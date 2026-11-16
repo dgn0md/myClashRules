@@ -128,10 +128,32 @@ async function verifySniffing({ binary, rulesDir, temp }) {
             { host: 'github.com', protocol: 'TLS', expected: 'GitHub', payload: 'github' },
             { host: 'github.com', protocol: 'HTTP', expected: 'GitHub', payload: 'github' },
             { host: 'github.com', protocol: 'TLS', ip: '2001:db8::42', expected: 'GitHub', payload: 'github' },
-            { host: 'api-siri-prod.apple.com', protocol: 'TLS', expected: 'Siri', payload: 'api-siri-prod.apple.com' },
-            { host: 'apple-relay.apple.com', protocol: 'TLS', expected: 'Apple智能', payload: 'apple-relay.apple.com' },
-            { host: 'unlisted-route-check.net', protocol: 'TLS', ip: '17.0.0.1', expected: '漏网之鱼' },
-            { host: 'unlisted-route-check.net', protocol: 'TLS', ip: '17.81.2.1', expected: '直连', payload: 'cn_ip' },
+            {
+              host: 'api-siri-prod.apple.com',
+              protocol: 'TLS',
+              expected: 'Siri Ai/Apple Intelligence',
+              payload: 'api-siri-prod.apple.com',
+            },
+            {
+              host: 'apple-relay.apple.com',
+              protocol: 'TLS',
+              expected: 'Siri Ai/Apple Intelligence',
+              payload: 'apple-relay.apple.com',
+            },
+            {
+              host: 'unlisted-route-check.net',
+              protocol: 'TLS',
+              ip: '17.0.0.1',
+              expected: 'Apple Product地区',
+              payload: 'apple_ip',
+            },
+            {
+              host: 'unlisted-route-check.net',
+              protocol: 'TLS',
+              ip: '17.81.2.1',
+              expected: 'Apple Product地区',
+              payload: 'apple_ip',
+            },
             { host: 'www.microsoft.com', protocol: 'TLS', expected: 'Microsoft', payload: 'microsoft' },
           ]
         : [{ host: 'github.com', protocol: 'TLS', expected: 'Microsoft', payload: 'microsoft_ip' }];

@@ -21,7 +21,7 @@
 | 极简国内外模式开关              | 保留；Apple/DNS 安全开关独立生效      | 同一逻辑                                           | 兼容回归与新行为测试；仍只发全量产物          |
 | Bettbox UI 开关                 | 保留；新增服务加入策略组列表          | 由支持脚本 UI 的客户端提供                         | `Compatible_With_Bettbox.policyGroupOptions`  |
 | LAN 代理、TUN、IPv6             | 新增显式开关；LAN 默认关闭            | 同步                                               | 默认与切换测试                                |
-| Apple 智能/Siri/海外产品        | 新增独立组、DNS 与优先规则            | 同步                                               | Apple 优先级、独立开关、回环 CONNECT 分流验收 |
+| Apple 服务分组                  | `Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service` 三组共享精细规则 | 同步                                         | Apple 优先级、组开关、回环 CONNECT 分流验收 |
 | 无明文上游 DNS                  | 默认严格；不可达不降级                | 同步                                               | DNS 全路径检查与私有明文拒绝测试              |
 | 丰富功能注释                    | 上游注释 + 新增选项说明               | 每个开关附同源注释，各配置块附说明                 | 生成一致性测试                                |
 

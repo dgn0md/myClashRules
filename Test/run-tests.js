@@ -50,20 +50,10 @@ async function main() {
       const api = loadScript(script.file);
       // 上游回归验证兼容模式原有算法；严格默认与 Apple 新行为由 tests/ 独立覆盖。
       api.ruleOptionsEnable.严格加密DNS = false;
-      api.ruleOptionsEnable.Apple智能 = false;
-      api.ruleOptionsEnable.Siri = false;
+      api.ruleOptionsEnable['Siri Ai/Apple Intelligence'] = false;
+      api.ruleOptionsEnable['Apple Product地区'] = false;
       api.ruleOptionsEnable.拦截外部明文DNS = false;
-      for (const key of [
-        'AppleNews',
-        'AppleTV',
-        'AppleFitness',
-        'AppleSports',
-        'AppleBooks',
-        'AppleRelay',
-        'Apple地区检测',
-        'Apple海外媒体',
-      ])
-        api.ruleOptionsEnable[key] = false;
+      api.ruleOptionsEnable.Apple海外媒体 = false;
       const h = new Harness(script.label);
 
       runUnitTests(h, api);
