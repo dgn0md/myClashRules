@@ -4,7 +4,8 @@ myClashRules 是基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) �
 
 ## 本仓库的特色
 
-- **全量上游能力继续维护**：地区、倍率、家宽节点分类，节点名称清理与补旗、去重、私有 DNS 和 hosts 处理、自定义节点及链式代理均沿用上游算法。
+- **全量上游节点能力继续维护**：地区、倍率、家宽节点分类，节点名称清理与补旗、去重、`dialer-proxy` 与必要的 hosts 节点映射沿用上游算法。
+- **机场设置由脚本接管**：展开机场配置时只读取并处理节点；机场的 DNS、`fake-ip-filter`、DNS policy、路由、策略组及其他设置不会进入输出。最终 DNS、hosts、路由和开关都由本脚本生成。
 - **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
 - **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。
 - **Apple 细分为三个独立组**：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。范围与副作用见[Apple 分流说明](docs/apple-routing.md)。
@@ -42,7 +43,7 @@ npm ci
 node tools/build.js --settings Config/mihomoConfig.yaml --output .local/myConfig.yaml
 ```
 
-如需让生成配置按脚本处理实际节点、节点 DNS 与 hosts，先将订阅保存到已忽略的 `.local/subscription.yaml`，再运行：
+如需让生成配置按脚本处理实际节点与节点 hosts 映射，先将订阅保存到已忽略的 `.local/subscription.yaml`，再运行：
 
 ```sh
 node tools/build.js --settings Config/mihomoConfig.yaml --subscription .local/subscription.yaml --output .local/myConfig.yaml
@@ -64,7 +65,7 @@ node tools/build.js --settings Config/mihomoConfig.yaml --subscription .local/su
 
 ## DNS 与路由边界
 
-默认严格加密 DNS 使用固定 IP 的 AliDNS 与 DNSPod DoH 作为启动、节点和直连解析器；一般代理解析使用 Cloudflare 与 Google DoH，并将请求交给相应策略组。严格模式拒绝系统/明文上游、跳过证书校验和静默回退。需要机场私有 DNS 的订阅必须提供受支持的 DoH/DoT 或明确的 hosts/IP 映射。
+默认严格加密 DNS 使用固定 IP 的 AliDNS 与 DNSPod DoH 作为启动、节点和直连解析器；一般代理解析使用 Cloudflare 与 Google DoH，并将请求交给相应策略组。机场的 DNS resolver、`fake-ip-filter` 和 `nameserver-policy` 不会被继承；脚本只输出自身定义的 DNS 与 Fake-IP 例外。严格模式拒绝节点解析所涉及的系统/明文上游及跳过证书校验配置，不会静默降级。展开模式可用机场 hosts 映射改写节点 server，但不会把机场 hosts 表复制到输出。
 
 默认启用 TUN、53 端口接管和纯 IP 域名嗅探；局域网代理监听默认关闭。嗅探仅补充路由可用的域名，不改写目标 IP，不覆盖未进入 TUN 的设备或链路。
 

@@ -333,11 +333,16 @@ test('international iCloud content suffix shares priority routing and DNS while 
     }
   }
 });
-test('strict DNS rejects private plaintext and insecure TLS instead of changing the resolver', () => {
+test('strict DNS rejects system, DHCP, plaintext and insecure airport node resolvers', () => {
   for (const resolver of [
+    'system',
+    'system://',
+    'dhcp://eth0',
     '192.168.1.1',
     'udp://10.2.3.4:53',
+    'udp://8.8.8.8:53',
     'tcp://10.2.3.4:53',
+    'tcp://8.8.8.8:53',
     'http://private.test/dns-query',
     'https://private.test/dns-query#skip-cert-verify=true',
   ]) {
@@ -347,7 +352,7 @@ test('strict DNS rejects private plaintext and insecure TLS instead of changing 
     assert.throws(() => build({ subscription }), /严格加密DNS/);
   }
 });
-test('strict private DNS keeps exact per-node policies and fills partially covered nodes', () => {
+test('airport DNS policy does not override the script-owned node resolver policy', () => {
   const subscription = clean();
   subscription.proxies[0].server = 'a.example.co.uk';
   subscription.proxies.push({ ...subscription.proxies[0], name: '香港 测试', server: 'b.example.co.uk' });
@@ -355,12 +360,12 @@ test('strict private DNS keeps exact per-node policies and fills partially cover
     nameserver: ['tls://private.test:853'],
     'proxy-server-nameserver-policy': { 'a.example.co.uk': 'https://special.test/dns-query' },
   };
-  const policy = build({ subscription }).config.dns['proxy-server-nameserver-policy'];
-  assert.deepEqual(policy, {
-    'a.example.co.uk': 'https://special.test/dns-query',
-    'b.example.co.uk': ['tls://private.test:853'],
-  });
-  assert.ok(!('+.co.uk' in policy));
+  const dns = build({ subscription }).config.dns;
+  assert.deepEqual(dns['proxy-server-nameserver-policy'], {});
+  assert.deepEqual(dns['proxy-server-nameserver'], [
+    'https://223.5.5.5/dns-query#DIRECT',
+    'https://1.12.12.12/dns-query#DIRECT',
+  ]);
 });
 test('private hosts rewrite still removes local-loop DNS before strict validation', () => {
   const config = build({ subscription: fx.hostsMappedSubscription() }).config;
@@ -737,18 +742,43 @@ test('provider IP preference and both rate filters preserve ordinary region grou
   const both = build({ settings: { options: { 代理IPV4优先: true, 代理IPV6优先: true } } }).config;
   assert.ok(!both['proxy-providers'].订阅.override);
 });
-test('private policy chooses the most specific suffix for each node', () => {
+test('airport fake-IP filters, DNS policies, and extra DNS settings never leak into generated output', () => {
   const subscription = clean();
   subscription.proxies[0].server = 'a.special.nodes.test';
   subscription.dns = {
+    'fake-ip-filter': ['+.airport.example', 'airport.example'],
+    'fake-ip-filter-mode': 'blacklist',
+    nameserver: ['https://airport.test/dns-query'],
+    'nameserver-policy': { '+.airport.example': 'https://policy.airport.test/dns-query' },
     'proxy-server-nameserver-policy': {
       '+.nodes.test': 'https://broad.test/dns-query',
       '+.special.nodes.test': 'https://specific.test/dns-query',
     },
   };
-  assert.deepEqual(build({ subscription }).config.dns['proxy-server-nameserver-policy'], {
-    'a.special.nodes.test': 'https://specific.test/dns-query',
-  });
+  subscription.hosts = { 'airport-host.example': '192.0.2.10' };
+  subscription.rules = ['DOMAIN,airport.example,DIRECT'];
+  subscription['proxy-groups'] = [{ name: '机场自定义组', type: 'select', proxies: ['DIRECT'] }];
+  subscription['rule-providers'] = { airport: { type: 'inline', behavior: 'domain', payload: ['DOMAIN,airport.example'] } };
+  subscription.tun = { enable: false, stack: 'system' };
+  subscription['profile'] = { 'store-fake-ip': false };
+  subscription['external-controller'] = '0.0.0.0:9999';
+  subscription['airport-sentinel'] = { shouldNotSurvive: true };
+  const config = build({ subscription }).config;
+  assert.ok(!config.dns['fake-ip-filter'].includes('+.airport.example'));
+  assert.ok(!config.dns['fake-ip-filter'].includes('airport.example'));
+  assert.ok(!('fake-ip-filter-mode' in config.dns));
+  assert.deepEqual(config.dns['proxy-server-nameserver-policy'], {});
+  assert.ok(!config.dns.nameserver.includes('https://airport.test/dns-query'));
+  assert.ok(!config.dns['nameserver-policy']['+.airport.example']);
+  assert.ok(!config.hosts['airport-host.example']);
+  assert.ok(!config.rules.includes('DOMAIN,airport.example,DIRECT'));
+  assert.ok(!config['proxy-groups'].some((group) => group.name === '机场自定义组'));
+  assert.ok(!config['rule-providers'].airport);
+  assert.equal(config.tun.stack, 'mixed');
+  assert.equal(config.tun.enable, true);
+  assert.equal(config.profile['store-fake-ip'], true);
+  assert.equal(config['external-controller'], '127.0.0.1:9090');
+  assert.ok(!('airport-sentinel' in config));
 });
 test('CLI applies edited booleans and preserves the subscription URL from a settings YAML', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'myclash-cli-'));

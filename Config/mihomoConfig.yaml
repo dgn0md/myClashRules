@@ -2,7 +2,7 @@
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。只改 true/false 后运行：
 # node tools/build.js --settings Config/mihomoConfig.yaml --output .local/myConfig.yaml
-# 私有 DNS/hosts 机场请使用 --subscription .local/subscription.yaml，以执行完整节点处理。
+# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
 # 严格模式无明文上游 DNS；需 TUN/网关接管才覆盖系统流量。不可达时不降级。
 # 请勿将真实订阅链接/节点提交到 Git。true 是正确拼写，ture 会被拒绝。
 
@@ -102,6 +102,7 @@ dns:
   proxy-server-nameserver:
     - https://223.5.5.5/dns-query#DIRECT
     - https://1.12.12.12/dns-query#DIRECT
+  proxy-server-nameserver-policy: {}
   nameserver:
     - https://cloudflare-dns.com/dns-query#默认代理
     - https://dns.google/dns-query#默认代理

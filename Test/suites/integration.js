@@ -90,100 +90,38 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
 
   // ---------------- DNS 与 hosts ----------------
   h.section('集成测试 · DNS 与 hosts');
-  h.test('默认与代理服务器 DNS 使用各自的固定公共 DNS；无专属策略时私有 DNS 合并写入节点域名 policy', () => {
+  h.test('机场 DNS resolver 与 Fake-IP 设置全部由脚本设置覆盖', () => {
     const cfg = fx.typicalSubscription();
-    // 移除 listen 触发条件与节点专属 DNS 策略，验证私有 DNS 经 policy 生效
-    delete cfg.dns.listen;
-    delete cfg.dns['proxy-server-nameserver-policy'];
+    cfg.dns['fake-ip-filter'].push('+.airport-filter.example');
+    cfg.dns['fake-ip-filter-mode'] = 'blacklist';
     cfg.dns['nameserver'] = ['8.8.8.8', 'https://private.example-dns.com/dns-query#proxy'];
-    cfg.dns['proxy-server-nameserver'] = ['223.5.5.5', 'https://private-proxy.example-dns.com/dns-query#proxy'];
+    cfg.dns['proxy-server-nameserver'] = ['https://private-proxy.example-dns.com/dns-query'];
     const out = api.main(cfg);
     h.assertEqual(out.dns.enable, true);
     h.assertEqual(out.dns['enhanced-mode'], 'fake-ip');
-    // 相同 DNS 的节点域名按后缀压缩为一条规则；两个来源的私有 DNS 合并去重、剥离 # 后缀
-    const policy = out.dns['proxy-server-nameserver-policy'];
-    h.assertDeep(policy['+.example.com'], [
-      'https://private.example-dns.com/dns-query',
-      'https://private-proxy.example-dns.com/dns-query',
+    h.assertDeep(out.dns.nameserver, [
+      'https://cloudflare-dns.com/dns-query#默认代理',
+      'https://dns.google/dns-query#默认代理',
     ]);
-    h.assert(!('hk1.example.com' in policy), '压缩后不应保留冗余的精确子域规则');
-    // 公共 DNS 不进入 policy；私有 DNS 不应含 # 后缀
-    const policyText = JSON.stringify(policy);
-    h.assert(!policyText.includes('8.8.8.8'), 'nameserver 公共 DNS 应被过滤');
-    h.assert(!policyText.includes('223.5.5.5'), 'proxy-server-nameserver 公共 DNS 应被过滤');
-    h.assert(!policyText.includes('#'), '私有 DNS 不应含 # 后缀');
+    h.assertDeep(out.dns['proxy-server-nameserver'], [
+      'https://223.5.5.5/dns-query#DIRECT',
+      'https://1.12.12.12/dns-query#DIRECT',
+    ]);
+    h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '机场节点 DNS policy 应明确清空');
+    h.assert(!out.dns['fake-ip-filter'].includes('+.airport-filter.example'), '不得继承机场 Fake-IP 例外');
+    h.assert(!('fake-ip-filter-mode' in out.dns), '不得继承机场 Fake-IP 模式');
   });
-  h.test('私有 DNS 后缀处理：非 direct 剥离、direct/直连 规范化为 #DIRECT', () => {
-    // 无节点专属 DNS 策略时，私有 DNS 经 policy 生效，后缀规则随之生效
+  h.test('机场 nameserver-policy 与 proxy-server-nameserver-policy 全部被脚本策略替换', () => {
     const cfg = fx.typicalSubscription();
-    delete cfg.dns['proxy-server-nameserver-policy'];
-    cfg.dns['nameserver'] = [
-      'https://private.example-dns.com/dns-query#direct',
-      'https://private.example-dns.com/dns-query#direct&ecs=2.2.2.2',
-      'https://private-proxy.example-dns.com/dns-query#PROXY',
-    ];
-    const out = api.main(cfg);
-    const policy = out.dns['proxy-server-nameserver-policy'];
-    // 未改写的多个 example.com 节点共享 DNS，策略应压缩为后缀规则
-    const privateDNS = policy['+.example.com'];
-    h.assert(privateDNS.includes('https://private.example-dns.com/dns-query#DIRECT'), '应规范化 #direct 后缀');
-    h.assertEqual(
-      privateDNS.filter((dns) => dns === 'https://private.example-dns.com/dns-query#DIRECT').length,
-      1,
-      '规范化后的重复 DNS 应去重',
-    );
-    h.assert(
-      privateDNS.includes('https://private-proxy.example-dns.com/dns-query'),
-      '非 direct 后缀（#PROXY）应被剥离',
-    );
-    // hk1.example.com 被 hosts 映射为 IP（10.0.0.1），IP 类型的 server 不进入 policy
-    h.assert(!('hk1.example.com' in policy), '映射为 IP 的节点域名不应进入 policy');
-  });
-  h.test('节点域名对应 nameserver-policy 与 proxy-server-nameserver-policy 被保留', () => {
-    const cfg = fx.typicalSubscription();
-    // 补充 nameserver-policy 来源，验证其与 proxy-server-nameserver-policy 合并后一起保留
     cfg.dns['nameserver-policy'] = {
       'jp1.example.com': 'https://private-ns.example-dns.com/dns-query#PROXY',
       'unrelated-ns.com': 'https://foo-ns.com/dns-query',
     };
     const out = api.main(cfg);
-    // 存在节点专属 DNS 策略时优先保留（# 后缀被剥离），不生成私有 DNS 兜底；
-    // hk1.example.com 被 hosts 映射为 IP（10.0.0.1）后不再匹配节点域名 → 被排除
-    h.assertDeep(out.dns['proxy-server-nameserver-policy'], {
-      // 来自 proxy-server-nameserver-policy（hk1.example.com 映射为 IP 被排除）
-      '+.example.com': ['https://other-dns.com/dns-query'],
-      // 来自 nameserver-policy（#PROXY 后缀被剥离）
-      'jp1.example.com': 'https://private-ns.example-dns.com/dns-query',
-    });
-  });
-  h.test('仅匹配部分节点域名时不压缩策略，避免后缀规则扩大匹配范围', () => {
-    const cfg = fx.minimalSubscription();
-    cfg.dns = {
-      'proxy-server-nameserver-policy': {
-        'b.example.com': ['https://private.example-dns.com/dns-query'],
-        'a.example.com': ['https://private.example-dns.com/dns-query'],
-      },
-    };
-    const out = api.main(cfg);
-    h.assertDeep(out.dns['proxy-server-nameserver-policy'], {
-      'b.example.com': ['https://private.example-dns.com/dns-query'],
-      'a.example.com': ['https://private.example-dns.com/dns-query'],
-    });
-  });
-  h.test('策略域名与节点域名完整一致时按忽略顺序的集合比较后压缩', () => {
-    const cfg = fx.minimalSubscription();
-    cfg.dns = {
-      'proxy-server-nameserver-policy': {
-        'd.example.com': ['https://private.example-dns.com/dns-query'],
-        'c.example.com': ['https://private.example-dns.com/dns-query'],
-        'b.example.com': ['https://private.example-dns.com/dns-query'],
-        'a.example.com': ['https://private.example-dns.com/dns-query'],
-      },
-    };
-    const out = api.main(cfg);
-    h.assertDeep(out.dns['proxy-server-nameserver-policy'], {
-      '+.example.com': ['https://private.example-dns.com/dns-query'],
-    });
+    h.assert(!out.dns['nameserver-policy']['jp1.example.com']);
+    h.assert(!out.dns['nameserver-policy']['unrelated-ns.com']);
+    h.assertDeep(out.dns['proxy-server-nameserver-policy'], {});
+    h.assert(out.dns['nameserver-policy']['rule-set:cn']);
   });
   h.test('节点 hosts 映射改写为 server，不再复制 hosts', () => {
     const out = api.main(fx.typicalSubscription());
@@ -192,22 +130,20 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     h.assert(!('hk1.example.com' in out.hosts), '映射后的节点 hosts 不应复制到新配置');
     h.assert(!('www.unrelated.com' in out.hosts), '无关 hosts 应被过滤');
   });
-  h.test('fake-ip-filter 保留匹配条目并过滤无关条目', () => {
-    // 节点域名（精确/后缀/通配）保留，无关条目与 rule-set 被过滤，默认条目置于头部
+  h.test('fake-ip-filter 完全由脚本定义，不继承机场条目', () => {
     const out = api.main(fx.typicalSubscription());
     const f = out.dns['fake-ip-filter'];
-    h.assert(f.includes('+.example.com'), '后缀匹配的节点域名应保留');
-    h.assert(f.includes('*.example.com'), '通配匹配的节点域名应保留');
-    // hk1.example.com 被 hosts 映射为 IP（10.0.0.1），IP 类型的 server 被排除
+    h.assert(!f.includes('+.example.com'), '不得继承机场后缀例外');
+    h.assert(!f.includes('*.example.com'), '不得继承机场通配例外');
     h.assert(!f.includes('hk1.example.com'), '映射为 IP 的节点域名应被排除');
     h.assert(!f.includes('www.unrelated.com'), '无关条目应被过滤');
     h.assert(!f.includes('rule-set:unrelated'), 'rule-set 条目应被过滤');
     h.assertEqual(f[0], 'rule-set:private');
     h.assertEqual(f[1], 'rule-set:fakeip_filter');
-    // hosts 映射目标域名场景：保留目标域名对应的条目
+    // hosts 只用于改写节点 server，不会把机场的 fake-ip-filter 带入输出
     const f2 = api.main(fx.hostsMappedSubscription()).dns['fake-ip-filter'];
-    h.assert(f2.includes('+.example-apt.com'), '节点 hosts 映射目标域名对应的条目应保留');
-    h.assert(!f2.includes('+.unrelated-filter.com'), '与节点无关的条目应被过滤');
+    h.assert(!f2.includes('+.example-apt.com'), '不得继承节点 hosts 目标对应的机场例外');
+    h.assert(!f2.includes('+.unrelated-filter.com'), '不得继承机场自定义例外');
   });
   h.test('hosts 改写触发条件不满足时跳过改写', () => {
     const find = (cfg) => api.main(cfg).proxies.find((x) => x.name === '🇭🇰 香港 01 | 中转');
@@ -228,18 +164,14 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     cfg = fx.typicalSubscription();
     cfg.dns['proxy-server-nameserver'] = ['udp://127.0.0.1:7874'];
     h.assertEqual(find(cfg).server, 'hk1.example.com', 'listen 不含 0.0.0.0 时不应改写');
-    // listen 缺失或为空字符串 → 不触发，且空串不当作私有 DNS 保留
+    // listen 缺失或为空字符串 → 不触发节点 hosts 改写；机场 DNS 仍不会进入输出
     for (const listen of [undefined, '']) {
       cfg = fx.typicalSubscription();
       if (listen === undefined) delete cfg.dns.listen;
       else cfg.dns.listen = listen;
       const out = api.main(cfg);
       h.assertEqual(find(cfg).server, 'hk1.example.com', 'listen 缺失/为空时不应改写');
-      // 空串不会被当作私有 DNS 写入 policy
-      h.assert(
-        Object.values(out.dns['proxy-server-nameserver-policy']).every((v) => v !== ''),
-        '不应将空串当作私有 DNS 保留',
-      );
+      h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '机场节点 DNS policy 应明确清空');
     }
   });
   h.test('新写法 proxy-server-nameserver 含 127.0.0.1 且 listen 含 0.0.0.0 时触发 hosts 改写', () => {
@@ -256,13 +188,11 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     const out2 = api.main(cfg);
     const p2 = out2.proxies.find((x) => x.name === '🇭🇰 香港 01 | 中转');
     h.assertEqual(p2.server, '10.0.0.1', '端口不同时仍应触发 hosts 改写');
-    // 无节点专属 DNS 策略时，私有 DNS 经 policy 生效：
-    // listen 对应的本地监听 DNS 在提取时被置空，nameserver 中的私有 DNS 保留
+    // hosts 映射只改写节点地址；机场 nameserver 设置不会写进生成配置
     delete cfg.dns['proxy-server-nameserver-policy'];
     const out3 = api.main(cfg);
-    const privateDNS = out3.dns['proxy-server-nameserver-policy']['+.example.com'];
-    h.assert(!privateDNS.some((d) => d.includes('udp://127.0.0.1')), 'listen 对应的本地 DNS 不应被误留为私有 DNS');
-    h.assert(privateDNS.includes('https://private.example-dns.com/dns-query'), 'nameserver 中的私有 DNS 仍应保留');
+    h.assertDeep(out3.dns['proxy-server-nameserver-policy'], {}, '机场 DNS policy 应明确清空');
+    h.assert(!JSON.stringify(out3.dns).includes('private.example-dns.com'), '机场私有 DNS 不应进入输出');
   });
   h.test('无 dns/hosts 输入时生成默认配置', () => {
     const cfg = fx.typicalSubscription();
@@ -270,8 +200,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     delete cfg.hosts;
     const out = api.main(cfg);
     h.assertEqual(out.dns.enable, true);
-    // 无私有 DNS 时不生成 policy
-    h.assert(!('proxy-server-nameserver-policy' in out.dns), '无私有 DNS 时不应生成 policy');
+    h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '应始终清空机场 proxy-server-nameserver-policy');
     h.assertDeep(out.hosts['doh.pub'], ['1.12.12.12', '120.53.53.53']);
     // 默认 hosts 仍生成（不再包含已移除的 dns.alidns.com/dns.google 等条目）
     h.assertDeep(out.hosts['services.googleapis.cn'], 'services.googleapis.com');

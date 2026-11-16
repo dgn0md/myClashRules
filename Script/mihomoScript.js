@@ -1874,7 +1874,8 @@ function simplifyDomainPolicy(policy) {
 }
 
 /**
- * 构建 DNS 与 hosts：保留私有 DNS、节点域名 policy/fake-ip-filter，并按 hosts 改写节点 server
+ * 构建脚本拥有的 DNS 与 hosts，并按机场 hosts 映射改写节点 server。
+ * 输入配置中除节点及用于改写节点地址的 hosts 映射外，其余设置都不进入输出。
  * hosts改写条件（满足任意一个条件即可）：
  * 1. proxy-server-nameserver 有且仅有一个 DNS 并且该 DNS 包含非空的 listen 值
  * 2. proxy-server-nameserver 有且仅有一个 DNS 并且该 DNS 包含 127.0.0.1 并且 listen 包含 0.0.0.0
@@ -1910,20 +1911,21 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const isCommonDns = (dns) => {
     const value = String(dns).trim().toLowerCase();
-    if (value === 'system' || value === 'system://') return true;
-
     return commonDnsRegex.test(value);
   };
 
-  const privateDNS = [
+  const airportResolverInputs = [
+    ...(originalDnsConfig['nameserver'] || []),
+    ...privateProxyServerNameservers,
+  ].filter((dns) => String(dns).trim().length > 0);
+  const airportPrivateResolvers = [
     ...new Set(
-      [...(originalDnsConfig['nameserver'] || []), ...privateProxyServerNameservers]
-        .map(stripDnsSuffix)
-        .filter((dns) => dns.length > 0 && !isCommonDns(dns)),
+      airportResolverInputs.map(stripDnsSuffix).filter((dns) => dns.length > 0 && !isCommonDns(dns)),
     ),
   ];
 
-  const matchedProxyPolicy = {};
+  // 机场 DNS 只参与节点 hosts 改写条件与严格模式安全检查；绝不复制到输出。
+  const matchedAirportNodePolicies = {};
   for (const [domain, dns] of Object.entries({
     ...originalDnsConfig['nameserver-policy'],
     ...originalDnsConfig['proxy-server-nameserver-policy'],
@@ -1933,38 +1935,32 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     const stripedDns = Array.isArray(dns) ? dns.map(stripDnsSuffix).filter((d) => d.length > 0) : stripDnsSuffix(dns);
     if (Array.isArray(stripedDns) && stripedDns.length === 0) continue;
 
-    matchedProxyPolicy[domain] = stripedDns;
+    matchedAirportNodePolicies[domain] = stripedDns;
   }
-
-  if (privateDNS.length > 0 && Object.keys(matchedProxyPolicy).length === 0) {
-    for (const domain of proxyDomains) {
-      matchedProxyPolicy[domain] = privateDNS;
-    }
-  }
-
-  const matchedPolicyDomains = Object.keys(matchedProxyPolicy);
-  let proxyServerPolicy =
-    proxyDomains.size === matchedPolicyDomains.length &&
-    matchedPolicyDomains.every((domain) => proxyDomains.has(domain.toLowerCase()))
-      ? simplifyDomainPolicy(matchedProxyPolicy)
-      : matchedProxyPolicy;
 
   if (ruleOptionsEnable.严格加密DNS) {
-    // 严格模式只保留节点的精确域名策略，避免 co.uk 等公共后缀合并扩大机场 DNS 的作用域。
-    // 有部分专属策略时，未覆盖节点仍使用机场私有 DNS，防止静默落到公共解析。
-    proxyServerPolicy = {};
-    const entries = Object.entries(matchedProxyPolicy).sort(
-      (a, b) => hostSpecificity(b[0]) - hostSpecificity(a[0]) || b[0].length - a[0].length,
-    );
-    for (const domain of proxyDomains) {
-      const match = entries.find(([pattern]) => matchDomainPattern(pattern, new Set([domain])));
-      if (match) proxyServerPolicy[domain] = match[1];
-      else if (privateDNS.length) proxyServerPolicy[domain] = privateDNS;
+    for (const resolver of airportResolverInputs) {
+      const value = stripDnsSuffix(resolver).trim();
+      if (/^(?:system|dhcp)(?::\/\/|$)|^(?:udp|tcp):\/\//i.test(value)) {
+        throw new Error(
+          '严格加密DNS：机场节点解析配置含 system/DHCP 或明文 UDP/TCP DNS。机场 DNS 设置不会继承；请改用加密解析或为节点配置 hosts/IP。',
+        );
+      }
+    }
+    const assertSecureResolver = (resolver, source) => {
+      const value = stripDnsSuffix(resolver).trim();
+      if (!/^(https|tls|rcode):\/\//i.test(value) || /skip-cert-verify|^system(?:\/\/|$)|^dhcp(?:\/\/|$)/i.test(value)) {
+        throw new Error(
+          `严格加密DNS：机场 ${source} 含不受支持或明文的节点 DNS。机场 DNS 设置不会继承；请改用脚本提供的节点解析 DNS，或为节点配置 hosts/IP。`,
+        );
+      }
+    };
+    for (const resolver of airportPrivateResolvers) assertSecureResolver(resolver, 'nameserver');
+    for (const [domain, resolvers] of Object.entries(matchedAirportNodePolicies)) {
+      for (const resolver of Array.isArray(resolvers) ? resolvers : [resolvers])
+        assertSecureResolver(resolver, `nameserver-policy ${domain}`);
     }
   }
-
-  const originalFakeIpFilter = originalDnsConfig['fake-ip-filter'] || [];
-  const proxyFakeIpFilter = originalFakeIpFilter.filter((pattern) => matchProxyDomain(pattern));
 
   const dns = {
     enable: true,
@@ -1981,13 +1977,10 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       'rule-set:cn',
       ...(minimalModeEnabled ? [] : ruleOptionsEnable['FCM'] ? ['rule-set:googlefcm'] : []),
       ...appleRealIpEndpoints,
-      ...proxyFakeIpFilter,
     ],
     'default-nameserver': defaultDNS,
     'proxy-server-nameserver': proxyServerDNS,
-    ...(Object.keys(proxyServerPolicy).length > 0 && {
-      'proxy-server-nameserver-policy': proxyServerPolicy,
-    }),
+    'proxy-server-nameserver-policy': {},
     nameserver: foreignDNS,
     'nameserver-policy': {
       'rule-set:private': 'system',

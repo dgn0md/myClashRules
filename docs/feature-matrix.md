@@ -23,7 +23,8 @@
 | 细分 Apple 路由 | 采用 `Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service` 三组。 | 共享 HTTPS 主机无法按应用路径拆分；详见[Apple 路由范围](apple-routing.md)。 |
 | DNS 与路由出口 | DNS resolver 通常跟随精确域名、后缀或动态 domain/classical provider 的路由目标组。 | Apple 例外：`Other Apple Service` 的连接仍由该组选择，默认直连；其通用 Apple DNS policy 固定使用 `美国` 组，显式 `.apple-dns.net` / `.apple-dns.com` 规则则改用 `Apple Product地区` DNS。私网、CN、douyin 等保留集合使用专用 policy；IP-CIDR provider 不发起域名查询。 |
 | 服务 IP 细分 | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 的 IP provider 分别使用对应服务组。 | 专用 IP 规则在通用 `cn_ip` 直连兜底之前；私网 IP 仍直连。 |
-| 严格加密 DNS | 默认使用 DoH，按直连或代理策略组选出口；严格模式拒绝明文私有 DNS、系统 DNS 和不安全 TLS 配置。 | 无法安全兼容的机场 DNS 会报错，需要机场提供加密解析或 hosts/IP。 |
+| 机场配置覆盖 | 展开模式只读取机场 `proxies`，并可用机场 hosts 映射改写节点 server；其他机场设置不进入输出。 | DNS、`fake-ip-filter`、DNS policy、路由、策略组、hosts 表和其他非节点设置均由脚本重建；静态 provider 模式无法读取远端订阅节点或 hosts。 |
+| 严格加密 DNS | DNS 上游、policy 与 Fake-IP 例外由脚本生成；严格模式拒绝节点解析所涉及的明文 DNS、system/DHCP 和不安全 TLS 配置。 | 机场 DNS 设置不会继承；不可安全使用的节点解析设置会明确报错，不会静默降级。 |
 | 纯 IP 域名嗅探 | 使用 HTTP Host、TLS SNI 与受支持的 QUIC 元数据补充规则匹配。 | 不解密 HTTPS，不改写目标地址；未进入 TUN 或无可见域名的流量仍按其他规则处理。 |
 | 显式依赖管理 | rule provider 只在路由或 DNS policy 实际引用时保留；Emby 关键词使用 classical 匹配。 | 上游集合内容随 provider 更新而变化。 |
 | 安全与客户端选项 | 可切换 TUN、IPv6、局域网访问、QUIC 阻断、PCDN hosts 规则、节点 IP 优先级和链式代理。 | 客户端权限和未进入内核的网络接口不受配置控制。 |
@@ -43,8 +44,8 @@
 | 模式 | 输入 | 节点处理 |
 | --- | --- | --- |
 | 脚本覆写 | Mihomo/Clash 展开后的配置，包含 `proxies` 数组。 | 运行上游完整节点算法，并生成最终配置。 |
-| 静态 YAML | 修改 `proxy-providers.订阅.url` 后导入 Mihomo。 | 通过内核 provider 与正则筛选；无法读取订阅内部节点 DNS/hosts，也无法在生成时处理节点名称。 |
-| 订阅展开 | 静态选项 YAML 加本地 `--subscription` 输入。 | 构建器将节点交给同一脚本处理；订阅变化后需要重新生成。 |
+| 静态 YAML | 修改 `proxy-providers.订阅.url` 后导入 Mihomo。 | 通过内核 provider 与正则筛选；无法读取远端节点或 hosts，也无法在生成时处理节点名称。机场 DNS 等非节点设置不会被远端 provider 注入。 |
+| 订阅展开 | 静态选项 YAML 加本地 `--subscription` 输入。 | 构建器只将节点与节点 hosts 映射交给同一脚本处理，机场 DNS/规则等其他设置不继承；订阅变化后需要重新生成。 |
 
 ## 关键默认值
 
