@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 18245)
-Total output lines: 1835
-
 # myClashRules 全量配置；派生自 AIsouler/MyClash（MIT），生成器：tools/build.js。
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。只改 true/false 后运行：
@@ -575,7 +572,677 @@ proxy-groups:
       - 高倍率节点
       - 家宽节点
       - 其他节点
-      - …6245 tokens truncated…|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+      - 直连
+    default-selected: 直连
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: YouTube
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/YouTube.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Google
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Google.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: AI
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/OpenAI.svg
+    proxies:
+      - 美国
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: GitHub
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/GitHub.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Microsoft
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Microsoft.svg
+    proxies:
+      - 直连
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Other Apple Service
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
+    proxies:
+      - 直连
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Telegram
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Telegram.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Steam
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Steam.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+      - 直连
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: TikTok
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/TikTok.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+    default-selected: 日本
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Twitter
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Twitter.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Meta
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Meta.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Line
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Line.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Netflix
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Netflix.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Emby
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Emby.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+      - 直连
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: PikPak
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/PikPak.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+      - 直连
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Spotify
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Spotify.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+      - 直连
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Crypto
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Bitcoin.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+    default-selected: 日本
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: PayPal
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/PayPal.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+    default-selected: 美国
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Patreon
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Patreon.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+    default-selected: 香港
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: EHentai
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/EHentai.svg
+    proxies:
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+      - 直连
+    default-selected: 美国
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: AdBlock
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/AdBlock.svg
+    proxies:
+      - REJECT
+      - REJECT-DROP
+      - PASS
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Siri Ai/Apple Intelligence
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
+    proxies:
+      - 美国
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: Apple Product地区
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
+    proxies:
+      - 美国
+      - 默认代理
+      - 手动选择
+      - 自动选择
+      - 负载均衡
+      - 香港
+      - 日本
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+      - 直连
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 漏网之鱼
+    proxies:
+      - 默认代理
+      - 直连
+      - 香港
+      - 日本
+      - 美国
+      - 新加坡
+      - 台湾
+      - 低倍率节点
+      - 高倍率节点
+      - 家宽节点
+      - 其他节点
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Stack.svg
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 直连
+    proxies:
+      - 🇨🇳 直连 | 双栈
+      - 🇨🇳 直连 | IPv4优先
+      - 🇨🇳 直连 | IPv6优先
+      - 🇨🇳 直连 | 仅IPv4
+      - 🇨🇳 直连 | 仅IPv6
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/China.svg
+    hidden: false
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 香港
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/HongKong.svg
+    proxies:
+      - 香港-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 香港-自动选择
+    include-all-providers: true
+    filter: (?i)🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 日本
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Japan.svg
+    proxies:
+      - 日本-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 日本-自动选择
+    include-all-providers: true
+    filter: (?i)🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 美国
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/America.svg
+    proxies:
+      - 美国-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 美国-自动选择
+    include-all-providers: true
+    filter: (?i)🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 新加坡
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Singapore.svg
+    proxies:
+      - 新加坡-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 新加坡-自动选择
+    include-all-providers: true
+    filter: (?i)🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 台湾
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Taiwan.svg
+    proxies:
+      - 台湾-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 台湾-自动选择
+    include-all-providers: true
+    filter: (?i)🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 低倍率节点
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Available.svg
+    proxies:
+      - 低倍率节点-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)^(?!.*(?:剩|期)).*(?:(?<![\d.])0(\.[0-5]|[*×✕✖⨯⨉x倍]))|(?:[*×✕✖⨯⨉x]0)|^(?!.*(?:客户端|软件)).*下载|低倍|免费|(?<![A-Za-z])free(?![A-Za-z])
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 低倍率节点-自动选择
+    include-all-providers: true
+    filter: (?i)^(?!.*(?:剩|期)).*(?:(?<![\d.])0(\.[0-5]|[*×✕✖⨯⨉x倍]))|(?:[*×✕✖⨯⨉x]0)|^(?!.*(?:客户端|软件)).*下载|低倍|免费|(?<![A-Za-z])free(?![A-Za-z])
+    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
