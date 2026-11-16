@@ -37,7 +37,7 @@ x-myClashRules:
     Apple Product地区: true # News、TV、Fitness、Sports、Books 与 Apple IP，默认美国并可选直连
     Apple海外媒体: false # iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
     Apple模型下载直连: true # 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
-    严格加密DNS: true # 禁止继承明文/系统/不安全 TLS DNS；私有 DNS 不兼容时明确报错
+    严格加密DNS: true # 校验脚本生成的加密 DNS；不从机场配置继承 DNS
     拦截外部明文DNS: true # 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
     国内服务优先直连: true # 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
     Apple服务默认直连: true # Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先

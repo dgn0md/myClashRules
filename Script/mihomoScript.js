@@ -55,7 +55,7 @@ const ruleOptionsEnable = {
   'Apple Product地区': true, // News、TV、Fitness、Sports、Books 与 Apple IP，默认美国并可选直连
   Apple海外媒体: false, // iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
   Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
-  严格加密DNS: true, // 禁止继承明文/系统/不安全 TLS DNS；私有 DNS 不兼容时明确报错
+  严格加密DNS: true, // 校验脚本生成的加密 DNS；不从机场配置继承 DNS
   拦截外部明文DNS: true, // 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
   国内服务优先直连: true, // 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
   Apple服务默认直连: true, // Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
@@ -1394,196 +1394,6 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
 
 // ---dns和hosts相关处理---
 
-// 常见的公共 DNS，用于过滤订阅中的公共 DNS
-const commonDnsList = [
-  // ==================== 国内 ====================
-
-  // 阿里 AliDNS（阿里云）
-  '223.5.5.5',
-  '223.6.6.6',
-  '2400:3200::1',
-  '2400:3200:baba::1',
-  'alidns',
-
-  // 腾讯 DNSPod（腾讯云）
-  '119.29.29.29',
-  '119.28.28.28',
-  '182.254.116.116',
-  '182.254.118.118',
-  '1.12.12.12',
-  '120.53.53.53',
-  '2402:4e00::',
-  'doh.pub',
-  'dot.pub',
-  'dns.pub',
-  'dnspod',
-
-  // 114DNS（南京信风）
-  '114.114.114.114',
-  '114.114.115.115',
-  '114.114.114.119',
-  '114.114.115.119',
-  '114.114.114.110',
-  '114.114.115.110',
-
-  // 百度 BaiduDNS
-  '180.76.76.76',
-  '2400:da00::6666',
-  'dns.baidu',
-
-  // CNNIC SDNS（中国互联网络信息中心）
-  '1.2.4.8',
-  '210.2.4.8',
-  '2001:dc7:1000::1',
-  'cnnic',
-
-  // 360 安全 DNS
-  '101.226.4.6',
-  '218.30.118.6',
-  '123.125.81.6',
-  '140.207.198.6',
-  '2400:8800:1::6',
-  '2400:8800:2::6',
-  'doh.360',
-  'dot.360',
-  'dns.360',
-
-  // 火山引擎（字节跳动）
-  '180.184.1.1',
-  '180.184.2.2',
-
-  // OneDNS（微步在线，拦截版/纯净版/家庭版）
-  '117.50.11.11',
-  '117.50.22.22',
-  '52.80.66.66',
-  '117.50.10.10',
-  '52.80.52.52',
-  '117.50.60.30',
-  '52.80.60.30',
-  'onedns.net',
-
-  // 清华大学 TUNA
-  '101.6.6.6',
-  '2001:da8::666',
-
-  // 下一代互联网国家工程中心（IPv6 公共 DNS）
-  '240c::6666',
-  '240c::6644',
-
-  // 中国科学技术大学（教育网防污染）
-  '202.141.162.123',
-  '202.141.178.13',
-
-  // ==================== 国外 ====================
-
-  // Cloudflare
-  '1.1.1.1',
-  '1.0.0.1',
-  '1.1.1.2',
-  '1.0.0.2',
-  '1.1.1.3',
-  '1.0.0.3',
-  '2606:4700:4700::1111',
-  '2606:4700:4700::1001',
-  '2606:4700:4700::1112',
-  '2606:4700:4700::1002',
-  '2606:4700:4700::1113',
-  '2606:4700:4700::1003',
-  'dns.cloudflare',
-  'cloudflare-dns',
-  'one.one.one.one',
-
-  // Google Public DNS
-  '8.8.8.8',
-  '8.8.4.4',
-  '2001:4860:4860::8888',
-  '2001:4860:4860::8844',
-  'dns.google',
-
-  // Quad9
-  '9.9.9.9',
-  '9.9.9.10',
-  '9.9.9.11',
-  '149.112.112.112',
-  '149.112.112.10',
-  '149.112.112.11',
-  '2620:fe::fe',
-  '2620:fe::9',
-  'quad9',
-
-  // Cisco OpenDNS（含 FamilyShield）
-  '208.67.222.222',
-  '208.67.220.220',
-  '208.67.222.123',
-  '208.67.220.123',
-  '2620:119:35::35',
-  '2620:119:53::53',
-  '2620:119:35::123',
-  '2620:119:53::123',
-  'opendns',
-
-  // AdGuard DNS（含家庭版）
-  '94.140.14.14',
-  '94.140.15.15',
-  '94.140.14.15',
-  '94.140.15.16',
-  '2a10:50c0::ad1:ff',
-  '2a10:50c0::ad2:ff',
-  '2a10:50c0::bad1:ff',
-  '2a10:50c0::bad2:ff',
-  'adguard',
-
-  // Control D
-  '76.76.2.0',
-  '76.76.10.0',
-  '76.76.19.19',
-  '76.223.122.150',
-
-  // CleanBrowsing（含安全/家庭版）
-  '185.228.168.9',
-  '185.228.169.9',
-  '185.228.168.10',
-  '185.228.169.11',
-  '185.228.168.168',
-  '185.228.169.168',
-  '2a0d:2a00:1::2',
-  '2a0d:2a00:2::2',
-
-  // Yandex DNS
-  '77.88.8.8',
-  '77.88.8.1',
-  '2a02:6b8::feed:0ff',
-  '2a02:6b8:0:1::feed:0ff',
-
-  // Neustar UltraDNS
-  '156.154.70.1',
-  '156.154.71.1',
-  '156.154.70.2',
-  '156.154.71.2',
-  '2610:a1:1018::1',
-  '2610:a1:1019::1',
-
-  // Mullvad DNS
-  '194.242.2.2',
-  '2a07:e340::2',
-
-  // Hurricane Electric
-  '74.82.42.42',
-  '2001:470:20::2',
-
-  // NextDNS
-  'nextdns',
-
-  // Apple
-  'dns.apple',
-];
-
-// 预编译公共 DNS 正则
-const commonDnsRegex = new RegExp(
-  commonDnsList.map((dns) => dns.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
-  'i',
-);
-
 // 国内外 DNS 定义
 // 国内运营商可达的公共加密 DNS，固定 IP 启动避免解析 DoH 域名时再发明文 DNS。
 // 不配置 UDP/53、system 或 skip-cert-verify；不可达时失败，不降级为明文。
@@ -1641,61 +1451,6 @@ function matchDomainPattern(pattern, domains) {
       patternParts.every((part, index) => part === '*' || part === domainParts[index])
     );
   });
-}
-
-/**
- * 预编译节点域名集合，返回「规则模式 → 是否命中」的匹配函数。
- * 精确 / `+.` / `.` 三类模式查预建集合；通配模式按「段数 + 通配位之后的固定后缀」分组后逐段比对，
- * 避免每个模式都遍历一遍整个域名集合（节点多时由 O(模式 × 域名) 降为近似 O(模式)）
- */
-function createDomainMatcher(domains) {
-  const exact = new Set();
-  const suffixes = new Set();
-  const properSuffixes = new Set();
-  const splitDomains = [];
-
-  for (const raw of domains) {
-    const domain = raw.toLowerCase();
-    if (exact.has(domain)) continue;
-    exact.add(domain);
-    const parts = domain.split('.');
-    splitDomains.push(parts);
-    suffixes.add(domain);
-    for (let i = 1; i < parts.length; i++) {
-      const suffix = parts.slice(i).join('.');
-      suffixes.add(suffix);
-      properSuffixes.add(suffix);
-    }
-  }
-
-  let wildcardIndex = null;
-  const candidatesOf = (key) => {
-    if (!wildcardIndex) {
-      wildcardIndex = new Map();
-      for (const parts of splitDomains) {
-        for (let i = 0; i <= parts.length; i++) {
-          const indexKey = `${parts.length}:${parts.slice(i).join('.')}`;
-          const list = wildcardIndex.get(indexKey);
-          if (list) list.push(parts);
-          else wildcardIndex.set(indexKey, [parts]);
-        }
-      }
-    }
-    return wildcardIndex.get(key) || [];
-  };
-
-  return (rawPattern) => {
-    const pattern = String(rawPattern).toLowerCase();
-    if (pattern.startsWith('+.')) return suffixes.has(pattern.slice(2));
-    if (pattern.startsWith('.')) return properSuffixes.has(pattern.slice(1));
-    if (!pattern.includes('*')) return exact.has(pattern);
-
-    const patternParts = pattern.split('.');
-    const key = `${patternParts.length}:${patternParts.slice(patternParts.lastIndexOf('*') + 1).join('.')}`;
-    return candidatesOf(key).some((parts) =>
-      patternParts.every((part, index) => part === '*' || part === parts[index]),
-    );
-  };
 }
 
 /**
@@ -1800,9 +1555,6 @@ function applyHostsToProxies(proxies, hosts) {
  */
 function stripDnsSuffix(dns) {
   const str = String(dns);
-  if (ruleOptionsEnable.严格加密DNS && /(?:^|[#&])skip-cert-verify(?:=true)?(?:&|$)/i.test(str)) {
-    throw new Error('严格加密DNS：订阅 DNS 禁用了证书校验，请修正私有 DNS 后重试');
-  }
   const hashIndex = str.indexOf('#');
   if (hashIndex === -1) return str;
 
@@ -1816,13 +1568,6 @@ function stripDnsSuffix(dns) {
   if (suffix.includes('direct') || suffix.includes('直连')) return prefix + '#DIRECT';
 
   return prefix;
-}
-
-/**
- * 判断节点 server 是否为 IP 地址（IPv4 / IPv6），用于从节点域名集合中排除 IP 类型的 server
- */
-function isIpAddress(server) {
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(server) || server.includes(':');
 }
 
 /**
@@ -1897,70 +1642,6 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
         proxyServerNameservers.some((dns) => String(dns).toLowerCase().includes('127.0.0.1'))));
 
   const mappedProxies = shouldRewriteByHosts ? applyHostsToProxies(filteredProxies, config.hosts) : filteredProxies;
-
-  const proxyDomains = new Set(
-    mappedProxies
-      .filter((proxy) => typeof proxy.server === 'string')
-      .map((proxy) => proxy.server.toLowerCase())
-      .filter((server) => !isIpAddress(server)),
-  );
-
-  const matchProxyDomain = createDomainMatcher(proxyDomains);
-
-  const privateProxyServerNameservers = shouldRewriteByHosts ? [] : proxyServerNameservers;
-
-  const isCommonDns = (dns) => {
-    const value = String(dns).trim().toLowerCase();
-    return commonDnsRegex.test(value);
-  };
-
-  const airportResolverInputs = [
-    ...(originalDnsConfig['nameserver'] || []),
-    ...privateProxyServerNameservers,
-  ].filter((dns) => String(dns).trim().length > 0);
-  const airportPrivateResolvers = [
-    ...new Set(
-      airportResolverInputs.map(stripDnsSuffix).filter((dns) => dns.length > 0 && !isCommonDns(dns)),
-    ),
-  ];
-
-  // 机场 DNS 只参与节点 hosts 改写条件与严格模式安全检查；绝不复制到输出。
-  const matchedAirportNodePolicies = {};
-  for (const [domain, dns] of Object.entries({
-    ...originalDnsConfig['nameserver-policy'],
-    ...originalDnsConfig['proxy-server-nameserver-policy'],
-  })) {
-    if (!matchProxyDomain(domain)) continue;
-
-    const stripedDns = Array.isArray(dns) ? dns.map(stripDnsSuffix).filter((d) => d.length > 0) : stripDnsSuffix(dns);
-    if (Array.isArray(stripedDns) && stripedDns.length === 0) continue;
-
-    matchedAirportNodePolicies[domain] = stripedDns;
-  }
-
-  if (ruleOptionsEnable.严格加密DNS) {
-    for (const resolver of airportResolverInputs) {
-      const value = stripDnsSuffix(resolver).trim();
-      if (/^(?:system|dhcp)(?::\/\/|$)|^(?:udp|tcp):\/\//i.test(value)) {
-        throw new Error(
-          '严格加密DNS：机场节点解析配置含 system/DHCP 或明文 UDP/TCP DNS。机场 DNS 设置不会继承；请改用加密解析或为节点配置 hosts/IP。',
-        );
-      }
-    }
-    const assertSecureResolver = (resolver, source) => {
-      const value = stripDnsSuffix(resolver).trim();
-      if (!/^(https|tls|rcode):\/\//i.test(value) || /skip-cert-verify|^system(?:\/\/|$)|^dhcp(?:\/\/|$)/i.test(value)) {
-        throw new Error(
-          `严格加密DNS：机场 ${source} 含不受支持或明文的节点 DNS。机场 DNS 设置不会继承；请改用脚本提供的节点解析 DNS，或为节点配置 hosts/IP。`,
-        );
-      }
-    };
-    for (const resolver of airportPrivateResolvers) assertSecureResolver(resolver, 'nameserver');
-    for (const [domain, resolvers] of Object.entries(matchedAirportNodePolicies)) {
-      for (const resolver of Array.isArray(resolvers) ? resolvers : [resolvers])
-        assertSecureResolver(resolver, `nameserver-policy ${domain}`);
-    }
-  }
 
   const dns = {
     enable: true,
@@ -2329,9 +2010,7 @@ function finalizeMyClashRules(config) {
     const encrypted = (value, path) => {
       for (const dns of Array.isArray(value) ? value : [value]) {
         if (!/^\s*(https|tls):\/\/[^\s#]+(?:#DIRECT)?$/i.test(dns) || /skip-cert-verify|@/i.test(dns)) {
-          throw new Error(
-            `严格加密DNS：${path} 含不受支持或明文的私有 DNS。请使用机场提供的 DoH/DoT 或 hosts/IP 节点；不会自动把私有 UDP DNS 改成公共 DNS。`,
-          );
+          throw new Error(`严格加密DNS：脚本生成的 ${path} 含不受支持或明文 DNS；严格模式不会降级。`);
         }
       }
     };

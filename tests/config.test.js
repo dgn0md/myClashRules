@@ -333,7 +333,7 @@ test('international iCloud content suffix shares priority routing and DNS while 
     }
   }
 });
-test('strict DNS rejects system, DHCP, plaintext and insecure airport node resolvers', () => {
+test('strict script output discards unsafe airport DNS settings instead of blocking import', () => {
   for (const resolver of [
     'system',
     'system://',
@@ -348,8 +348,24 @@ test('strict DNS rejects system, DHCP, plaintext and insecure airport node resol
   ]) {
     const subscription = clean();
     subscription.proxies[0].server = 'us.node.test';
-    subscription.dns = { nameserver: [resolver] };
-    assert.throws(() => build({ subscription }), /严格加密DNS/);
+    subscription.dns = {
+      nameserver: [resolver],
+      'proxy-server-nameserver': [resolver],
+      'nameserver-policy': { 'us.node.test': resolver },
+      'proxy-server-nameserver-policy': { 'us.node.test': resolver },
+    };
+    const config = build({ subscription }).config;
+    encryptedDns(config);
+    assert.deepEqual(config.dns.nameserver, [
+      'https://cloudflare-dns.com/dns-query#默认代理',
+      'https://dns.google/dns-query#默认代理',
+    ]);
+    assert.deepEqual(config.dns['proxy-server-nameserver'], [
+      'https://223.5.5.5/dns-query#DIRECT',
+      'https://1.12.12.12/dns-query#DIRECT',
+    ]);
+    assert.deepEqual(config.dns['proxy-server-nameserver-policy'], {});
+    assert.ok(!('us.node.test' in config.dns['nameserver-policy']), `airport policy leaked: ${resolver}`);
   }
 });
 test('airport DNS policy does not override the script-owned node resolver policy', () => {

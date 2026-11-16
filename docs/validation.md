@@ -64,7 +64,7 @@ node tools/check-doh.js
 
 ## 用户网络验收
 
-1. 导入自己的订阅，使用脚本或展开模式生成；关闭客户端额外 DNS 覆写，开启 TUN。机场 DNS policy 不会继承；严格模式仍会检查节点解析相关的机场 resolver，遇到 system/DHCP、明文或不安全 TLS 时先修正节点解析设置。
+1. 导入自己的订阅，使用脚本或展开模式生成；关闭客户端额外 DNS 覆写，开启 TUN。机场 DNS resolver、policy 和 Fake-IP 设置全部丢弃；严格模式只校验脚本生成的 DNS 配置，不会因机场内的 system/DHCP、明文或不安全 TLS DNS 设置阻断导入。
 2. 清理系统/浏览器 DNS 与客户端 Fake-IP 缓存，分别用 IPv4 与 IPv6 测试国内域名、境外域名、节点域名和 Apple 专用域名。代理模式应为 `rule`。
 3. 在真实外网接口抓取 **UDP/TCP 53**：正常公网解析不应出现上游明文查询；不要把回环/本机 TUN 上已被接管的请求误判成外泄。macOS 可先用 `route get default` 查看接口，再在该接口抓包：
 

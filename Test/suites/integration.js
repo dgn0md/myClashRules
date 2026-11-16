@@ -111,6 +111,32 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     h.assert(!out.dns['fake-ip-filter'].includes('+.airport-filter.example'), '不得继承机场 Fake-IP 例外');
     h.assert(!('fake-ip-filter-mode' in out.dns), '不得继承机场 Fake-IP 模式');
   });
+  h.test('机场 system/DHCP、明文和不安全 TLS DNS 被覆盖且不阻断脚本', () => {
+    for (const resolver of [
+      'system',
+      'dhcp://eth0',
+      'udp://127.0.0.1:53',
+      'tcp://8.8.8.8:53',
+      'https://private.example-dns.com/dns-query#skip-cert-verify=true',
+    ]) {
+      const cfg = fx.typicalSubscription();
+      cfg.dns.nameserver = [resolver];
+      cfg.dns['proxy-server-nameserver'] = [resolver];
+      cfg.dns['nameserver-policy'] = { 'hk1.example.com': resolver };
+      cfg.dns['proxy-server-nameserver-policy'] = { 'hk1.example.com': resolver };
+      const out = api.main(cfg);
+      h.assertDeep(out.dns.nameserver, [
+        'https://cloudflare-dns.com/dns-query#默认代理',
+        'https://dns.google/dns-query#默认代理',
+      ]);
+      h.assertDeep(out.dns['proxy-server-nameserver'], [
+        'https://223.5.5.5/dns-query#DIRECT',
+        'https://1.12.12.12/dns-query#DIRECT',
+      ]);
+      h.assertDeep(out.dns['proxy-server-nameserver-policy'], {});
+      h.assert(!('hk1.example.com' in out.dns['nameserver-policy']), `机场 DNS policy 不应进入输出：${resolver}`);
+    }
+  });
   h.test('机场 nameserver-policy 与 proxy-server-nameserver-policy 全部被脚本策略替换', () => {
     const cfg = fx.typicalSubscription();
     cfg.dns['nameserver-policy'] = {

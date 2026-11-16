@@ -9,7 +9,7 @@ myClashRules 是基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) �
 - **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
 - **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。
 - **Apple 细分为三个独立组**：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。范围与副作用见[Apple 分流说明](docs/apple-routing.md)。
-- **严格加密 DNS 默认开启**：直连解析使用加密 DNS，代理解析使用经对应代理组的 DoH；严格模式不接受明文私有 DNS 或不安全 TLS DNS，也不静默降级。
+- **严格加密 DNS 默认开启**：机场 DNS 设置完全丢弃，最终配置使用脚本生成的加密解析；严格模式校验生成结果，不接受明文上游或不安全 TLS，也不静默降级。
 - **补充纯 IP 入站的域名识别**：TUN 内的 HTTP Host、TLS SNI 与可识别 QUIC 握手可补充域名元数据；默认不改写实际目标地址，也不解密 HTTPS。
 - **完整配置与静态配置共用构建链**：静态 YAML 的扩展开关经脚本生成后才生效；传入本地订阅文件时，构建工具也能按脚本算法处理实际节点。
 
@@ -69,7 +69,7 @@ node tools/build.js --settings Config/mihomoConfig.yaml --subscription .local/su
 
 ## DNS 与路由边界
 
-默认严格加密 DNS 使用固定 IP 的 AliDNS 与 DNSPod DoH 作为启动、节点和直连解析器；一般代理解析使用 Cloudflare 与 Google DoH，并将请求交给相应策略组。机场的 DNS resolver、`fake-ip-filter` 和 `nameserver-policy` 不会被继承；脚本只输出自身定义的 DNS 与 Fake-IP 例外。严格模式拒绝节点解析所涉及的系统/明文上游及跳过证书校验配置，不会静默降级。展开模式可用机场 hosts 映射改写节点 server，但不会把机场 hosts 表复制到输出。
+默认严格加密 DNS 使用固定 IP 的 AliDNS 与 DNSPod DoH 作为启动、节点和直连解析器；一般代理解析使用 Cloudflare 与 Google DoH，并将请求交给相应策略组。机场的 DNS resolver、`fake-ip-filter`、DNS policy 和其他 DNS 开关均会被丢弃，不会因其中含有 system/DHCP、明文 UDP/TCP 或跳过证书校验而阻断覆写。严格模式只校验脚本生成的 DNS 配置，不会静默降级。展开模式可用机场 hosts 映射改写节点 server，但不会把机场 hosts 表复制到输出。
 
 默认启用 TUN、53 端口接管和纯 IP 域名嗅探；局域网代理监听默认关闭。嗅探仅补充路由可用的域名，不改写目标 IP，不覆盖未进入 TUN 的设备或链路。
 
