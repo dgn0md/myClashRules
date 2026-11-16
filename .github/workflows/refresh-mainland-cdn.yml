@@ -1,0 +1,39 @@
+name: Refresh mainland JS CDN cache
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - Script/mihomoScript.js
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: refresh-mainland-cdn
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Request and inspect cached script
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js'
+          response="$(mktemp)"
+          trap 'rm -f "$response"' EXIT
+
+          curl --fail --silent --show-error --location \
+            --retry 3 --retry-all-errors \
+            --header 'Cache-Control: no-cache' \
+            "$url" --output "$response"
+
+          test -s "$response"
+          grep -q 'function main(config)' "$response"
+          echo "Mainland CDN returned a non-empty Mihomo script: $url"
