@@ -235,6 +235,7 @@ test('shared iCloud setup endpoint uses Other Apple Service and matching DNS in 
       const setupIndex = config.rules.indexOf(rule);
       assert.ok(setupIndex >= 0, `missing Other Apple Service route in minimal=${minimal}`);
       assert.ok(!config.rules.includes(`DOMAIN,setup.icloud.com,${siriAiGroup}`));
+      assert.ok(!config.dns['fake-ip-filter'].includes('setup.icloud.com'));
       assert.ok(setupIndex < config.rules.indexOf('RULE-SET,apple_cn,直连'));
       const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
       assert.ok(group, `missing ${otherAppleGroup} group in minimal=${minimal}`);

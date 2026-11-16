@@ -244,7 +244,6 @@ const appleRealIpEndpoints = [
   'sequoia.apple.com',
   '+.smoot.apple.com',
   'api-siri-prod.apple.com',
-  'setup.icloud.com',
   'gspe1-ssl.ls.apple.com',
   '+.issuer.apple.com',
   '+.ropes.apple.com',
