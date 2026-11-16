@@ -176,6 +176,12 @@ dns:
     gspe1-ssl.ls.apple.com:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
+    +.apple-dns.net:
+      - https://cloudflare-dns.com/dns-query#Apple Product地区
+      - https://dns.google/dns-query#Apple Product地区
+    +.apple-dns.com:
+      - https://cloudflare-dns.com/dns-query#Apple Product地区
+      - https://dns.google/dns-query#Apple Product地区
     +.apple.news:
       - https://cloudflare-dns.com/dns-query#Apple Product地区
       - https://dns.google/dns-query#Apple Product地区
@@ -1725,6 +1731,8 @@ rules:
   - DOMAIN-SUFFIX,smoot.apple.com,Siri Ai/Apple Intelligence
   - DOMAIN,api-siri-prod.apple.com,Siri Ai/Apple Intelligence
   - DOMAIN,gspe1-ssl.ls.apple.com,Siri Ai/Apple Intelligence
+  - DOMAIN-SUFFIX,apple-dns.net,Apple Product地区
+  - DOMAIN-SUFFIX,apple-dns.com,Apple Product地区
   - DOMAIN-SUFFIX,apple.news,Apple Product地区
   - DOMAIN,news-client.apple.com,Apple Product地区
   - DOMAIN,news-client-search.apple.com,Apple Product地区

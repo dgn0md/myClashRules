@@ -131,6 +131,34 @@ test('Apple IP routes to Apple Product地区 before cn_ip in every output mode',
     }
   }
 });
+test('Apple DNS domain suffixes route to Apple Product地区 with matching DNS', () => {
+  const targets = [
+    [`DOMAIN-SUFFIX,apple-dns.net,${appleProductGroup}`, '+.apple-dns.net'],
+    [`DOMAIN-SUFFIX,apple-dns.com,${appleProductGroup}`, '+.apple-dns.com'],
+  ];
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      for (const [rule, policyKey] of targets) {
+        const index = config.rules.indexOf(rule);
+        assert.ok(index >= 0, `missing ${rule}`);
+        for (const laterRule of [
+          `RULE-SET,apple_cn,直连`,
+          `RULE-SET,apple,${otherAppleGroup}`,
+          'RULE-SET,category-ads,AdBlock',
+        ]) {
+          const laterIndex = config.rules.indexOf(laterRule);
+          if (laterIndex >= 0) assert.ok(index < laterIndex, `${rule} must precede ${laterRule}`);
+        }
+        const policy = config.dns['nameserver-policy'][policyKey];
+        assert.ok(policy, `missing DNS policy ${policyKey}`);
+        for (const resolver of Array.isArray(policy) ? policy : [policy])
+          assert.ok(resolver.endsWith(`#${appleProductGroup}`), `${policyKey} DNS → ${resolver}`);
+      }
+      assert.ok(!config.rules.includes(`DOMAIN-SUFFIX,apple-dns.com.cn,${appleProductGroup}`));
+    }
+  }
+});
 test('dynamic IP rules keep service egress aligned with their domain DNS policy', () => {
   const expectedTargets = {
     apple_ip: appleProductGroup,

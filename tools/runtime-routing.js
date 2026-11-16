@@ -108,6 +108,8 @@ const CASES = [
   ['news-client-search.apple.com', APPLE_PRODUCT_GROUP],
   ['news-assets.apple.com', APPLE_PRODUCT_GROUP],
   ['apple.news', APPLE_PRODUCT_GROUP],
+  ['default.fe2.apple-dns.net', APPLE_PRODUCT_GROUP],
+  ['default.fe2.apple-dns.com', APPLE_PRODUCT_GROUP],
   ['gspe1-ssl.ls.apple.com', APPLE_AI_GROUP],
   ['tv.apple.com', APPLE_PRODUCT_GROUP],
   ['play-edge.itunes.apple.com', APPLE_PRODUCT_GROUP],

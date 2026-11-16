@@ -7,7 +7,7 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 | 策略组 | 路由范围 | 默认选择 |
 | --- | --- | --- |
 | `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。 | 固定使用 `美国` 选择器；没有符合筛选条件的美国候选时拒绝连接。 |
-| `Apple Product地区` | News、TV/TV+、Fitness、Sports、Books、Apple IP 集合。 | 初始美国，可在客户端切换到其他可用候选或直连。 |
+| `Apple Product地区` | News、TV/TV+、Fitness、Sports、Books、Apple IP 集合与 `apple-dns.net` / `apple-dns.com` 服务域名。 | 初始美国，可在客户端切换到其他可用候选或直连。 |
 | `Other Apple Service` | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 默认直连；对应 Apple DNS policy 使用 `美国` 组。 |
 | `Apple海外媒体` | 少量共享购买和媒体接口。 | 选项默认关闭。 |
 | `Apple模型下载直连` | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
@@ -22,7 +22,7 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 4. `apple_ip` 进入 `Apple Product地区`；`private_ip` 直连；其他服务 IP 集合按对应服务组分流。
 5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
-每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。DNS policy 通常与路由目标组使用同一出口。明确例外是 `Other Apple Service`：`rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS 查询固定经 `美国` 组；服务连接仍按 `Other Apple Service` 当前选择路由，默认直连。其余 Apple 产品与 Siri 域名的 DNS policy 继续跟随各自路由组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
+每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。DNS policy 通常与路由目标组使用同一出口。明确例外是 `Other Apple Service`：通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS 查询固定经 `美国` 组；服务连接仍按 `Other Apple Service` 当前选择路由，默认直连。`apple-dns.net` 与 `apple-dns.com` 通过更具体的后缀规则进入 `Apple Product地区`，DNS policy 也跟随该组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
 
 `cn` 域名集合参与 DNS 与 Fake-IP 过滤，不能用它替代一份完整的直连白名单。也不会把整个 Apple、Cloudflare 或 `17/8` 地址段强制代理。
 

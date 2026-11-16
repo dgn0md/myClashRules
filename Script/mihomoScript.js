@@ -871,6 +871,9 @@ const appleEndpointDefinitions = {
     'gspe1-ssl.ls.apple.com',
   ],
   [appleProductGroupName]: [
+    // Apple DNS service namespace, including default.fe2.apple-dns.net.
+    '+.apple-dns.net',
+    '+.apple-dns.com',
     '+.apple.news',
     'news-client.apple.com',
     'news-client-search.apple.com',
