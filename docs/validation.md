@@ -44,7 +44,7 @@ GitHub CI 使用同版本 Linux 二进制并核验官方发行摘要；新建 wo
 - 关闭嗅探：以纯 IP 入站、携带 `github.com` TLS SNI，命中 `microsoft_ip` / `Microsoft`，复现此前域名缺失时的归类机制。
 - 开启嗅探：同一请求恢复 `github.com`，命中 `github` / `GitHub`；另外覆盖 HTTP Host 与 IPv6 目标地址。
 - Siri 的 `api-siri-prod.apple.com` 和 Apple AI 的 `apple-relay.apple.com` 按恢复的 TLS 域名命中各自专用组；普通 Microsoft 域名仍命中 Microsoft 组。
-- 当时的对照样例中，目标 `17.0.0.1` 命中 `apple_ip → Apple`，目标 `17.81.2.1` 先命中 `cn_ip → 直连`；仅验证这两个样例的规则优先级，不推断整个 17/8 的实际地理位置。当前 test 分支已按下方 2026-11-16 实验移除 `apple_ip` provider 和路由规则，这条历史结果不代表当前配置。
+- 对未列出的合成域名，目标 `17.0.0.1` 命中 `apple_ip → Apple`，目标 `17.81.2.1` 先命中 `cn_ip → 直连`；仅验证这两个样例的规则优先级，不推断整个 17/8 的实际地理位置。
 
 测试使用真实 TLS ClientHello，不完成远端握手，也不跳过证书校验。所有测试组（包括原本直连的组）均替换为回环 SOCKS 模拟出口，避免缺陷复现时向外网 IP 发包；生产规则顺序和域名嗅探配置保持原样，并断言目标 IP 没有被改写。证据仅写入临时目录的 `sniffing.json`。QUIC 配置已通过原生解析，但本次未生成 QUIC 流量验证；没有可见域名的握手仍可能落入 IP 规则。这些结果不等同于用户设备、运营商或 Siri 服务实测。
 
@@ -82,20 +82,3 @@ node tools/check-doh.js
 ## 尚未取得的环境证据
 
 没有你的真实订阅、出口节点、Apple 设备与大陆运营商抓包，因此不报告服务解锁成功率、全设备零旁路或代理字节节省百分比。实现层面的开关、DNS 上游、路由顺序、生成一致性与真实内核选择已经单独验收。
-
-## 2026-11-16 Siri / Apple AI / 地区出口改动
-
-- `npm run build` 已重新生成全量 `Config/mihomoConfig.yaml`；`npm test` 通过：旧版脚本回归 89 项、ES2026 检查 2 项、QuickJS 检查 2 项、Node 配置回归 26 项，共 119 项。
-- `npm run check` 与 `git diff --check` 通过。配置回归覆盖 PCC/Siri 主机顺序、Fake-IP 实 IP 例外、严格加密 DNS、地区候选缺失时拒绝回退、各 domain rule-set 的 DNS egress 标签、QUIC 开关及节点 `udp` 声明透传。
-- AppleFlow 审计固定在 commit `eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f`：13 条 PCC 项已按精确主机或指定后缀生成规则；`Siri-Direct` 的 5 条来源主机按用户要求改走 Siri 美国选择器，没有生成中文 Siri 直连规则。逐条结果与 blob SHA 见 [审计 JSON](validation/appleflow-coverage.json)。
-
-- `category-ai-!cn.mrs` 从 Bett Rules `meta` 下载并记录了 commit、Git blob SHA 与 SHA-256；25 条 AppleFlow 第三方 AI 域名逐项状态均为 **unverified**。本环境没有 Mihomo 可执行文件，无法把 MRS 加载后核对每项是否实际命中；没有将“可能包含”当成覆盖通过，也没有静态复制这 25 个域名。
-- 美国组是按节点名称生成的候选列表，不构成地理证明。AI、Siri、PCC、地区检测和可选 Apple Relay 只引用同一个美国选择器；没有美国名称候选时规则目标为 `REJECT`。未取得订阅或任何真实出口 IP，未做两个地理来源交叉验证。
-- 当前环境 `command -v mihomo` 与 `command -v mihomo-alpha` 均无可执行文件，因此本轮**未**对改动后的 YAML 运行 Mihomo 原生校验。上文 2026-11-13 的原生结果属于当时配置，不可替代本轮检查。
-- 节点 `udp: true/false/未声明` 仅验证脚本保留输入值；未测目标 UDP 443、LiveKit/WebRTC、真实出口 IPv4/IPv6、Siri/PCC 设备行为或运营商链路。未提交订阅、节点、出口地址、MRS 缓存或运行日志。
-
-### Apple IP 移除对照实验
-
-- 本轮从 `Apple` service 配置中完整移除了 `apple_ip` provider 和 `RULE-SET,apple_ip,Apple`，生成 YAML 也不再携带该 provider。Apple/Siri 已知域名的精确规则保持不变。
-- 按当前规则顺序，没有域名的流量仍先经过 `cn_ip → 直连`；不匹配 `cn_ip`、其他服务 IP 集合或私网规则的流量会落入 `MATCH,漏网之鱼`，该组默认选 `默认代理`。因此命中大陆 IP 集合的地址仍可能直连。
-- `npm test` / `npm run check` 覆盖配置生成和 provider 引用；尚未用 Mihomo 原生内核或 iPhone 验证本轮规则效果。需要在 iPhone 导入 test 分支最新 YAML 后，观察 Siri 连接日志与出口，再决定是否保留此实验。
