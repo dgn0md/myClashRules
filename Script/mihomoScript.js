@@ -51,8 +51,8 @@ const ruleOptionsEnable = {
   AdBlock: true, // 广告拦截
 
   // Apple 精细分流组：AI/Siri 与产品地区服务各自共用一个出口选择器。
-  'Siri Ai/Apple Intelligence': true, // PCC、Apple Intelligence、Siri 与共享 iCloud 接口，默认美国并在缺少美区节点时拒绝
-  'Apple Product地区': true, // News、TV、Fitness、Sports、Books、Apple IP 与地区检测，默认美国并可选直连
+  'Siri Ai/Apple Intelligence': true, // PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国并在缺少美区节点时拒绝
+  'Apple Product地区': true, // News、TV、Fitness、Sports、Books 与 Apple IP，默认美国并可选直连
   Apple海外媒体: false, // iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
   Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
   严格加密DNS: true, // 禁止继承明文/系统/不安全 TLS DNS；私有 DNS 不兼容时明确报错
@@ -857,8 +857,7 @@ const appleEndpointDefinitions = {
     '+.apple-relay.fastly-edge.com',
     '+.apple-relay.akamaized.net',
     'cp4.cloudflare.com',
-    // gateway 精确匹配；国际内容域整体覆盖，中国站内容域保留原规则。
-    'gateway.icloud.com',
+    // 国际内容域整体覆盖，中国站内容域保留原规则；gateway 单独归入 Other Apple Service。
     '+.icloud-content.com',
     'guzzoni.apple.com',
     '+.guzzoni.apple.com',
@@ -868,6 +867,8 @@ const appleEndpointDefinitions = {
     '+.smoot.apple.com',
     // 精确匹配 Siri API 主机，并沿用该组的 DNS 与出口。
     'api-siri-prod.apple.com',
+    // Apple 地区检测端点按用户指定与 Siri/Apple Intelligence 共用此组出口。
+    'gspe1-ssl.ls.apple.com',
   ],
   [appleProductGroupName]: [
     '+.apple.news',
@@ -886,9 +887,9 @@ const appleEndpointDefinitions = {
     '+.fitness.apple.com',
     '+.sports.apple.com',
     '+.books.apple.com',
-    'gspe1-ssl.ls.apple.com',
   ],
 };
+const appleOtherExactEndpoints = ['gateway.icloud.com', 'setup.icloud.com'];
 const appleOverseasMediaEndpoints = [
   'buy.itunes.apple.com',
   'p12-buy.itunes.apple.com',
@@ -2215,9 +2216,8 @@ function finalizeMyClashRules(config) {
       }
     }
   }
-  // setup.icloud.com is a shared Apple service endpoint, not a Siri-only route.
-  // Keep the exact-host exception in Other Apple Service, including minimal output where
-  // the regular service group is omitted; its DNS policy is derived from this same target below.
+  // Exact shared Apple endpoints assigned to Other Apple Service. In minimal output the
+  // regular service group may be omitted; DNS policy is derived from these same route targets.
   if (options[appleOtherGroupName]) {
     let group = groups.find((entry) => entry.name === appleOtherGroupName);
     if (!group) {
@@ -2230,7 +2230,8 @@ function finalizeMyClashRules(config) {
       groups.splice(1, 0, group);
       groups[0].proxies.push(appleOtherGroupName);
     }
-    specialRules.push(`DOMAIN,setup.icloud.com,${appleOtherGroupName}`);
+    for (const domain of appleOtherExactEndpoints)
+      specialRules.push(`DOMAIN,${domain},${appleOtherGroupName}`);
   }
   for (const [name, enabled] of [
     [appleOtherGroupName, options.Apple服务默认直连],

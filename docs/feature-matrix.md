@@ -32,9 +32,9 @@
 
 | 策略组 | 负责范围 | 默认与出口 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC 及少量共享 Relay 端点。 | 通过美国组；没有符合名称筛选的美国候选时使用拒绝策略。 |
-| `Apple Product地区` | News、TV、Fitness、Sports、Books、地区检测与 `apple_ip`。 | 默认美国，客户端可改选其他候选或直连。 |
-| `Other Apple Service` | 广泛 Apple 动态域名集合、常规 Apple 服务及精确主机 `setup.icloud.com`。 | 默认直连。 |
+| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、地区检测端点及少量共享 Relay/iCloud 内容端点。 | 通过美国组；没有符合名称筛选的美国候选时使用拒绝策略。 |
+| `Apple Product地区` | News、TV、Fitness、Sports、Books 与 `apple_ip`。 | 默认美国，客户端可改选其他候选或直连。 |
+| `Other Apple Service` | 广泛 Apple 动态域名集合、常规 Apple 服务及精确主机 `gateway.icloud.com`、`setup.icloud.com`。 | 默认直连。 |
 
 共享域名可能承担多个功能；国际内容域后缀只定义匹配范围，不代表 IP 地理位置。模型/系统资源默认由直连规则处理；共享媒体代理选项默认关闭。
 

@@ -33,8 +33,8 @@ x-myClashRules:
     Patreon: true # Patreon创作者赞助平台
     EHentai: true # E-Hentai网站
     AdBlock: true # 广告拦截
-    Siri Ai/Apple Intelligence: true # PCC、Apple Intelligence、Siri 与共享 iCloud 接口，默认美国并在缺少美区节点时拒绝
-    Apple Product地区: true # News、TV、Fitness、Sports、Books、Apple IP 与地区检测，默认美国并可选直连
+    Siri Ai/Apple Intelligence: true # PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国并在缺少美区节点时拒绝
+    Apple Product地区: true # News、TV、Fitness、Sports、Books 与 Apple IP，默认美国并可选直连
     Apple海外媒体: false # iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
     Apple模型下载直连: true # 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
     严格加密DNS: true # 禁止继承明文/系统/不安全 TLS DNS；私有 DNS 不兼容时明确报错
@@ -149,9 +149,6 @@ dns:
     cp4.cloudflare.com:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
-    gateway.icloud.com:
-      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
-      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.icloud-content.com:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
@@ -174,6 +171,9 @@ dns:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     api-siri-prod.apple.com:
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
+    gspe1-ssl.ls.apple.com:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.apple.news:
@@ -222,9 +222,6 @@ dns:
       - https://cloudflare-dns.com/dns-query#Apple Product地区
       - https://dns.google/dns-query#Apple Product地区
     +.books.apple.com:
-      - https://cloudflare-dns.com/dns-query#Apple Product地区
-      - https://dns.google/dns-query#Apple Product地区
-    gspe1-ssl.ls.apple.com:
       - https://cloudflare-dns.com/dns-query#Apple Product地区
       - https://dns.google/dns-query#Apple Product地区
     rule-set:apple_tv:
@@ -330,6 +327,9 @@ dns:
     rule-set:geolocation-!cn:
       - https://cloudflare-dns.com/dns-query#默认代理
       - https://dns.google/dns-query#默认代理
+    gateway.icloud.com:
+      - https://cloudflare-dns.com/dns-query#Other Apple Service
+      - https://dns.google/dns-query#Other Apple Service
     setup.icloud.com:
       - https://cloudflare-dns.com/dns-query#Other Apple Service
       - https://dns.google/dns-query#Other Apple Service
@@ -1716,7 +1716,6 @@ rules:
   - DOMAIN-SUFFIX,apple-relay.fastly-edge.com,Siri Ai/Apple Intelligence
   - DOMAIN-SUFFIX,apple-relay.akamaized.net,Siri Ai/Apple Intelligence
   - DOMAIN,cp4.cloudflare.com,Siri Ai/Apple Intelligence
-  - DOMAIN,gateway.icloud.com,Siri Ai/Apple Intelligence
   - DOMAIN-SUFFIX,icloud-content.com,Siri Ai/Apple Intelligence
   - DOMAIN,guzzoni.apple.com,Siri Ai/Apple Intelligence
   - DOMAIN-SUFFIX,guzzoni.apple.com,Siri Ai/Apple Intelligence
@@ -1725,6 +1724,7 @@ rules:
   - DOMAIN,sequoia.apple.com,Siri Ai/Apple Intelligence
   - DOMAIN-SUFFIX,smoot.apple.com,Siri Ai/Apple Intelligence
   - DOMAIN,api-siri-prod.apple.com,Siri Ai/Apple Intelligence
+  - DOMAIN,gspe1-ssl.ls.apple.com,Siri Ai/Apple Intelligence
   - DOMAIN-SUFFIX,apple.news,Apple Product地区
   - DOMAIN,news-client.apple.com,Apple Product地区
   - DOMAIN,news-client-search.apple.com,Apple Product地区
@@ -1741,8 +1741,8 @@ rules:
   - DOMAIN-SUFFIX,fitness.apple.com,Apple Product地区
   - DOMAIN-SUFFIX,sports.apple.com,Apple Product地区
   - DOMAIN-SUFFIX,books.apple.com,Apple Product地区
-  - DOMAIN,gspe1-ssl.ls.apple.com,Apple Product地区
   - RULE-SET,apple_tv,Apple Product地区
+  - DOMAIN,gateway.icloud.com,Other Apple Service
   - DOMAIN,setup.icloud.com,Other Apple Service
   - DOMAIN,gdmf.apple.com,直连
   - DOMAIN,mesu.apple.com,直连

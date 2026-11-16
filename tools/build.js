@@ -34,7 +34,7 @@ function configure(api, settings) {
     AppleFitness: 'Apple Product地区',
     AppleSports: 'Apple Product地区',
     AppleBooks: 'Apple Product地区',
-    Apple地区检测: 'Apple Product地区',
+    Apple地区检测: 'Siri Ai/Apple Intelligence',
   };
   const removedAppleOptions = new Set(['AppleRelay']);
   const migratedAppleOptions = new Map();

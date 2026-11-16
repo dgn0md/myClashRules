@@ -224,26 +224,29 @@ test('Siri AI domain routes use matching DNS policy and precede QUIC rejection i
     }
   }
 });
-test('shared iCloud setup endpoint uses Other Apple Service and matching DNS in both output modes', () => {
-  const rule = `DOMAIN,setup.icloud.com,${otherAppleGroup}`;
+test('shared iCloud endpoints use Other Apple Service and matching DNS in both output modes', () => {
+  const hosts = ['gateway.icloud.com', 'setup.icloud.com'];
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const config = build({
         subscription,
         settings: { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } },
       }).config;
-      const setupIndex = config.rules.indexOf(rule);
-      assert.ok(setupIndex >= 0, `missing Other Apple Service route in minimal=${minimal}`);
-      assert.ok(!config.rules.includes(`DOMAIN,setup.icloud.com,${siriAiGroup}`));
+      for (const host of hosts) {
+        const rule = `DOMAIN,${host},${otherAppleGroup}`;
+        const routeIndex = config.rules.indexOf(rule);
+        assert.ok(routeIndex >= 0, `missing ${rule} in minimal=${minimal}`);
+        assert.ok(!config.rules.includes(`DOMAIN,${host},${siriAiGroup}`));
+        assert.ok(routeIndex < config.rules.indexOf('RULE-SET,apple_cn,直连'));
+        const dns = config.dns['nameserver-policy'][host];
+        assert.ok(dns, `missing DNS policy for ${host}`);
+        for (const resolver of Array.isArray(dns) ? dns : [dns])
+          assert.ok(resolver.endsWith(`#${otherAppleGroup}`), `DNS must use ${otherAppleGroup}: ${resolver}`);
+      }
       assert.ok(!config.dns['fake-ip-filter'].includes('setup.icloud.com'));
-      assert.ok(setupIndex < config.rules.indexOf('RULE-SET,apple_cn,直连'));
       const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
       assert.ok(group, `missing ${otherAppleGroup} group in minimal=${minimal}`);
       assert.equal(group.proxies[0], '直连');
-      const dns = config.dns['nameserver-policy']['setup.icloud.com'];
-      assert.ok(dns, 'missing DNS policy for setup.icloud.com');
-      for (const resolver of Array.isArray(dns) ? dns : [dns])
-        assert.ok(resolver.endsWith(`#${otherAppleGroup}`), `DNS must use ${otherAppleGroup}: ${resolver}`);
       graph(config);
       encryptedDns(config);
     }
@@ -251,13 +254,14 @@ test('shared iCloud setup endpoint uses Other Apple Service and matching DNS in 
       subscription,
       settings: { options: { [otherAppleGroup]: false } },
     }).config;
-    assert.ok(!disabled.rules.includes(rule));
-    assert.ok(!disabled.dns['nameserver-policy']['setup.icloud.com']);
+    for (const host of hosts) {
+      assert.ok(!disabled.rules.includes(`DOMAIN,${host},${otherAppleGroup}`));
+      assert.ok(!disabled.dns['nameserver-policy'][host]);
+    }
   }
 });
 test('international iCloud content suffix shares priority routing and DNS while excluding China sites', () => {
   const targets = [
-    [`DOMAIN,gateway.icloud.com,${siriAiGroup}`, 'gateway.icloud.com'],
     [`DOMAIN-SUFFIX,icloud-content.com,${siriAiGroup}`, '+.icloud-content.com'],
   ];
   for (const subscription of [undefined, clean()]) {
@@ -438,13 +442,14 @@ test('Apple product endpoints share one regional group and overseas media stays 
     '+.fitness.apple.com',
     '+.sports.apple.com',
     '+.books.apple.com',
-    'gspe1-ssl.ls.apple.com',
   ]) {
     const ruleDomain = domain.startsWith('+.') ? domain.slice(2) : domain;
     const type = domain.startsWith('+.') ? 'DOMAIN-SUFFIX' : 'DOMAIN';
     assert.ok(defaults.rules.includes(`${type},${ruleDomain},${appleProductGroup}`));
     assert.ok(defaults.dns['nameserver-policy'][domain]?.[0].endsWith(`#${appleProductGroup}`));
   }
+  assert.ok(defaults.rules.includes(`DOMAIN,gspe1-ssl.ls.apple.com,${siriAiGroup}`));
+  assert.ok(defaults.dns['nameserver-policy']['gspe1-ssl.ls.apple.com'][0].endsWith(`#${siriAiGroup}`));
   assert.ok(defaults['rule-providers'].apple_tv.url.endsWith('/apple-tvplus.mrs'));
   assert.ok(defaults.rules.indexOf(`RULE-SET,apple_tv,${appleProductGroup}`) < defaults.rules.indexOf('RULE-SET,apple_cn,直连'));
   assert.ok(defaults.rules.includes(`RULE-SET,apple_ip,${appleProductGroup}`));
@@ -509,6 +514,9 @@ test('legacy Apple group switches migrate to the consolidated names and explicit
   assert.ok(migrated['proxy-groups'].some((group) => group.name === siriAiGroup));
   assert.ok(migrated['proxy-groups'].some((group) => group.name === appleProductGroup));
   assert.ok(!migrated['proxy-groups'].some((group) => group.name === otherAppleGroup));
+  const legacyRegionDetectionOff = build({ settings: { options: { Apple地区检测: false } } }).config;
+  assert.ok(!legacyRegionDetectionOff['proxy-groups'].some((group) => group.name === siriAiGroup));
+  assert.ok(legacyRegionDetectionOff['proxy-groups'].some((group) => group.name === appleProductGroup));
 
   const explicit = build({
     settings: {
@@ -528,7 +536,6 @@ test('legacy Apple group switches migrate to the consolidated names and explicit
 test('AppleFlow PCC and Siri endpoints route through the shared US selector before QUIC rejection', () => {
   const config = build({ subscription: clean(), settings: { options: { 屏蔽代理QUIC流量: true } } }).config;
   const pcc = [
-    ['DOMAIN', 'gspe1-ssl.ls.apple.com', appleProductGroup],
     ['DOMAIN-SUFFIX', 'issuer.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'ropes.apple.com', siriAiGroup],
     ['DOMAIN', 'mask-api.icloud.com', siriAiGroup],
@@ -543,6 +550,7 @@ test('AppleFlow PCC and Siri endpoints route through the shared US selector befo
     ['DOMAIN', 'cp4.cloudflare.com', siriAiGroup],
   ];
   const siri = [
+    ['DOMAIN', 'gspe1-ssl.ls.apple.com', siriAiGroup],
     ['DOMAIN', 'guzzoni.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'guzzoni.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'siri.apple.com', siriAiGroup],

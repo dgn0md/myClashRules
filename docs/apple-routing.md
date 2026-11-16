@@ -6,9 +6,9 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 
 | 策略组 | 路由范围 | 默认选择 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC，以及与这些功能共用的 Private Relay 端点。 | 固定使用 `美国` 选择器；没有符合筛选条件的美国候选时拒绝连接。 |
-| `Apple Product地区` | News、TV/TV+、Fitness、Sports、Books、地区检测、Apple IP 集合。 | 初始美国，可在客户端切换到其他可用候选或直连。 |
-| `Other Apple Service` | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `setup.icloud.com`。 | 默认直连。 |
+| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。 | 固定使用 `美国` 选择器；没有符合筛选条件的美国候选时拒绝连接。 |
+| `Apple Product地区` | News、TV/TV+、Fitness、Sports、Books、Apple IP 集合。 | 初始美国，可在客户端切换到其他可用候选或直连。 |
+| `Other Apple Service` | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 默认直连。 |
 | `Apple海外媒体` | 少量共享购买和媒体接口。 | 选项默认关闭。 |
 | `Apple模型下载直连` | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
 
@@ -29,7 +29,7 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 ## 共享端点与选择边界
 
 - 国际 iCloud 内容规则按 `icloud-content.com` 后缀匹配；中国地区专用命名空间不匹配该规则。后缀只表示路由范围，不表示服务器实际所在地区。
-- 共享 iCloud/Relay/Apple 媒体端点可能被多个产品使用。`setup.icloud.com` 按精确主机归入 `Other Apple Service`；网络层只看到域名、IP 与协议元数据，不能根据 HTTPS 路径保证区分每个应用。
+- 共享 iCloud/Relay/Apple 媒体端点可能被多个产品使用。`gateway.icloud.com` 与 `setup.icloud.com` 按精确主机归入 `Other Apple Service`；网络层只看到域名、IP 与协议元数据，不能根据 HTTPS 路径保证区分每个应用。
 - 国际照片、文件或备份流量可能与 Siri 共用路由组，造成额外代理流量。
 - 产品可用性还受账号地区、设备资格、系统版本、SIM 和服务端策略影响。地区组按节点名称筛选候选，不证明公网出口所在地。
 - 部分 Apple 服务需要客户端的 TUN/Network Extension 能力；普通系统代理不一定覆盖所有流量。
