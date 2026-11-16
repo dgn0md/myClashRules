@@ -11,6 +11,9 @@
 
 // 适配 Bettbox 自定义配置参数
 const Compatible_With_Bettbox = { ruleOptionsEnable: true };
+const appleAiGroupName = 'Siri Ai/Apple Intelligence';
+const appleProductGroupName = 'Apple Product地区';
+const appleOtherGroupName = 'Other Apple Service';
 
 /**
  * 自定义配置选项
@@ -30,7 +33,7 @@ const ruleOptionsEnable = {
   AI: true, // 国外AI服务
   GitHub: true, // GitHub代码托管平台
   Microsoft: true, // Microsoft服务
-  Apple: true, // Apple服务
+  'Other Apple Service': true, // 普通 Apple 服务
   Telegram: true, // Telegram通讯软件
   Steam: true, // Steam游戏平台
   TikTok: true, // TikTok视频平台
@@ -47,22 +50,15 @@ const ruleOptionsEnable = {
   EHentai: true, // E-Hentai网站
   AdBlock: true, // 广告拦截
 
-  // Apple 精细分流：AI/Siri 端点和已观察到的共享接口优先，其余 Apple 服务仍按原规则。
-  Apple智能: true, // PCC + Extensions + 国际 gateway/全部 iCloud 内容域（排除 .com.cn），默认美国
-  Siri: true, // Siri/听写/Spotlight 搜索单独选择出口，默认美国
-  AppleNews: true, // News/News+ 专用接口与内容，默认美国；不代理所有新闻网站
-  AppleTV: true, // TV/TV+ 专用接口与视频；共享 iTunes 媒体端点可能同时服务其他产品
-  AppleFitness: true, // Fitness+ 专用域名；共享视频 CDN 由 AppleTV/Apple海外媒体控制
-  AppleSports: true, // Sports 专用域名；不改 Apple 地图/天气的整体策略
-  AppleBooks: true, // Books 商店专用域名；购买/授权还受账号地区限制
-  AppleRelay: false, // iCloud Private Relay；开启可能让整个 Safari 浏览流量再次中继并消耗代理
-  Apple地区检测: true, // News 所需 gspe1 地区接口；也影响地图数据源/eSIM/部分 Watch 地区判断
+  // Apple 精细分流组：AI/Siri 与产品地区服务各自共用一个出口选择器。
+  'Siri Ai/Apple Intelligence': true, // PCC、Apple Intelligence、Siri 与共享 iCloud 接口，默认美国并在缺少美区节点时拒绝
+  'Apple Product地区': true, // News、TV、Fitness、Sports、Books、Apple IP 与地区检测，默认美国并可选直连
   Apple海外媒体: false, // iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
-  Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Apple 组
+  Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
   严格加密DNS: true, // 禁止继承明文/系统/不安全 TLS DNS；私有 DNS 不兼容时明确报错
   拦截外部明文DNS: true, // 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
   国内服务优先直连: true, // 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
-  Apple服务默认直连: true, // Apple AI/Siri 例外仍优先，减少商店/iCloud 流量
+  Apple服务默认直连: true, // Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
   微软服务默认直连: true, // 国内可用服务优先直连，需要时可在组内切换
   TUN: true, // 接管 DNS 所必需；关闭仅适合上级路由器已经接管 DNS 的环境
   域名嗅探: true, // 从 HTTP/TLS/QUIC 补充缺失域名，避免纯 IP 入站误走服务 IP 规则
@@ -235,6 +231,33 @@ const homeRegionDefinitions = [
     regex: /家宽|住宅|原生\s*IP|家庭宽带|\bISP\b|\bRES\b|residential/i,
     icon: `${iconBaseUrl}Home.svg`,
   },
+];
+
+// This group is selected from proxy names only. It is a candidate set, not proof of egress country.
+const unitedStatesRegion = regionDefinitions.find(({ name }) => name === '美国');
+const appleUsBoundGroups = ['AI', appleAiGroupName];
+const appleRealIpEndpoints = [
+  'guzzoni.apple.com',
+  '+.guzzoni.apple.com',
+  '+.siri.apple.com',
+  'dejavu.apple.com',
+  'sequoia.apple.com',
+  '+.smoot.apple.com',
+  'api-siri-prod.apple.com',
+  'setup.icloud.com',
+  'gspe1-ssl.ls.apple.com',
+  '+.issuer.apple.com',
+  '+.ropes.apple.com',
+  'mask-api.icloud.com',
+  'mask.icloud.com',
+  'mask-h2.icloud.com',
+  'ss-cleanup-proxy-prod.us-east-1m.app.apple.com',
+  '+.app.apple.com',
+  '+.apple-relay.apple.com',
+  '+.apple-relay.cloudflare.com',
+  '+.apple-relay.fastly-edge.com',
+  '+.apple-relay.akamaized.net',
+  'cp4.cloudflare.com',
 ];
 
 // 全部策略组定义（地区 + 倍率 + 家宽），统一用于节点匹配与归类
@@ -518,7 +541,7 @@ const serviceConfigs = [
     ipRules: ['RULE-SET,microsoft_ip,Microsoft'],
   },
   {
-    name: 'Apple',
+    name: appleOtherGroupName,
     baseOption: selectBaseOption,
     direct: true,
     providers: {
@@ -528,16 +551,9 @@ const serviceConfigs = [
         path: './ruleset/apple.mrs',
         'path-in-bundle': 'geo/geosite/apple.mrs',
       },
-      apple_ip: {
-        ...ruleProviderCommonIpcidr,
-        url: `${ruleSetBaseUrl}geoip/apple.mrs`,
-        path: './ruleset/apple_ip.mrs',
-        'path-in-bundle': 'geo/geoip/apple.mrs',
-      },
     },
     icon: `${iconBaseUrl}Apple.svg`,
-    rules: ['RULE-SET,apple,Apple'],
-    ipRules: ['RULE-SET,apple_ip,Apple'],
+    rules: [`RULE-SET,apple,${appleOtherGroupName}`],
   },
   {
     name: 'Telegram',
@@ -692,13 +708,19 @@ const serviceConfigs = [
         path: './ruleset/emby.mrs',
         'path-in-bundle': 'geo/geosite/category-emby.mrs',
       },
+      emby_keyword: {
+        type: 'inline',
+        format: 'text',
+        behavior: 'classical',
+        payload: ['DOMAIN-KEYWORD,emby'],
+      },
     },
     icon: `${iconBaseUrl}Emby.svg`,
     rules: [
       'RULE-SET,emby,Emby',
       'DOMAIN-SUFFIX,mb3admin.com,Emby',
       'DOMAIN-SUFFIX,nubebelle.com,Emby',
-      'DOMAIN-KEYWORD,emby,Emby',
+      'RULE-SET,emby_keyword,Emby',
     ],
   },
   {
@@ -823,33 +845,40 @@ const serviceConfigs = [
 // 同时覆盖地区根域、edge 以及其他命名结构；照片/文件等普通国际 iCloud 内容也会代理。
 // 不代理整个 apple.com / cloudflare.com / icloud.com 或 17/8。
 const appleEndpointDefinitions = {
-  Apple智能: [
-    'apple-relay.cloudflare.com',
-    'apple-relay.fastly-edge.com',
+  [appleAiGroupName]: [
+    '+.issuer.apple.com',
+    '+.ropes.apple.com',
+    'mask-api.icloud.com',
+    'mask.icloud.com',
+    'mask-h2.icloud.com',
+    'ss-cleanup-proxy-prod.us-east-1m.app.apple.com',
+    '+.app.apple.com',
+    '+.apple-relay.apple.com',
+    '+.apple-relay.cloudflare.com',
+    '+.apple-relay.fastly-edge.com',
+    '+.apple-relay.akamaized.net',
     'cp4.cloudflare.com',
-    'apple-relay.apple.com',
-    // 用户观察到 Siri 失败时访问以下主机；它们是共享 iCloud 接口，非 AI 专用。
-    // gateway 精确匹配；国际内容域按用户要求整体覆盖，中国站内容域保留原规则。
+    // gateway 精确匹配；国际内容域整体覆盖，中国站内容域保留原规则。
     'gateway.icloud.com',
     '+.icloud-content.com',
-  ],
-  Siri: [
     'guzzoni.apple.com',
+    '+.guzzoni.apple.com',
+    '+.siri.apple.com',
+    'dejavu.apple.com',
+    'sequoia.apple.com',
     '+.smoot.apple.com',
-    // 用户在 Siri 请求中观察到的主机；官方企业网络清单尚未单列，精确匹配并沿用 Siri 的 DNS/出口。
+    // 精确匹配 Siri API 主机，并沿用该组的 DNS 与出口。
     'api-siri-prod.apple.com',
-    // 用户观察到规则模式失败、全局成功时访问此共享 iCloud 初始化接口；按用户选择精确代理。
+    // 共享 iCloud 初始化接口，按主机精确路由；不扩展到整个 iCloud 域。
     'setup.icloud.com',
   ],
-  AppleNews: [
+  [appleProductGroupName]: [
     '+.apple.news',
     'news-client.apple.com',
     'news-client-search.apple.com',
     'news-assets.apple.com',
     'news-edge.apple.com',
     'news-events.apple.com',
-  ],
-  AppleTV: [
     '+.tv.apple.com',
     'uts-api.itunes.apple.com',
     'hls-amt.itunes.apple.com',
@@ -857,20 +886,19 @@ const appleEndpointDefinitions = {
     'np-edge.itunes.apple.com',
     'play-edge.itunes.apple.com',
     'tv.applemusic.com',
-  ],
-  AppleFitness: ['+.fitness.apple.com'],
-  AppleSports: ['+.sports.apple.com'],
-  AppleBooks: ['+.books.apple.com'],
-  AppleRelay: ['mask.icloud.com', 'mask-h2.icloud.com', 'mask-api.icloud.com'],
-  Apple地区检测: ['gspe1-ssl.ls.apple.com'],
-  Apple海外媒体: [
-    'buy.itunes.apple.com',
-    'p12-buy.itunes.apple.com',
-    'play.itunes.apple.com',
-    'se.itunes.apple.com',
-    'se2.itunes.apple.com',
+    '+.fitness.apple.com',
+    '+.sports.apple.com',
+    '+.books.apple.com',
+    'gspe1-ssl.ls.apple.com',
   ],
 };
+const appleOverseasMediaEndpoints = [
+  'buy.itunes.apple.com',
+  'p12-buy.itunes.apple.com',
+  'play.itunes.apple.com',
+  'se.itunes.apple.com',
+  'se2.itunes.apple.com',
+];
 for (const name of Object.keys(appleEndpointDefinitions)) {
   serviceConfigs.push({
     name,
@@ -878,18 +906,17 @@ for (const name of Object.keys(appleEndpointDefinitions)) {
     direct: true,
     defaultSelected: '美国',
     icon: `${iconBaseUrl}Apple.svg`,
-    rules: appleEndpointDefinitions[name].map(
-      (domain) => `${domain.startsWith('+.') ? 'DOMAIN-SUFFIX' : 'DOMAIN'},${domain.replace(/^\+\./, '')},${name}`,
-    ),
-    ...(name === 'AppleTV'
+    ...(name === appleProductGroupName
       ? {
           providers: {
-            apple_tv: {
-              ...ruleProviderCommonDomain,
-              url: `${ruleSetBaseUrl}geosite/apple-tvplus.mrs`,
-              path: './ruleset/apple_tv.mrs',
+            apple_ip: {
+              ...ruleProviderCommonIpcidr,
+              url: `${ruleSetBaseUrl}geoip/apple.mrs`,
+              path: './ruleset/apple_ip.mrs',
+              'path-in-bundle': 'geo/geoip/apple.mrs',
             },
           },
+          ipRules: [`RULE-SET,apple_ip,${appleProductGroupName}`],
         }
       : {}),
   });
@@ -1134,6 +1161,14 @@ function buildRegionGroups(filteredProxies, customProxies) {
   }
 
   return generatedRegionGroups;
+}
+
+/** Keep one shared US candidate selector in minimal mode for Apple AI/Siri/PCC egress. */
+function buildMinimalUsRegionGroup(filteredProxies, customProxies) {
+  const candidates = [...filteredProxies, ...customProxies]
+    .filter((proxy) => getMatchedRegions(proxy.name).includes(unitedStatesRegion))
+    .map((proxy) => proxy.name);
+  return candidates.length ? createRegionGroup(unitedStatesRegion.name, unitedStatesRegion.icon, candidates) : [];
 }
 
 // ---构建自定义节点组---
@@ -1941,6 +1976,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
       'rule-set:fakeip_filter',
       'rule-set:cn',
       ...(minimalModeEnabled ? [] : ruleOptionsEnable['FCM'] ? ['rule-set:googlefcm'] : []),
+      ...appleRealIpEndpoints,
       ...proxyFakeIpFilter,
     ],
     'default-nameserver': defaultDNS,
@@ -1989,7 +2025,7 @@ function main(config) {
   const { customProxies, customProxyNames, customGroup } = buildCustomizeGroups(filteredProxies);
 
   const generatedRegionGroups = ruleOptionsEnable.极简国内外分流模式
-    ? []
+    ? buildMinimalUsRegionGroup(filteredProxies, customProxies)
     : buildRegionGroups(filteredProxies, customProxies);
 
   const {
@@ -2056,15 +2092,19 @@ function main(config) {
   ];
   newConfig['rule-providers'] = finalRuleProviders;
 
+  const appleIpRules = functionalIpRules.filter((rule) => rule.startsWith('RULE-SET,apple_ip,'));
+  const otherFunctionalIpRules = functionalIpRules.filter((rule) => !rule.startsWith('RULE-SET,apple_ip,'));
+  // Keep Apple and service-specific IP exits ahead of the generic CN IP fallback; private IPs remain direct first.
   newConfig['rules'] = [
     ...priorityRules,
     ...prefixRules,
     ...(ruleOptionsEnable.屏蔽代理QUIC流量 ? blockForeignQuic : []),
     ...functionalRules,
     'RULE-SET,geolocation-!cn,默认代理',
-    'RULE-SET,cn_ip,直连',
+    ...appleIpRules,
     'RULE-SET,private_ip,直连',
-    ...functionalIpRules,
+    ...otherFunctionalIpRules,
+    'RULE-SET,cn_ip,直连',
     `MATCH,${ruleOptionsEnable.极简国内外分流模式 ? '默认代理' : '漏网之鱼'}`,
   ];
 
@@ -2104,41 +2144,82 @@ function finalizeMyClashRules(config) {
   config.dns['respect-rules'] = false; // 每个 DNS 显式选出口，避免解析节点时递归进入代理
 
   const groups = config['proxy-groups'];
+  // Apple AI/Siri use one shared US selector. Without a US-labelled candidate, REJECT is
+  // deliberate: they must not silently use the default proxy. The unexpanded/minimal template
+  // keeps its existing group set and therefore fails closed directly in the service groups.
+  const usGroup = groups.find((group) => group.name === unitedStatesRegion.name);
+  for (const name of appleUsBoundGroups) {
+    const group = groups.find((entry) => entry.name === name);
+    if (!group) continue;
+    group.proxies = usGroup ? [unitedStatesRegion.name] : ['REJECT'];
+    delete group['default-selected'];
+  }
   const specialRules = [];
   // 极简模式仅关闭常规服务组；安全与 Apple 精细例外仍由各自开关控制。
   for (const [name, domains] of Object.entries(appleEndpointDefinitions)) {
     if (!options[name]) continue;
     let group = groups.find((g) => g.name === name);
     if (!group) {
-      group = { ...selectBaseOption, name, icon: `${iconBaseUrl}Apple.svg`, proxies: ['默认代理', '直连'] };
+      group = {
+        ...selectBaseOption,
+        name,
+        icon: `${iconBaseUrl}Apple.svg`,
+        proxies:
+          name === appleProductGroupName
+            ? ['默认代理', ...(usGroup ? [unitedStatesRegion.name] : []), '直连']
+            : ['默认代理', '直连'],
+      };
       groups.splice(1, 0, group);
       groups[0].proxies.push(name);
     }
-    // 默认首项即美国；不依赖客户端是否实现 default-selected。
-    const selected = group.proxies.includes('美国') ? '美国' : '默认代理';
-    group.proxies = [selected, ...group.proxies.filter((p) => p !== selected)];
-    delete group['default-selected'];
+    if (appleUsBoundGroups.includes(name)) {
+      // The route must share the same US selector as DNS; missing candidates remain fail-closed.
+      group.proxies = usGroup ? [unitedStatesRegion.name] : ['REJECT'];
+      delete group['default-selected'];
+    } else {
+      // Default first item is the US candidate group; do not rely on default-selected support.
+      const selected = group.proxies.includes(unitedStatesRegion.name) ? unitedStatesRegion.name : '默认代理';
+      group.proxies = [selected, ...group.proxies.filter((p) => p !== selected)];
+      delete group['default-selected'];
+    }
     for (const domain of domains) {
       specialRules.push(
         `${domain.startsWith('+.') ? 'DOMAIN-SUFFIX' : 'DOMAIN'},${domain.replace(/^\+\./, '')},${name}`,
       );
       config.dns['nameserver-policy'][domain] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${name}`));
     }
-    if (name === 'AppleTV') {
-      // 与通用 Apple 组分离的每日更新规则。极简模式也保留独立 TV 开关。
+    if (name === appleProductGroupName) {
+      // TV+ 动态规则与其他产品共享同一地区选择器。
+      if (!config['rule-providers'].apple_ip) {
+        config['rule-providers'].apple_ip = {
+          ...ruleProviderCommonIpcidr,
+          url: `${ruleSetBaseUrl}geoip/apple.mrs`,
+          path: './ruleset/apple_ip.mrs',
+          'path-in-bundle': 'geo/geoip/apple.mrs',
+        };
+        specialRules.push(`RULE-SET,apple_ip,${appleProductGroupName}`);
+      }
       config['rule-providers'].apple_tv = {
         ...ruleProviderCommonDomain,
         url: `${ruleSetBaseUrl}geosite/apple-tvplus.mrs`,
         path: './ruleset/apple_tv.mrs',
       };
-      specialRules.push('RULE-SET,apple_tv,AppleTV');
+      specialRules.push(`RULE-SET,apple_tv,${appleProductGroupName}`);
       config.dns['nameserver-policy']['rule-set:apple_tv'] = foreignDNS.map((dns) =>
-        dns.replace('#默认代理', '#AppleTV'),
+        dns.replace('#默认代理', `#${appleProductGroupName}`),
       );
+      if (options.Apple海外媒体) {
+        for (const domain of appleOverseasMediaEndpoints) {
+          specialRules.push(`DOMAIN,${domain},${appleProductGroupName}`);
+          config.dns['nameserver-policy'][domain] = foreignDNS.map((dns) =>
+            dns.replace('#默认代理', `#${appleProductGroupName}`),
+          );
+        }
+      }
     }
   }
   for (const [name, enabled] of [
-    ['Apple', options.Apple服务默认直连],
+    [appleOtherGroupName, options.Apple服务默认直连],
     ['Microsoft', options.微软服务默认直连],
   ]) {
     const group = groups.find((g) => g.name === name);
@@ -2154,8 +2235,33 @@ function finalizeMyClashRules(config) {
       config.dns['nameserver-policy'][domain] = chinaDNS;
     }
   }
-  // AI 海外域名不送给国内 DNS，即使广义 cn 库出现交叉也优先外国 DNS。
-  if (config['rule-providers'].ai) config.dns['nameserver-policy']['rule-set:ai'] = foreignDNS;
+  // DNS rule-set egress follows the first matching domain-provider route target. For a policy
+  // group, the DNS request and destination connection therefore share the same selectable exit.
+  const domainRuleSetEgress = new Map();
+  for (const rule of config.rules) {
+    const match = /^RULE-SET,([^,]+),([^,]+)(?:,|$)/.exec(rule);
+    if (!match) continue;
+    const [, providerName, target] = match;
+    const provider = config['rule-providers'][providerName];
+    if (!provider || !['domain', 'classical'].includes(provider.behavior)) continue;
+    if (['REJECT', 'REJECT-DROP', 'PASS'].includes(target)) continue;
+    if (!domainRuleSetEgress.has(providerName)) domainRuleSetEgress.set(providerName, target);
+  }
+  for (const [providerName, target] of domainRuleSetEgress) {
+    if (['private', 'cn', 'douyin'].includes(providerName)) continue;
+    const targetGroup = config['proxy-groups'].find((group) => group.name === target);
+    if (
+      targetGroup?.proxies.length &&
+      targetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
+    ) {
+      config.dns['nameserver-policy'][`rule-set:${providerName}`] = 'rcode://name_error';
+    } else {
+      config.dns['nameserver-policy'][`rule-set:${providerName}`] =
+        target === '直连'
+          ? chinaDNS
+          : foreignDNS.map((dns) => dns.replace('#默认代理', `#${target}`));
+    }
+  }
   if (!options.PCDN拦截) {
     for (const name of Object.keys(config.hosts))
       if (Array.isArray(config.hosts[name]) && config.hosts[name][0] === '0.0.0.0') delete config.hosts[name];
@@ -2172,6 +2278,33 @@ function finalizeMyClashRules(config) {
       (rule) => !specialRules.includes(rule) && (options.国内服务优先直连 || !prefixRules.slice(1).includes(rule)),
     ),
   ];
+  // Every explicit domain route gets the same DNS exit. Domain keyword/regex rules use a
+  // classical rule-set so nameserver-policy can match the same domain predicate.
+  const literalDomainEgress = new Map();
+  for (const rule of config.rules) {
+    const match = /^(DOMAIN|DOMAIN-SUFFIX),([^,]+),([^,]+)(?:,|$)/.exec(rule);
+    if (!match) continue;
+    const [, type, domain, target] = match;
+    if (['REJECT', 'REJECT-DROP', 'PASS'].includes(target)) continue;
+    const policyKey = type === 'DOMAIN-SUFFIX' ? `+.${domain}` : domain;
+    if (!literalDomainEgress.has(policyKey)) literalDomainEgress.set(policyKey, target);
+  }
+  for (const [policyKey, target] of literalDomainEgress) {
+    if (target === '直连') {
+      config.dns['nameserver-policy'][policyKey] = chinaDNS;
+      continue;
+    }
+    const targetGroup = groups.find((group) => group.name === target);
+    if (!targetGroup) continue;
+    if (
+      targetGroup.proxies.length &&
+      targetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
+    ) {
+      config.dns['nameserver-policy'][policyKey] = 'rcode://name_error';
+    } else {
+      config.dns['nameserver-policy'][policyKey] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${target}`));
+    }
+  }
   if (options.严格加密DNS) {
     config.dns['use-system-hosts'] = false;
     // 不向系统 DNS 查询 LAN 名称；局域网名称通过用户 hosts 显式维护。

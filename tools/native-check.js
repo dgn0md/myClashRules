@@ -126,12 +126,12 @@ async function run() {
       assert.ok(proxies[name].all.length > 0, `${name} empty`);
     assert.ok(proxies['日本'].all.includes('日本 1x'));
     assert.ok(!proxies['日本'].all.includes('美国 1x'));
-    assert.equal(proxies.AppleNews.now, '美国');
-    assert.equal(proxies.Apple智能.now, '美国');
-    assert.equal(proxies.Apple.now, '直连');
+    assert.equal(proxies['Apple Product地区'].now, '美国');
+    assert.equal(proxies['Siri Ai/Apple Intelligence'].now, '美国');
+    assert.equal(proxies['Other Apple Service'].now, '直连');
     assert.equal(proxies.Microsoft.now, '直连');
     const routes = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort, track: local.track, api });
-    const selected = await fetch(`http://127.0.0.1:${port}/proxies/Apple`, {
+    const selected = await fetch(`http://127.0.0.1:${port}/proxies/Other%20Apple%20Service`, {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ name: '美国' }),
@@ -147,7 +147,7 @@ async function run() {
         ['fpinit.itunes.apple.com', '美国', 'apple'],
         ['gspe35-ssl.ls.apple.com', '美国', 'apple'],
         ['smp-device-content.apple.com', '美国', 'apple'],
-        ['gs-loc-cn.apple.com', '直连', 'apple_cn', 'Apple'],
+        ['gs-loc-cn.apple.com', '直连', 'apple_cn', 'Other Apple Service'],
       ],
     });
     const dnsPolicies = await verifyICloudContentDnsPolicy(api);

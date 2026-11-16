@@ -25,11 +25,33 @@ function readYaml(file) {
 }
 function configure(api, settings) {
   const options = settings.options || {};
+  const legacyAppleOptions = {
+    Apple: 'Other Apple Service',
+    Apple智能: 'Siri Ai/Apple Intelligence',
+    Siri: 'Siri Ai/Apple Intelligence',
+    AppleNews: 'Apple Product地区',
+    AppleTV: 'Apple Product地区',
+    AppleFitness: 'Apple Product地区',
+    AppleSports: 'Apple Product地区',
+    AppleBooks: 'Apple Product地区',
+    Apple地区检测: 'Apple Product地区',
+  };
+  const removedAppleOptions = new Set(['AppleRelay']);
+  const migratedAppleOptions = new Map();
   for (const [key, value] of Object.entries(options)) {
-    if (!Object.prototype.hasOwnProperty.call(api.ruleOptionsEnable, key)) throw new Error(`未知配置项：${key}`);
     if (typeof value !== 'boolean') throw new Error(`${key} 必须填写 true 或 false`);
+    if (removedAppleOptions.has(key)) continue;
+    const target = legacyAppleOptions[key];
+    if (target) {
+      if (!Object.prototype.hasOwnProperty.call(options, target)) {
+        migratedAppleOptions.set(target, (migratedAppleOptions.get(target) || false) || value);
+      }
+      continue;
+    }
+    if (!Object.prototype.hasOwnProperty.call(api.ruleOptionsEnable, key)) throw new Error(`未知配置项：${key}`);
     api.ruleOptionsEnable[key] = value;
   }
+  for (const [key, value] of migratedAppleOptions) api.ruleOptionsEnable[key] = value;
   if (settings.customProxies) {
     if (!Array.isArray(settings.customProxies)) throw new Error('customProxies 必须为节点数组');
     api.customizeProxies.push(...settings.customProxies);
@@ -99,8 +121,8 @@ function render(config, api, settings) {
   const optionsBlock = /const ruleOptionsEnable = \{([\s\S]*?)\n\};/.exec(fs.readFileSync(SCRIPT, 'utf8'))[1];
   const descriptions = {};
   for (const line of optionsBlock.split('\n')) {
-    const m = /^\s*(\S+): (?:true|false),\s*\/\/ (.*)$/.exec(line);
-    if (m) descriptions[m[1]] = m[2];
+    const m = /^\s*(?:'([^']+)'|"([^"]+)"|(\S+)): (?:true|false),\s*\/\/ (.*)$/.exec(line);
+    if (m) descriptions[m[1] || m[2] || m[3]] = m[4];
   }
   const header = [
     '# myClashRules 全量配置；派生自 AIsouler/MyClash（MIT），生成器：tools/build.js。',
@@ -126,7 +148,7 @@ function render(config, api, settings) {
     'proxy-groups': '全量服务/地区/倍率/家宽组。静态地区无节点时回退 REJECT；脚本只生成有节点的组。',
     'rule-providers': '远程 MRS 每日更新；本地 inline 规则随配置更新。国内域名库仅参与 DNS，不整体强制直连。',
     rules:
-      '顺序：DNS 接管 → Apple AI/Siri/CDN 例外 → 广告/国内服务 → 服务域名 → 海外域名 → CN IP → 私网 IP → 服务 IP → 兜底。',
+      '顺序：DNS 接管 → Apple 精确域名例外 → 广告/国内服务 → 服务域名 → 海外域名 → Apple IP → 私网 IP → 其他服务 IP → CN IP → 兜底。',
   };
   for (const [key, comment] of Object.entries(comments)) {
     const value = doc.get(key, true);

@@ -53,7 +53,7 @@ async function probe({ port, api, host, protocol, expected, payload, ip = '20.20
     assert.ok(connection, `${protocol} ${host}: missing connection`);
     assert.equal(connection.metadata.destinationIP, ip, 'sniffing must preserve the target IP');
     assert.ok(connection.chains.includes(expected), JSON.stringify(connection));
-    assert.equal(connection.rulePayload, payload);
+    if (payload !== undefined) assert.equal(connection.rulePayload, payload);
     if (expected !== 'Microsoft') assert.equal(connection.metadata.sniffHost, host);
     return { protocol, host, ip, expected, sniffHost: connection.metadata.sniffHost, payload: connection.rulePayload };
   } finally {
@@ -128,10 +128,32 @@ async function verifySniffing({ binary, rulesDir, temp }) {
             { host: 'github.com', protocol: 'TLS', expected: 'GitHub', payload: 'github' },
             { host: 'github.com', protocol: 'HTTP', expected: 'GitHub', payload: 'github' },
             { host: 'github.com', protocol: 'TLS', ip: '2001:db8::42', expected: 'GitHub', payload: 'github' },
-            { host: 'api-siri-prod.apple.com', protocol: 'TLS', expected: 'Siri', payload: 'api-siri-prod.apple.com' },
-            { host: 'apple-relay.apple.com', protocol: 'TLS', expected: 'Apple智能', payload: 'apple-relay.apple.com' },
-            { host: 'unlisted-route-check.net', protocol: 'TLS', ip: '17.0.0.1', expected: 'Apple', payload: 'apple_ip' },
-            { host: 'unlisted-route-check.net', protocol: 'TLS', ip: '17.81.2.1', expected: '直连', payload: 'cn_ip' },
+            {
+              host: 'api-siri-prod.apple.com',
+              protocol: 'TLS',
+              expected: 'Siri Ai/Apple Intelligence',
+              payload: 'api-siri-prod.apple.com',
+            },
+            {
+              host: 'apple-relay.apple.com',
+              protocol: 'TLS',
+              expected: 'Siri Ai/Apple Intelligence',
+              payload: 'apple-relay.apple.com',
+            },
+            {
+              host: 'unlisted-route-check.net',
+              protocol: 'TLS',
+              ip: '17.0.0.1',
+              expected: 'Apple Product地区',
+              payload: 'apple_ip',
+            },
+            {
+              host: 'unlisted-route-check.net',
+              protocol: 'TLS',
+              ip: '17.81.2.1',
+              expected: 'Apple Product地区',
+              payload: 'apple_ip',
+            },
             { host: 'www.microsoft.com', protocol: 'TLS', expected: 'Microsoft', payload: 'microsoft' },
           ]
         : [{ host: 'github.com', protocol: 'TLS', expected: 'Microsoft', payload: 'microsoft_ip' }];
