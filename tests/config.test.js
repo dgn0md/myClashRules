@@ -8,6 +8,9 @@ const { spawnSync } = require('node:child_process');
 const { build, load } = require('../tools/build');
 const YAML = require('yaml');
 const fx = require('../Test/lib/fixtures');
+const appleFlowAudit = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../docs/validation/appleflow-coverage.json'), 'utf8'),
+);
 const clean = () => ({
   proxies: [{ name: '美国 测试', type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' }],
 });
@@ -96,7 +99,7 @@ test('Apple PCC/Siri precede narrow Apple CN, advertising and QUIC; Apple fallba
   assert.match(config['rule-providers'].apple_cn.url, /SukkaW\/Surge@0afc9c2.*\/apple_cn\.conf$/);
   assert.ok(rules.indexOf('RULE-SET,apple_cn,直连') < rules.indexOf('RULE-SET,apple,Apple'));
   assert.ok(rules.indexOf('RULE-SET,cn_ip,直连') < rules.indexOf('RULE-SET,apple_ip,Apple'));
-  const apple = rules.indexOf('DOMAIN,apple-relay.apple.com,Apple智能');
+  const apple = rules.indexOf('DOMAIN-SUFFIX,apple-relay.apple.com,Apple智能');
   assert.ok(apple >= 0);
   for (const ref of ['RULE-SET,apple_cn,直连', 'RULE-SET,category-ads,AdBlock']) assert.ok(apple < rules.indexOf(ref));
   assert.ok(apple < rules.findIndex((r) => r.startsWith('AND,')));
@@ -106,7 +109,7 @@ test('Apple PCC/Siri precede narrow Apple CN, advertising and QUIC; Apple fallba
     assert.equal(config['proxy-groups'].find((g) => g.name === name).proxies[0], '美国');
   for (const name of ['Apple', 'Microsoft'])
     assert.equal(config['proxy-groups'].find((g) => g.name === name).proxies[0], '直连');
-  assert.match(config.dns['nameserver-policy']['apple-relay.apple.com'][0], /#Apple智能$/);
+  assert.match(config.dns['nameserver-policy']['+.apple-relay.apple.com'][0], /#Apple智能$/);
   assert.match(config.dns['nameserver-policy']['+.smoot.apple.com'][0], /#Siri$/);
   assert.ok(rules.includes('DOMAIN,assets.cdn-apple.com,直连'));
   assert.ok(!rules.includes('RULE-SET,cn,直连'));
@@ -164,7 +167,7 @@ test('international iCloud content suffix shares priority routing and DNS while 
         }
         assert.deepEqual(
           config.dns['nameserver-policy'][policy],
-          config.dns['nameserver-policy']['apple-relay.apple.com'],
+          config.dns['nameserver-policy']['+.apple-relay.apple.com'],
         );
       }
       for (const suffix of ['icloud.com', 'icloud.com.cn', 'icloud-content.com.cn', 'gateway.icloud.com']) {
@@ -319,6 +322,156 @@ test('News and overseas Apple products have independent priority rules and encry
   assert.ok(!defaults['proxy-groups'].some((g) => g.name === 'AppleRelay'));
   const relay = build({ settings: { options: { AppleRelay: true } } }).config;
   assert.ok(relay.rules.includes('DOMAIN,mask.icloud.com,AppleRelay'));
+});
+
+test('AppleFlow PCC and Siri endpoints route through the shared US selector before QUIC rejection', () => {
+  const config = build({ subscription: clean(), settings: { options: { 屏蔽代理QUIC流量: true } } }).config;
+  const pcc = [
+    ['DOMAIN', 'gspe1-ssl.ls.apple.com', 'Apple地区检测'],
+    ['DOMAIN-SUFFIX', 'issuer.apple.com', 'Apple智能'],
+    ['DOMAIN-SUFFIX', 'ropes.apple.com', 'Apple智能'],
+    ['DOMAIN', 'mask-api.icloud.com', 'Apple智能'],
+    ['DOMAIN', 'mask.icloud.com', 'Apple智能'],
+    ['DOMAIN', 'mask-h2.icloud.com', 'Apple智能'],
+    ['DOMAIN', 'ss-cleanup-proxy-prod.us-east-1m.app.apple.com', 'Apple智能'],
+    ['DOMAIN-SUFFIX', 'app.apple.com', 'Apple智能'],
+    ['DOMAIN-SUFFIX', 'apple-relay.apple.com', 'Apple智能'],
+    ['DOMAIN-SUFFIX', 'apple-relay.cloudflare.com', 'Apple智能'],
+    ['DOMAIN-SUFFIX', 'apple-relay.fastly-edge.com', 'Apple智能'],
+    ['DOMAIN-SUFFIX', 'apple-relay.akamaized.net', 'Apple智能'],
+    ['DOMAIN', 'cp4.cloudflare.com', 'Apple智能'],
+  ];
+  const siri = [
+    ['DOMAIN', 'guzzoni.apple.com', 'Siri'],
+    ['DOMAIN-SUFFIX', 'guzzoni.apple.com', 'Siri'],
+    ['DOMAIN-SUFFIX', 'siri.apple.com', 'Siri'],
+    ['DOMAIN', 'dejavu.apple.com', 'Siri'],
+    ['DOMAIN', 'sequoia.apple.com', 'Siri'],
+    ['DOMAIN-SUFFIX', 'smoot.apple.com', 'Siri'],
+    ['DOMAIN', 'api-siri-prod.apple.com', 'Siri'],
+    ['DOMAIN', 'setup.icloud.com', 'Siri'],
+  ];
+  const quicReject = config.rules.findIndex((rule) => rule.startsWith('AND,') && rule.endsWith(',REJECT'));
+  assert.ok(quicReject >= 0, 'QUIC reject rule is enabled for this test');
+  for (const [type, domain, target] of [...pcc, ...siri]) {
+    const rule = `${type},${domain},${target}`;
+    const index = config.rules.indexOf(rule);
+    assert.ok(index >= 0, `missing ${rule}`);
+    assert.ok(index < quicReject, `${rule} must precede QUIC rejection`);
+    const policyKey = type === 'DOMAIN-SUFFIX' ? `+.${domain}` : domain;
+    assert.ok(config.dns['nameserver-policy'][policyKey]?.some((dns) => dns.endsWith(`#${target}`)));
+    assert.ok(config.dns['fake-ip-filter'].includes(policyKey), `missing real-IP exception ${policyKey}`);
+  }
+  for (const name of ['AI', 'Apple智能', 'Siri', 'Apple地区检测']) {
+    assert.deepEqual(config['proxy-groups'].find((group) => group.name === name).proxies, ['美国']);
+  }
+  const usGroup = config['proxy-groups'].find((group) => group.name === '美国');
+  assert.ok(usGroup.proxies.includes('美国-自动选择'));
+  assert.ok(config['proxy-groups'].find((group) => group.name === '美国-自动选择').proxies.includes('🇺🇸 美国 测试'));
+  assert.ok(!config.rules.some((rule) => /,(直连|DIRECT)$/.test(rule) && /guzzoni|siri\.apple|dejavu|sequoia|smoot/.test(rule)));
+});
+
+test('Apple US-bound routes fail closed when there is no US-labelled candidate', () => {
+  const subscription = { proxies: [{ ...clean().proxies[0], name: 'Unlabelled node' }] };
+  for (const settings of [{}, { options: { 极简国内外分流模式: true } }]) {
+    const config = build({ subscription, settings }).config;
+    assert.ok(!config['proxy-groups'].some((group) => group.name === '美国'));
+    for (const name of ['AI', 'Apple智能', 'Siri', 'Apple地区检测']) {
+      const group = config['proxy-groups'].find((entry) => entry.name === name);
+      if (name === 'AI' && settings.options?.极简国内外分流模式) assert.equal(group, undefined);
+      else assert.deepEqual(group.proxies, ['REJECT']);
+    }
+  }
+});
+
+test('every routed domain rule-set uses its route target as DNS egress', () => {
+  const config = build().config;
+  const expectedPolicies = new Map();
+  for (const rule of config.rules) {
+    const match = /^RULE-SET,([^,]+),([^,]+)(?:,|$)/.exec(rule);
+    if (!match) continue;
+    const [, providerName, target] = match;
+    const provider = config['rule-providers'][providerName];
+    if (!provider || !['domain', 'classical'].includes(provider.behavior)) continue;
+    if (['REJECT', 'REJECT-DROP', 'PASS'].includes(target)) continue;
+    if (['private', 'cn', 'douyin'].includes(providerName)) continue;
+    expectedPolicies.set(providerName, target);
+  }
+  assert.ok(expectedPolicies.size > 0);
+  for (const [providerName, target] of expectedPolicies) {
+    const dns = config.dns['nameserver-policy'][`rule-set:${providerName}`];
+    assert.ok(dns, `missing DNS egress for rule-set:${providerName} → ${target}`);
+    const targetGroup = config['proxy-groups'].find((group) => group.name === target);
+    if (targetGroup?.proxies.length && targetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
+      assert.equal(dns, 'rcode://name_error');
+    } else if (target === '直连') assert.deepEqual(dns, config.dns['direct-nameserver']);
+    else for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.ok(resolver.endsWith(`#${target}`));
+  }
+  assert.ok(config.dns['nameserver-policy']['rule-set:ai'].every((dns) => dns.endsWith('#AI')));
+  assert.ok(config.dns['nameserver-policy']['rule-set:google'].every((dns) => dns.endsWith('#Google')));
+  assert.ok(config.dns['nameserver-policy']['rule-set:youtube'].every((dns) => dns.endsWith('#YouTube')));
+});
+
+test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers and narrow iCloud suffix', () => {
+  const config = build().config;
+  const filters = config.dns['fake-ip-filter'];
+  for (const domain of [
+    'gspe1-ssl.ls.apple.com',
+    'guzzoni.apple.com',
+    '+.guzzoni.apple.com',
+    '+.siri.apple.com',
+    '+.smoot.apple.com',
+    '+.issuer.apple.com',
+    '+.ropes.apple.com',
+    'mask-api.icloud.com',
+    'mask.icloud.com',
+    'mask-h2.icloud.com',
+    '+.app.apple.com',
+    '+.apple-relay.akamaized.net',
+  ]) assert.ok(filters.includes(domain), `missing Fake-IP filter ${domain}`);
+  assert.ok(!filters.includes('+.icloud-content.com'));
+  const policy = config.dns['nameserver-policy'];
+  for (const key of ['gspe1-ssl.ls.apple.com', 'guzzoni.apple.com', '+.guzzoni.apple.com', '+.siri.apple.com']) {
+    assert.ok(policy[key]);
+    for (const resolver of policy[key]) assert.match(resolver, /^https:\/\//);
+  }
+  const suffixMatches = (suffix, domain) => domain === suffix || domain.endsWith(`.${suffix}`);
+  for (const host of ['icloud-content.com', 'edge.hkg.icloud-content.com', 'a.b.icloud-content.com'])
+    assert.equal(suffixMatches('icloud-content.com', host), true);
+  for (const host of ['icloud-content.com.cn', 'fakeicloud-content.com', 'icloud-content.com.evil'])
+    assert.equal(suffixMatches('icloud-content.com', host), false);
+});
+
+test('AppleFlow extension audit does not treat dynamic AI provider coverage as assumed', () => {
+  const config = build().config;
+  assert.equal(appleFlowAudit.applePcc.length, 13);
+  assert.equal(appleFlowAudit.appleAiExtensions.length, 25);
+  assert.equal(appleFlowAudit.dynamicAiProvider.semanticCoverageStatus, 'unverified');
+  assert.ok(appleFlowAudit.appleAiExtensions.every((entry) => entry.status === 'unverified'));
+  assert.ok(config.rules.includes('RULE-SET,ai,AI'));
+  assert.ok(config.dns['nameserver-policy']['rule-set:ai'].every((dns) => dns.endsWith('#AI')));
+  for (const { domain } of appleFlowAudit.appleAiExtensions) {
+    assert.ok(
+      !config.rules.some((rule) => /^(DOMAIN|DOMAIN-SUFFIX),/.test(rule) && rule.includes(`,${domain},`)),
+      `${domain} should not become a duplicate static extension rule`,
+    );
+  }
+  assert.ok(appleFlowAudit.siriDirectSource.entries.every((entry) => entry.status === 'routed-to-US-selector'));
+});
+
+test('node UDP declarations pass through unchanged and QUIC blocking stays opt-in', () => {
+  for (const udp of [true, false, undefined]) {
+    const node = { ...clean().proxies[0], name: '美国 UDP fixture' };
+    if (udp !== undefined) node.udp = udp;
+    const config = build({ subscription: { proxies: [node] } }).config;
+    const actual = config.proxies.find((proxy) => proxy.name.includes('UDP fixture'));
+    assert.equal(actual.udp, udp);
+  }
+  const defaults = build().config;
+  assert.equal(load().ruleOptionsEnable['屏蔽代理QUIC流量'], false);
+  assert.ok(!defaults.rules.some((rule) => rule.startsWith('AND,') && rule.endsWith(',REJECT')));
+  const enabled = build({ settings: { options: { 屏蔽代理QUIC流量: true } } }).config;
+  assert.ok(enabled.rules.some((rule) => rule.startsWith('AND,') && rule.endsWith(',REJECT')));
 });
 test('provider IP preference and both rate filters preserve ordinary region groups', () => {
   const config = build({

@@ -82,3 +82,13 @@ node tools/check-doh.js
 ## 尚未取得的环境证据
 
 没有你的真实订阅、出口节点、Apple 设备与大陆运营商抓包，因此不报告服务解锁成功率、全设备零旁路或代理字节节省百分比。实现层面的开关、DNS 上游、路由顺序、生成一致性与真实内核选择已经单独验收。
+
+## 2026-11-16 Siri / Apple AI / 地区出口改动
+
+- `npm run build` 已重新生成全量 `Config/mihomoConfig.yaml`；`npm test` 通过：旧版脚本回归 89 项、ES2026 检查 2 项、QuickJS 检查 2 项、Node 配置回归 25 项，共 118 项。
+- `npm run check` 与 `git diff --check` 通过。配置回归覆盖 PCC/Siri 主机顺序、Fake-IP 实 IP 例外、严格加密 DNS、地区候选缺失时拒绝回退、各 domain rule-set 的 DNS egress 标签、QUIC 开关及节点 `udp` 声明透传。
+- AppleFlow 审计固定在 commit `eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f`：13 条 PCC 项已按精确主机或指定后缀生成规则；`Siri-Direct` 的 5 条来源主机按用户要求改走 Siri 美国选择器，没有生成中文 Siri 直连规则。逐条结果与 blob SHA 见 [审计 JSON](validation/appleflow-coverage.json)。
+- `category-ai-!cn.mrs` 从 Bett Rules `meta` 下载并记录了 commit、Git blob SHA 与 SHA-256；25 条 AppleFlow 第三方 AI 域名逐项状态均为 **unverified**。本环境没有 Mihomo 可执行文件，无法把 MRS 加载后核对每项是否实际命中；没有将“可能包含”当成覆盖通过，也没有静态复制这 25 个域名。
+- 美国组是按节点名称生成的候选列表，不构成地理证明。AI、Siri、PCC、地区检测和可选 Apple Relay 只引用同一个美国选择器；没有美国名称候选时规则目标为 `REJECT`。未取得订阅或任何真实出口 IP，未做两个地理来源交叉验证。
+- 当前环境 `command -v mihomo` 与 `command -v mihomo-alpha` 均无可执行文件，因此本轮**未**对改动后的 YAML 运行 Mihomo 原生校验。上文 2026-11-13 的原生结果属于当时配置，不可替代本轮检查。
+- 节点 `udp: true/false/未声明` 仅验证脚本保留输入值；未测目标 UDP 443、LiveKit/WebRTC、真实出口 IPv4/IPv6、Siri/PCC 设备行为或运营商链路。未提交订阅、节点、出口地址、MRS 缓存或运行日志。

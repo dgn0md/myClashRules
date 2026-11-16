@@ -1,0 +1,88 @@
+{
+  "checkedAt": "2026-11-16",
+  "appleFlow": {
+    "repository": "Kianuni/AppleFlow",
+    "commit": "eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f",
+    "files": {
+      "Apple-PCC": {
+        "path": "rules/clash/Apple-PCC.yaml",
+        "blobSha": "2455988a133a508516325a48acb1831aee498349"
+      },
+      "Apple-AI-Ext": {
+        "path": "rules/clash/Apple-AI-Ext.yaml",
+        "blobSha": "20a675a9b0e7a470638ae53d412bbec567d47fa5"
+      },
+      "Apple-AI-All": {
+        "path": "rules/clash/Apple-AI-All.yaml",
+        "blobSha": "1ba34733d5ebdf4a53fb88cf691545532939116d"
+      },
+      "Siri-Direct": {
+        "path": "rules/clash/Siri-Direct.yaml",
+        "blobSha": "ad18fd6d711ca19f12c7bc3fcd09073d0279b675"
+      }
+    }
+  },
+  "dynamicAiProvider": {
+    "url": "https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/category-ai-!cn.mrs",
+    "commit": "bce88259ed59c572b2777a93dae27e9fbff3ab2a",
+    "blobSha": "e9f77f86ec13f2ee2fb2e28a8b8b2eb45dde2b0e",
+    "sha256": "252fc3e36adba99ccbe91b2c89eaf315a28e4872120239c665047d6057bf5775",
+    "format": "Mihomo MRS",
+    "downloaded": true,
+    "semanticCoverageStatus": "unverified",
+    "reason": "No Mihomo executable was available to load the MRS provider and inspect its domain rules. The blob is not a plain text domain list; no AppleFlow extension is marked covered based on assumption."
+  },
+  "applePcc": [
+    { "type": "DOMAIN", "domain": "gspe1-ssl.ls.apple.com", "route": "Apple地区检测", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "issuer.apple.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "ropes.apple.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN", "domain": "mask-api.icloud.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN", "domain": "mask.icloud.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN", "domain": "mask-h2.icloud.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN", "domain": "ss-cleanup-proxy-prod.us-east-1m.app.apple.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "app.apple.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "apple-relay.apple.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "apple-relay.cloudflare.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "apple-relay.fastly-edge.com", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN-SUFFIX", "domain": "apple-relay.akamaized.net", "route": "Apple智能", "status": "configured" },
+    { "type": "DOMAIN", "domain": "cp4.cloudflare.com", "route": "Apple智能", "status": "configured" }
+  ],
+  "siriDirectSource": {
+    "sourcePolicy": "AppleFlow lists these hosts as Chinese Siri direct. The user request specifies US Siri/AI and no Mandarin Siri direct rule, so the source intent is not adopted.",
+    "entries": [
+      { "type": "DOMAIN-SUFFIX", "domain": "guzzoni.apple.com", "route": "Siri", "status": "routed-to-US-selector" },
+      { "type": "DOMAIN-SUFFIX", "domain": "siri.apple.com", "route": "Siri", "status": "routed-to-US-selector" },
+      { "type": "DOMAIN", "domain": "dejavu.apple.com", "route": "Siri", "status": "routed-to-US-selector" },
+      { "type": "DOMAIN", "domain": "sequoia.apple.com", "route": "Siri", "status": "routed-to-US-selector" },
+      { "type": "DOMAIN-SUFFIX", "domain": "smoot.apple.com", "route": "Siri", "status": "routed-to-US-selector" }
+    ]
+  },
+  "appleAiExtensions": [
+    { "domain": "openai.com", "status": "unverified" },
+    { "domain": "chatgpt.com", "status": "unverified" },
+    { "domain": "chat.com", "status": "unverified" },
+    { "domain": "sora.com", "status": "unverified" },
+    { "domain": "oaistatic.com", "status": "unverified" },
+    { "domain": "oaiusercontent.com", "status": "unverified" },
+    { "domain": "oaistatsig.com", "status": "unverified" },
+    { "domain": "openai.com.cdn.cloudflare.net", "status": "unverified" },
+    { "domain": "openai-api.arkoselabs.com", "status": "unverified" },
+    { "domain": "chatgpt.livekit.cloud", "status": "unverified" },
+    { "domain": "host.livekit.cloud", "status": "unverified" },
+    { "domain": "turn.livekit.cloud", "status": "unverified" },
+    { "domain": "lens.google.com", "status": "unverified" },
+    { "domain": "gemini.google.com", "status": "unverified" },
+    { "domain": "gemini.gstatic.com", "status": "unverified" },
+    { "domain": "generativelanguage.googleapis.com", "status": "unverified" },
+    { "domain": "proactivebackend-pa.googleapis.com", "status": "unverified" },
+    { "domain": "robinfrontend-pa.googleapis.com", "status": "unverified" },
+    { "domain": "aistudio.google.com", "status": "unverified" },
+    { "domain": "alkalimakersuite-pa.clients6.google.com", "status": "unverified" },
+    { "domain": "deepmind.google", "status": "unverified" },
+    { "domain": "anthropic.com", "status": "unverified" },
+    { "domain": "claude.ai", "status": "unverified" },
+    { "domain": "claude.com", "status": "unverified" },
+    { "domain": "claudeusercontent.com", "status": "unverified" }
+  ],
+  "routingPolicy": "Third-party AI endpoints are not copied into static DOMAIN rules. They continue to use RULE-SET,ai,AI and rule-set:ai DNS policy; each listed provider-coverage result remains unverified until the pinned MRS data is loaded by Mihomo."
+}

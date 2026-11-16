@@ -83,6 +83,27 @@ dns:
     - rule-set:fakeip_filter
     - rule-set:cn
     - rule-set:googlefcm
+    - guzzoni.apple.com
+    - +.guzzoni.apple.com
+    - +.siri.apple.com
+    - dejavu.apple.com
+    - sequoia.apple.com
+    - +.smoot.apple.com
+    - api-siri-prod.apple.com
+    - setup.icloud.com
+    - gspe1-ssl.ls.apple.com
+    - +.issuer.apple.com
+    - +.ropes.apple.com
+    - mask-api.icloud.com
+    - mask.icloud.com
+    - mask-h2.icloud.com
+    - ss-cleanup-proxy-prod.us-east-1m.app.apple.com
+    - +.app.apple.com
+    - +.apple-relay.apple.com
+    - +.apple-relay.cloudflare.com
+    - +.apple-relay.fastly-edge.com
+    - +.apple-relay.akamaized.net
+    - cp4.cloudflare.com
   default-nameserver:
     - https://223.5.5.5/dns-query#DIRECT
     - https://1.12.12.12/dns-query#DIRECT
@@ -100,16 +121,40 @@ dns:
     rule-set:cn:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
-    apple-relay.cloudflare.com:
+    +.issuer.apple.com:
       - https://cloudflare-dns.com/dns-query#Apple智能
       - https://dns.google/dns-query#Apple智能
-    apple-relay.fastly-edge.com:
+    +.ropes.apple.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    mask-api.icloud.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    mask.icloud.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    mask-h2.icloud.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    ss-cleanup-proxy-prod.us-east-1m.app.apple.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    +.app.apple.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    +.apple-relay.apple.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    +.apple-relay.cloudflare.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    +.apple-relay.fastly-edge.com:
+      - https://cloudflare-dns.com/dns-query#Apple智能
+      - https://dns.google/dns-query#Apple智能
+    +.apple-relay.akamaized.net:
       - https://cloudflare-dns.com/dns-query#Apple智能
       - https://dns.google/dns-query#Apple智能
     cp4.cloudflare.com:
-      - https://cloudflare-dns.com/dns-query#Apple智能
-      - https://dns.google/dns-query#Apple智能
-    apple-relay.apple.com:
       - https://cloudflare-dns.com/dns-query#Apple智能
       - https://dns.google/dns-query#Apple智能
     gateway.icloud.com:
@@ -119,6 +164,18 @@ dns:
       - https://cloudflare-dns.com/dns-query#Apple智能
       - https://dns.google/dns-query#Apple智能
     guzzoni.apple.com:
+      - https://cloudflare-dns.com/dns-query#Siri
+      - https://dns.google/dns-query#Siri
+    +.guzzoni.apple.com:
+      - https://cloudflare-dns.com/dns-query#Siri
+      - https://dns.google/dns-query#Siri
+    +.siri.apple.com:
+      - https://cloudflare-dns.com/dns-query#Siri
+      - https://dns.google/dns-query#Siri
+    dejavu.apple.com:
+      - https://cloudflare-dns.com/dns-query#Siri
+      - https://dns.google/dns-query#Siri
+    sequoia.apple.com:
       - https://cloudflare-dns.com/dns-query#Siri
       - https://dns.google/dns-query#Siri
     +.smoot.apple.com:
@@ -196,7 +253,89 @@ dns:
     assets.cdn-apple.com:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
+    rule-set:category-ads: rcode://name_error
+    rule-set:geolocation-cn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:games_cn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:synology:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:nvidia_cn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:apple_cn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:microsoft_cn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:googlefcm:
+      - https://cloudflare-dns.com/dns-query#FCM
+      - https://dns.google/dns-query#FCM
+    rule-set:youtube:
+      - https://cloudflare-dns.com/dns-query#YouTube
+      - https://dns.google/dns-query#YouTube
+    rule-set:google:
+      - https://cloudflare-dns.com/dns-query#Google
+      - https://dns.google/dns-query#Google
     rule-set:ai:
+      - https://cloudflare-dns.com/dns-query#AI
+      - https://dns.google/dns-query#AI
+    rule-set:github:
+      - https://cloudflare-dns.com/dns-query#GitHub
+      - https://dns.google/dns-query#GitHub
+    rule-set:microsoft:
+      - https://cloudflare-dns.com/dns-query#Microsoft
+      - https://dns.google/dns-query#Microsoft
+    rule-set:apple:
+      - https://cloudflare-dns.com/dns-query#Apple
+      - https://dns.google/dns-query#Apple
+    rule-set:telegram:
+      - https://cloudflare-dns.com/dns-query#Telegram
+      - https://dns.google/dns-query#Telegram
+    rule-set:steam:
+      - https://cloudflare-dns.com/dns-query#Steam
+      - https://dns.google/dns-query#Steam
+    rule-set:tiktok:
+      - https://cloudflare-dns.com/dns-query#TikTok
+      - https://dns.google/dns-query#TikTok
+    rule-set:twitter:
+      - https://cloudflare-dns.com/dns-query#Twitter
+      - https://dns.google/dns-query#Twitter
+    rule-set:meta:
+      - https://cloudflare-dns.com/dns-query#Meta
+      - https://dns.google/dns-query#Meta
+    rule-set:line:
+      - https://cloudflare-dns.com/dns-query#Line
+      - https://dns.google/dns-query#Line
+    rule-set:netflix:
+      - https://cloudflare-dns.com/dns-query#Netflix
+      - https://dns.google/dns-query#Netflix
+    rule-set:emby:
+      - https://cloudflare-dns.com/dns-query#Emby
+      - https://dns.google/dns-query#Emby
+    rule-set:pikpak:
+      - https://cloudflare-dns.com/dns-query#PikPak
+      - https://dns.google/dns-query#PikPak
+    rule-set:spotify:
+      - https://cloudflare-dns.com/dns-query#Spotify
+      - https://dns.google/dns-query#Spotify
+    rule-set:cryptocurrency:
+      - https://cloudflare-dns.com/dns-query#Crypto
+      - https://dns.google/dns-query#Crypto
+    rule-set:paypal:
+      - https://cloudflare-dns.com/dns-query#PayPal
+      - https://dns.google/dns-query#PayPal
+    rule-set:patreon:
+      - https://cloudflare-dns.com/dns-query#Patreon
+      - https://dns.google/dns-query#Patreon
+    rule-set:ehentai:
+      - https://cloudflare-dns.com/dns-query#EHentai
+      - https://dns.google/dns-query#EHentai
+    rule-set:geolocation-!cn:
       - https://cloudflare-dns.com/dns-query#默认代理
       - https://dns.google/dns-query#默认代理
   direct-nameserver:
@@ -471,20 +610,7 @@ proxy-groups:
     name: AI
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/OpenAI.svg
     proxies:
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
-      - 日本
       - 美国
-      - 新加坡
-      - 台湾
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
-    default-selected: 美国
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -874,19 +1000,6 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
     proxies:
       - 美国
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
-      - 日本
-      - 新加坡
-      - 台湾
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
-      - 直连
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -896,19 +1009,6 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
     proxies:
       - 美国
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
-      - 日本
-      - 新加坡
-      - 台湾
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
-      - 直连
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1028,19 +1128,6 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
     proxies:
       - 美国
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
-      - 日本
-      - 新加坡
-      - 台湾
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
-      - 直连
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1704,13 +1791,25 @@ rule-providers:
 rules:
   # 顺序：DNS 接管 → Apple AI/Siri/CDN 例外 → 广告/国内服务 → 服务域名 → 海外域名 → CN IP → 私网 IP → 服务 IP → 兜底。
   - DST-PORT,53,内置DNS
-  - DOMAIN,apple-relay.cloudflare.com,Apple智能
-  - DOMAIN,apple-relay.fastly-edge.com,Apple智能
+  - DOMAIN-SUFFIX,issuer.apple.com,Apple智能
+  - DOMAIN-SUFFIX,ropes.apple.com,Apple智能
+  - DOMAIN,mask-api.icloud.com,Apple智能
+  - DOMAIN,mask.icloud.com,Apple智能
+  - DOMAIN,mask-h2.icloud.com,Apple智能
+  - DOMAIN,ss-cleanup-proxy-prod.us-east-1m.app.apple.com,Apple智能
+  - DOMAIN-SUFFIX,app.apple.com,Apple智能
+  - DOMAIN-SUFFIX,apple-relay.apple.com,Apple智能
+  - DOMAIN-SUFFIX,apple-relay.cloudflare.com,Apple智能
+  - DOMAIN-SUFFIX,apple-relay.fastly-edge.com,Apple智能
+  - DOMAIN-SUFFIX,apple-relay.akamaized.net,Apple智能
   - DOMAIN,cp4.cloudflare.com,Apple智能
-  - DOMAIN,apple-relay.apple.com,Apple智能
   - DOMAIN,gateway.icloud.com,Apple智能
   - DOMAIN-SUFFIX,icloud-content.com,Apple智能
   - DOMAIN,guzzoni.apple.com,Siri
+  - DOMAIN-SUFFIX,guzzoni.apple.com,Siri
+  - DOMAIN-SUFFIX,siri.apple.com,Siri
+  - DOMAIN,dejavu.apple.com,Siri
+  - DOMAIN,sequoia.apple.com,Siri
   - DOMAIN-SUFFIX,smoot.apple.com,Siri
   - DOMAIN,api-siri-prod.apple.com,Siri
   - DOMAIN,setup.icloud.com,Siri
