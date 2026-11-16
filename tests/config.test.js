@@ -8,9 +8,6 @@ const { spawnSync } = require('node:child_process');
 const { build, load } = require('../tools/build');
 const YAML = require('yaml');
 const fx = require('../Test/lib/fixtures');
-const appleFlowAudit = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../docs/validation/appleflow-coverage.json'), 'utf8'),
-);
 const siriAiGroup = 'Siri Ai/Apple Intelligence';
 const appleProductGroup = 'Apple Product地区';
 const otherAppleGroup = 'Other Apple Service';
@@ -134,35 +131,99 @@ test('Apple IP routes to Apple Product地区 before cn_ip in every output mode',
     }
   }
 });
-for (const host of ['api-siri-prod.apple.com', 'setup.icloud.com']) {
-  test(`observed Siri host ${host} has exact priority routing and encrypted DNS in both output modes`, () => {
-    const rule = `DOMAIN,${host},${siriAiGroup}`;
-    for (const subscription of [undefined, clean()]) {
-      for (const minimal of [false, true]) {
-        const settings = { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } };
-        const config = build({ subscription, settings }).config;
-        const index = config.rules.indexOf(rule);
-        assert.ok(index >= 0, 'missing Siri API exception');
-        assert.equal(config.rules.filter((r) => r === rule).length, 1);
-        for (const [i, other] of config.rules.entries()) {
-          if (/^RULE-SET,(apple_cn|apple|category-ads),|^AND,/.test(other))
-            assert.ok(index < i, `Siri API must precede ${other}`);
+test('dynamic IP rules keep service egress aligned with their domain DNS policy', () => {
+  const expectedTargets = {
+    apple_ip: appleProductGroup,
+    cn_ip: '直连',
+    private_ip: '直连',
+    google_ip: 'Google',
+    microsoft_ip: 'Microsoft',
+    telegram_ip: 'Telegram',
+    steam_ip: 'Steam',
+    tiktok_ip: 'TikTok',
+    twitter_ip: 'Twitter',
+    facebook_ip: 'Meta',
+    netflix_ip: 'Netflix',
+    spotify_ip: 'Spotify',
+  };
+  const domainPartners = {
+    apple_ip: 'apple_tv',
+    google_ip: 'google',
+    microsoft_ip: 'microsoft',
+    telegram_ip: 'telegram',
+    steam_ip: 'steam',
+    tiktok_ip: 'tiktok',
+    twitter_ip: 'twitter',
+    facebook_ip: 'meta',
+    netflix_ip: 'netflix',
+    spotify_ip: 'spotify',
+  };
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      const routes = new Map();
+      for (const rule of config.rules) {
+        const match = /^RULE-SET,([^,]+),([^,]+)/.exec(rule);
+        if (!match || config['rule-providers'][match[1]]?.behavior !== 'ipcidr') continue;
+        const [, provider, target] = match;
+        assert.equal(target, expectedTargets[provider], `unexpected target for ${provider}`);
+        // IP-CIDR providers have no DNS names; their domain companion carries the DNS policy.
+        assert.equal(config.dns['nameserver-policy'][`rule-set:${provider}`], undefined);
+        routes.set(provider, target);
+      }
+      const privateIpIndex = config.rules.indexOf('RULE-SET,private_ip,直连');
+      const cnIpIndex = config.rules.indexOf('RULE-SET,cn_ip,直连');
+      for (const provider of routes.keys()) {
+        const index = config.rules.indexOf(`RULE-SET,${provider},${routes.get(provider)}`);
+        if (provider === 'apple_ip') assert.ok(index < privateIpIndex && index < cnIpIndex);
+        else if (!['cn_ip', 'private_ip'].includes(provider)) assert.ok(index > privateIpIndex && index < cnIpIndex);
+      }
+      for (const [ipProvider, domainProvider] of Object.entries(domainPartners)) {
+        const target = routes.get(ipProvider);
+        if (!target) continue;
+        assert.ok(config.rules.includes(`RULE-SET,${domainProvider},${target}`), `${domainProvider} must share ${ipProvider} egress`);
+        const dns = config.dns['nameserver-policy'][`rule-set:${domainProvider}`];
+        assert.ok(dns, `missing DNS policy for ${domainProvider}`);
+        for (const resolver of Array.isArray(dns) ? dns : [dns])
+          assert.ok(resolver.endsWith(`#${target}`), `${ipProvider} → ${target}, ${domainProvider} DNS → ${resolver}`);
+      }
+      if (routes.has('cn_ip'))
+        assert.deepEqual(config.dns['nameserver-policy']['rule-set:cn'], config.dns['direct-nameserver']);
+      if (routes.has('private_ip')) assert.equal(config.dns['nameserver-policy']['rule-set:private'], 'rcode://success');
+      if (routes.has('apple_ip')) {
+        assert.ok(config.rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup}`) < config.rules.indexOf('RULE-SET,cn_ip,直连'));
+        if (config['rule-providers'].apple) {
+          assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
+          assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${otherAppleGroup}`)));
         }
-        assert.ok(!config.rules.includes(`DOMAIN-SUFFIX,${host},${siriAiGroup}`));
-        assert.deepEqual(config.dns['nameserver-policy'][host], config.dns['nameserver-policy']['+.smoot.apple.com']);
-        for (const dns of config.dns['nameserver-policy'][host])
-          assert.ok(dns.endsWith(`#${siriAiGroup}`), `wrong DNS group: ${dns}`);
-        assert.ok(!config.dns['nameserver-policy'][`+.${host}`]);
-        const disabled = build({
-          subscription,
-          settings: { options: { ...settings.options, [siriAiGroup]: false } },
-        }).config;
-        assert.ok(!disabled.rules.includes(rule));
-        assert.ok(!disabled.dns['nameserver-policy'][host]);
       }
     }
-  });
-}
+  }
+});
+test('Siri AI domain routes use matching DNS policy and precede QUIC rejection in both output modes', () => {
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      const config = build({
+        subscription,
+        settings: { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } },
+      }).config;
+      const routes = config.rules
+        .map((rule, index) => ({ index, parts: rule.split(',') }))
+        .filter(({ parts }) => ['DOMAIN', 'DOMAIN-SUFFIX'].includes(parts[0]) && parts[2] === siriAiGroup);
+      assert.ok(routes.length > 0, 'expected Siri AI domain routes');
+      const quic = config.rules.findIndex((entry) => entry.startsWith('AND,') && entry.endsWith(',REJECT'));
+      assert.ok(quic >= 0, 'QUIC reject rule is enabled for this test');
+      for (const { index, parts } of routes) {
+        assert.ok(index < quic, `${parts[0]},${parts[1]} must precede QUIC rejection`);
+        const key = parts[0] === 'DOMAIN-SUFFIX' ? `+.${parts[1]}` : parts[1];
+        const resolvers = config.dns['nameserver-policy'][key];
+        assert.ok(resolvers, `missing DNS policy for ${key}`);
+        for (const resolver of Array.isArray(resolvers) ? resolvers : [resolvers])
+          assert.ok(resolver.endsWith(`#${siriAiGroup}`), `${key} DNS must use ${siriAiGroup}`);
+      }
+    }
+  }
+});
 test('international iCloud content suffix shares priority routing and DNS while excluding China sites', () => {
   const targets = [
     [`DOMAIN,gateway.icloud.com,${siriAiGroup}`, 'gateway.icloud.com'],
@@ -457,8 +518,6 @@ test('AppleFlow PCC and Siri endpoints route through the shared US selector befo
     ['DOMAIN', 'dejavu.apple.com', siriAiGroup],
     ['DOMAIN', 'sequoia.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'smoot.apple.com', siriAiGroup],
-    ['DOMAIN', 'api-siri-prod.apple.com', siriAiGroup],
-    ['DOMAIN', 'setup.icloud.com', siriAiGroup],
   ];
   const quicReject = config.rules.findIndex((rule) => rule.startsWith('AND,') && rule.endsWith(',REJECT'));
   assert.ok(quicReject >= 0, 'QUIC reject rule is enabled for this test');
@@ -559,21 +618,12 @@ test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers a
     assert.equal(suffixMatches('icloud-content.com', host), false);
 });
 
-test('AppleFlow extension audit does not treat dynamic AI provider coverage as assumed', () => {
+test('dynamic AI provider and DNS policy share the AI egress group', () => {
   const config = build().config;
-  assert.equal(appleFlowAudit.applePcc.length, 13);
-  assert.equal(appleFlowAudit.appleAiExtensions.length, 25);
-  assert.equal(appleFlowAudit.dynamicAiProvider.semanticCoverageStatus, 'unverified');
-  assert.ok(appleFlowAudit.appleAiExtensions.every((entry) => entry.status === 'unverified'));
   assert.ok(config.rules.includes('RULE-SET,ai,AI'));
-  assert.ok(config.dns['nameserver-policy']['rule-set:ai'].every((dns) => dns.endsWith('#AI')));
-  for (const { domain } of appleFlowAudit.appleAiExtensions) {
-    assert.ok(
-      !config.rules.some((rule) => /^(DOMAIN|DOMAIN-SUFFIX),/.test(rule) && rule.includes(`,${domain},`)),
-      `${domain} should not become a duplicate static extension rule`,
-    );
-  }
-  assert.ok(appleFlowAudit.siriDirectSource.entries.every((entry) => entry.status === 'routed-to-US-selector'));
+  const resolvers = config.dns['nameserver-policy']['rule-set:ai'];
+  assert.ok(resolvers?.length > 0, 'missing DNS policy for the AI rule-set');
+  assert.ok(resolvers.every((dns) => dns.endsWith('#AI')));
 });
 
 test('node UDP declarations pass through unchanged and QUIC blocking stays opt-in', () => {

@@ -148,7 +148,7 @@ function render(config, api, settings) {
     'proxy-groups': '全量服务/地区/倍率/家宽组。静态地区无节点时回退 REJECT；脚本只生成有节点的组。',
     'rule-providers': '远程 MRS 每日更新；本地 inline 规则随配置更新。国内域名库仅参与 DNS，不整体强制直连。',
     rules:
-      '顺序：DNS 接管 → Apple 精确域名例外 → 广告/国内服务 → 服务域名 → 海外域名 → Apple IP → CN IP → 私网 IP → 其他服务 IP → 兜底。',
+      '顺序：DNS 接管 → Apple 精确域名例外 → 广告/国内服务 → 服务域名 → 海外域名 → Apple IP → 私网 IP → 其他服务 IP → CN IP → 兜底。',
   };
   for (const [key, comment] of Object.entries(comments)) {
     const value = doc.get(key, true);
