@@ -54,9 +54,9 @@ node tools/build.js --settings Config/mihomoConfig.yaml --subscription .local/su
 
 | 策略组 | 默认行为 | 范围 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | 使用 `美国` 选择器；缺少美区候选时拒绝连接。 | Apple Intelligence、Siri、PCC 及部分共享 iCloud/Relay 端点。 |
+| `Siri Ai/Apple Intelligence` | 使用 `美国` 选择器；缺少美区候选时拒绝连接。 | Apple Intelligence、Siri、PCC 及部分共享 Relay 端点。 |
 | `Apple Product地区` | 初始选择美国，可在客户端切换，包括直连。 | News、TV、Fitness、Sports、Books、地区检测，以及 `apple_ip`。 |
-| `Other Apple Service` | 默认直连。 | 广泛 Apple 域名规则。 |
+| `Other Apple Service` | 默认直连。 | 广泛 Apple 域名规则，以及精确主机 `setup.icloud.com`。 |
 | `Apple海外媒体` | 默认关闭。 | 可选共享购买和媒体接口。 |
 | `Apple模型下载直连` | 默认开启。 | 系统与模型共用资源按直连规则处理。 |
 

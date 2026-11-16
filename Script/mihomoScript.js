@@ -869,8 +869,6 @@ const appleEndpointDefinitions = {
     '+.smoot.apple.com',
     // 精确匹配 Siri API 主机，并沿用该组的 DNS 与出口。
     'api-siri-prod.apple.com',
-    // 共享 iCloud 初始化接口，按主机精确路由；不扩展到整个 iCloud 域。
-    'setup.icloud.com',
   ],
   [appleProductGroupName]: [
     '+.apple.news',
@@ -2217,6 +2215,23 @@ function finalizeMyClashRules(config) {
         }
       }
     }
+  }
+  // setup.icloud.com is a shared Apple service endpoint, not a Siri-only route.
+  // Keep the exact-host exception in Other Apple Service, including minimal output where
+  // the regular service group is omitted; its DNS policy is derived from this same target below.
+  if (options[appleOtherGroupName]) {
+    let group = groups.find((entry) => entry.name === appleOtherGroupName);
+    if (!group) {
+      group = {
+        ...selectBaseOption,
+        name: appleOtherGroupName,
+        icon: `${iconBaseUrl}Apple.svg`,
+        proxies: ['默认代理', '直连'],
+      };
+      groups.splice(1, 0, group);
+      groups[0].proxies.push(appleOtherGroupName);
+    }
+    specialRules.push(`DOMAIN,setup.icloud.com,${appleOtherGroupName}`);
   }
   for (const [name, enabled] of [
     [appleOtherGroupName, options.Apple服务默认直连],

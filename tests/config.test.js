@@ -224,6 +224,36 @@ test('Siri AI domain routes use matching DNS policy and precede QUIC rejection i
     }
   }
 });
+test('shared iCloud setup endpoint uses Other Apple Service and matching DNS in both output modes', () => {
+  const rule = `DOMAIN,setup.icloud.com,${otherAppleGroup}`;
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      const config = build({
+        subscription,
+        settings: { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } },
+      }).config;
+      const setupIndex = config.rules.indexOf(rule);
+      assert.ok(setupIndex >= 0, `missing Other Apple Service route in minimal=${minimal}`);
+      assert.ok(!config.rules.includes(`DOMAIN,setup.icloud.com,${siriAiGroup}`));
+      assert.ok(setupIndex < config.rules.indexOf('RULE-SET,apple_cn,直连'));
+      const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
+      assert.ok(group, `missing ${otherAppleGroup} group in minimal=${minimal}`);
+      assert.equal(group.proxies[0], '直连');
+      const dns = config.dns['nameserver-policy']['setup.icloud.com'];
+      assert.ok(dns, 'missing DNS policy for setup.icloud.com');
+      for (const resolver of Array.isArray(dns) ? dns : [dns])
+        assert.ok(resolver.endsWith(`#${otherAppleGroup}`), `DNS must use ${otherAppleGroup}: ${resolver}`);
+      graph(config);
+      encryptedDns(config);
+    }
+    const disabled = build({
+      subscription,
+      settings: { options: { [otherAppleGroup]: false } },
+    }).config;
+    assert.ok(!disabled.rules.includes(rule));
+    assert.ok(!disabled.dns['nameserver-policy']['setup.icloud.com']);
+  }
+});
 test('international iCloud content suffix shares priority routing and DNS while excluding China sites', () => {
   const targets = [
     [`DOMAIN,gateway.icloud.com,${siriAiGroup}`, 'gateway.icloud.com'],

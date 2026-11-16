@@ -292,14 +292,14 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       }
     }
   });
-  h.test('极简模式只额外保留 Apple 共用的美国出口选择器且 MATCH 走默认代理', () =>
+  h.test('极简模式只额外保留 Apple 特例所需策略组且 MATCH 走默认代理', () =>
     withOptions(api, { 极简国内外分流模式: true }, () => {
       const out = api.main(fx.typicalSubscription());
       const groups = out['proxy-groups'];
       h.assertDeep(
         groups.map((g) => g.name),
-        ['GLOBAL', '默认代理', '自动选择', '直连', '美国', '美国-自动选择'],
-        '极简模式只额外生成 Apple AI/Siri/PCC 共用的美国候选组',
+        ['GLOBAL', 'Other Apple Service', '默认代理', '自动选择', '直连', '美国', '美国-自动选择'],
+        '极简模式只额外生成 Apple AI/Siri/PCC 美国候选组与 setup.icloud.com 服务组',
       );
       h.assert(!out.dns['fake-ip-filter'].includes('rule-set:googlefcm'), '不应注入 FCM fake-IP 规则');
       h.assert(!out.rules.some((rule) => /,(Google|AI|Telegram|Steam|AdBlock)$/.test(rule)), '不应生成分流规则');
