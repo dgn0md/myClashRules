@@ -555,16 +555,9 @@ const serviceConfigs = [
         path: './ruleset/apple.mrs',
         'path-in-bundle': 'geo/geosite/apple.mrs',
       },
-      apple_ip: {
-        ...ruleProviderCommonIpcidr,
-        url: `${ruleSetBaseUrl}geoip/apple.mrs`,
-        path: './ruleset/apple_ip.mrs',
-        'path-in-bundle': 'geo/geoip/apple.mrs',
-      },
     },
     icon: `${iconBaseUrl}Apple.svg`,
     rules: ['RULE-SET,apple,Apple'],
-    ipRules: ['RULE-SET,apple_ip,Apple'],
   },
   {
     name: 'Telegram',

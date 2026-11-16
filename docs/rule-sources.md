@@ -22,7 +22,7 @@
 
 ## 当前节流改变
 
-- 普通 Apple、微软默认直连，用户仍能在组内改选代理。Siri 排查时，`apple_cn` 只保留 SukkaW 标记的大陆专用主机；其余命中 `apple` / `apple_ip` 的流量可通过 `Apple` 组手动改选代理。`cn_ip` 仍先于 `apple_ip`，此实验不等于 Apple 服务地区实测。
+- Siri 排查对照实验暂时完全移除了 `apple_ip` provider 和路由规则。已知 AI/Siri 域名仍由精确域名规则代理；没有恢复出域名的 IP 流量继续按原有顺序判断，命中 `cn_ip` 时会直连，其他未分类 IP 落入 `漏网之鱼`（默认选择 `默认代理`）。因此，此实验用于观察移除 Apple IP 分类后的影响，不保证未知 Siri IP 不会命中大陆 IP 集合；仍需用 iPhone 实测。
 - Apple AI/News/TV 等只选专用端点，模型/共享资源下载默认直连。
 - 高/低倍率、家宽、自建和链式组保持可选；Private Relay 与共享海外媒体默认不开启代理例外。
 - 只保留路由或 DNS 实际引用的 provider；依赖扫描同时覆盖两者，防止删除只供 DNS 用的 `cn`、`douyin`、`fakeip_filter`。

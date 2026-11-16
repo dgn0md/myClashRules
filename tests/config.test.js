@@ -97,8 +97,9 @@ test('Apple PCC/Siri precede narrow Apple CN, advertising and QUIC; Apple fallba
   assert.equal(config['rule-providers'].apple_cn.behavior, 'classical');
   assert.equal(config['rule-providers'].apple_cn.format, 'text');
   assert.match(config['rule-providers'].apple_cn.url, /SukkaW\/Surge@0afc9c2.*\/apple_cn\.conf$/);
+  assert.ok(!config['rule-providers'].apple_ip);
+  assert.ok(!rules.some((rule) => rule.startsWith('RULE-SET,apple_ip,')));
   assert.ok(rules.indexOf('RULE-SET,apple_cn,直连') < rules.indexOf('RULE-SET,apple,Apple'));
-  assert.ok(rules.indexOf('RULE-SET,cn_ip,直连') < rules.indexOf('RULE-SET,apple_ip,Apple'));
   const apple = rules.indexOf('DOMAIN-SUFFIX,apple-relay.apple.com,Apple智能');
   assert.ok(apple >= 0);
   for (const ref of ['RULE-SET,apple_cn,直连', 'RULE-SET,category-ads,AdBlock']) assert.ok(apple < rules.indexOf(ref));
@@ -114,6 +115,17 @@ test('Apple PCC/Siri precede narrow Apple CN, advertising and QUIC; Apple fallba
   assert.ok(rules.includes('DOMAIN,assets.cdn-apple.com,直连'));
   assert.ok(!rules.includes('RULE-SET,cn,直连'));
 });
+test('Apple IP provider and classification rule are absent in every output mode', () => {
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      assert.ok(!config['rule-providers'].apple_ip);
+      assert.ok(!config.rules.some((rule) => rule.startsWith('RULE-SET,apple_ip,')));
+      assert.ok(config.rules.includes('RULE-SET,cn_ip,直连'));
+      assert.ok(config.rules.some((rule) => rule.startsWith('MATCH,')));
+    }
+  }
+});
 for (const host of ['api-siri-prod.apple.com', 'setup.icloud.com']) {
   test(`observed Siri host ${host} has exact priority routing and encrypted DNS in both output modes`, () => {
     const rule = `DOMAIN,${host},Siri`;
@@ -125,7 +137,7 @@ for (const host of ['api-siri-prod.apple.com', 'setup.icloud.com']) {
         assert.ok(index >= 0, 'missing Siri API exception');
         assert.equal(config.rules.filter((r) => r === rule).length, 1);
         for (const [i, other] of config.rules.entries()) {
-          if (/^RULE-SET,(apple_cn|apple|apple_ip|category-ads),|^AND,/.test(other))
+          if (/^RULE-SET,(apple_cn|apple|category-ads),|^AND,/.test(other))
             assert.ok(index < i, `Siri API must precede ${other}`);
         }
         assert.ok(!config.rules.includes(`DOMAIN-SUFFIX,${host},Siri`));
@@ -162,7 +174,7 @@ test('international iCloud content suffix shares priority routing and DNS while 
         const index = config.rules.indexOf(rule);
         assert.ok(index >= 0, `missing AI exception: ${rule}`);
         for (const [i, other] of config.rules.entries()) {
-          if (/^RULE-SET,(apple_cn|apple|apple_ip|category-ads),|^AND,/.test(other))
+          if (/^RULE-SET,(apple_cn|apple|category-ads),|^AND,/.test(other))
             assert.ok(index < i, `${policy} must precede ${other}`);
         }
         assert.deepEqual(

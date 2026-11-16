@@ -1597,14 +1597,6 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/apple.mrs
     path: ./ruleset/apple.mrs
     path-in-bundle: geo/geosite/apple.mrs
-  apple_ip:
-    type: http
-    format: mrs
-    interval: 86400
-    behavior: ipcidr
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geoip/apple.mrs
-    path: ./ruleset/apple_ip.mrs
-    path-in-bundle: geo/geoip/apple.mrs
   telegram:
     type: http
     format: mrs
@@ -1878,7 +1870,6 @@ rules:
   - RULE-SET,private_ip,直连
   - RULE-SET,google_ip,Google
   - RULE-SET,microsoft_ip,Microsoft
-  - RULE-SET,apple_ip,Apple
   - RULE-SET,telegram_ip,Telegram
   - RULE-SET,steam_ip,Steam
   - RULE-SET,tiktok_ip,TikTok
