@@ -21,7 +21,7 @@
 | 地区与策略组 | 香港、日本、美国、新加坡、台湾节点按名称归类；可生成手动、自动、负载均衡、地区、倍率、家宽和自定义组。 | 节点名称只是筛选依据，不证明实际出口国家。 |
 | 单一来源与双全量产物 | 脚本管理行为，YAML 通过构建器再生成；无第二份精简规则。 | 静态 YAML 中的扩展选项须重新生成。 |
 | 细分 Apple 路由 | 采用 `Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service` 三组。 | 共享 HTTPS 主机无法按应用路径拆分；详见[Apple 路由范围](apple-routing.md)。 |
-| DNS 与路由同组 | 可路由的精确域名、后缀及动态 domain/classical provider 的 DNS resolver 标签跟随路由目标组。 | 私网、CN、douyin 等保留集合使用专用 policy；IP-CIDR provider 不发起域名查询。 |
+| DNS 与路由出口 | DNS resolver 通常跟随精确域名、后缀或动态 domain/classical provider 的路由目标组。 | Apple 例外：`Other Apple Service` 的连接仍由该组选择，默认直连；`rule-set:apple`、`gateway.icloud.com`、`setup.icloud.com` 的 DNS policy 固定使用 `美国` 组。私网、CN、douyin 等保留集合使用专用 policy；IP-CIDR provider 不发起域名查询。 |
 | 服务 IP 细分 | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 的 IP provider 分别使用对应服务组。 | 专用 IP 规则在通用 `cn_ip` 直连兜底之前；私网 IP 仍直连。 |
 | 严格加密 DNS | 默认使用 DoH，按直连或代理策略组选出口；严格模式拒绝明文私有 DNS、系统 DNS 和不安全 TLS 配置。 | 无法安全兼容的机场 DNS 会报错，需要机场提供加密解析或 hosts/IP。 |
 | 纯 IP 域名嗅探 | 使用 HTTP Host、TLS SNI 与受支持的 QUIC 元数据补充规则匹配。 | 不解密 HTTPS，不改写目标地址；未进入 TUN 或无可见域名的流量仍按其他规则处理。 |

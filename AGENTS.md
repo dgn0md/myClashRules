@@ -11,7 +11,7 @@
 
 - 保留上游地区、倍率、家宽、节点名称清理/补旗、零宽字符处理、去重、`dialer-proxy`、私有 DNS 与 hosts 算法及其回归测试。
 - 严格加密 DNS 默认拒绝 system/DHCP、明文 UDP/TCP DNS、跳过证书校验及不受支持的私有明文解析；不能静默回退。
-- 可路由的精确域名、后缀域名和动态 domain/classical 规则集，其 DNS policy 必须与路由目标组一致。`private`、`cn`、`douyin` 等保留集合与拒绝出口可使用专用安全 policy。IP-CIDR provider 本身没有域名 DNS；其服务域名规则集应使用同一出口。
+- 可路由的精确域名、后缀域名和动态 domain/classical 规则集，其 DNS policy 通常与路由目标组一致。唯一 Apple 例外：`Other Apple Service` 的连接出口仍由该组选择（默认直连），但 `rule-set:apple`、`gateway.icloud.com` 与 `setup.icloud.com` 的 DNS policy 固定使用 `美国` 组。`private`、`cn`、`douyin` 等保留集合与拒绝出口可使用专用安全 policy。IP-CIDR provider 本身没有域名 DNS；其服务域名规则集应使用同一出口。
 - IP 规则顺序应保留 `apple_ip`、`private_ip`、服务 IP 与 `cn_ip` 直连兜底的优先级关系，避免专用服务流量先被通用 CN IP 集合接走。
 - Apple 精确规则应先于广告、Apple CN 规则与可选 QUIC 拒绝规则。禁止用整个 Apple、Cloudflare 或 `17/8` 代理替代精细端点分流。
 - 用户指定的策略组名称须原样保留：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。不要翻译或擅自改写大小写、空格或地区名。

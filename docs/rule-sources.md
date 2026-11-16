@@ -16,7 +16,7 @@
 
 | Provider 类型 | 典型用途 | 路由与 DNS |
 | --- | --- | --- |
-| domain MRS | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。 | 路由规则目标组决定该 provider 的 DNS policy 标签。 |
+| domain MRS | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。 | 通常由路由规则目标组决定 DNS policy；`apple` 的 DNS policy 固定使用 `美国` 组，连接仍路由到 `Other Apple Service`。 |
 | ipcidr MRS | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 服务 IP。 | IP 规则直接选择服务组；同服务的 domain provider 使用相同出口。IPCIDR provider 本身没有域名 DNS 查询。 |
 | domain/classical | 固定文本域名列表、精确/后缀路由和 Emby 关键词等匹配。 | 可路由的 domain 与 classical provider 按路由谓词建立 DNS policy；保留集合有专用 policy，关键词规则使用 classical inline set。 |
 
@@ -29,4 +29,4 @@
 - 专用 Apple 域名例外排在 Apple CN 与 QUIC 拒绝规则之前。
 - provider 的 IP 与域名集合来自不同数据类别；DNS 侧按域名匹配的 provider 设置策略，不把 IP 地址集合错误地当作 DNS 域名规则。
 
-更新某个 provider 时，同时核对路由引用、DNS policy 引用和规则顺序，并在测试中固定同组 DNS/出口关系。
+更新某个 provider 时，同时核对路由引用、DNS policy 引用和规则顺序，并在测试中固定 DNS/出口映射，包括 `Other Apple Service` 的美国 DNS 例外。

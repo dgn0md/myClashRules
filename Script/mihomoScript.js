@@ -1586,6 +1586,9 @@ const commonDnsRegex = new RegExp(
 // 不配置 UDP/53、system 或 skip-cert-verify；不可达时失败，不降级为明文。
 const chinaDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#默认代理', 'https://dns.google/dns-query#默认代理'];
+// Other Apple Service keeps its selected connection route (default DIRECT), while its
+// domain DNS queries use the US group to obtain region-specific Apple answers.
+const appleOtherDnsEgressGroupName = '美国';
 const defaultDNS = [...chinaDNS];
 const proxyServerDNS = [...chinaDNS];
 
@@ -2271,10 +2274,11 @@ function finalizeMyClashRules(config) {
     ) {
       config.dns['nameserver-policy'][`rule-set:${providerName}`] = 'rcode://name_error';
     } else {
+      const dnsTarget = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
       config.dns['nameserver-policy'][`rule-set:${providerName}`] =
         target === '直连'
           ? chinaDNS
-          : foreignDNS.map((dns) => dns.replace('#默认代理', `#${target}`));
+          : foreignDNS.map((dns) => dns.replace('#默认代理', `#${dnsTarget}`));
     }
   }
   if (!options.PCDN拦截) {
@@ -2317,7 +2321,8 @@ function finalizeMyClashRules(config) {
     ) {
       config.dns['nameserver-policy'][policyKey] = 'rcode://name_error';
     } else {
-      config.dns['nameserver-policy'][policyKey] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${target}`));
+      const dnsTarget = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
+      config.dns['nameserver-policy'][policyKey] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${dnsTarget}`));
     }
   }
   if (options.严格加密DNS) {

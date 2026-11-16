@@ -184,8 +184,9 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         assert.ok(config.rules.includes(`RULE-SET,${domainProvider},${target}`), `${domainProvider} must share ${ipProvider} egress`);
         const dns = config.dns['nameserver-policy'][`rule-set:${domainProvider}`];
         assert.ok(dns, `missing DNS policy for ${domainProvider}`);
+        const dnsTarget = domainProvider === 'apple' && target === otherAppleGroup ? '美国' : target;
         for (const resolver of Array.isArray(dns) ? dns : [dns])
-          assert.ok(resolver.endsWith(`#${target}`), `${ipProvider} → ${target}, ${domainProvider} DNS → ${resolver}`);
+          assert.ok(resolver.endsWith(`#${dnsTarget}`), `${ipProvider} → ${target}, ${domainProvider} DNS → ${resolver}`);
       }
       if (routes.has('cn_ip'))
         assert.deepEqual(config.dns['nameserver-policy']['rule-set:cn'], config.dns['direct-nameserver']);
@@ -194,7 +195,7 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         assert.ok(config.rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup}`) < config.rules.indexOf('RULE-SET,cn_ip,直连'));
         if (config['rule-providers'].apple) {
           assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
-          assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${otherAppleGroup}`)));
+          assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith('#美国')));
         }
       }
     }
@@ -241,7 +242,7 @@ test('shared iCloud endpoints use Other Apple Service and matching DNS in both o
         const dns = config.dns['nameserver-policy'][host];
         assert.ok(dns, `missing DNS policy for ${host}`);
         for (const resolver of Array.isArray(dns) ? dns : [dns])
-          assert.ok(resolver.endsWith(`#${otherAppleGroup}`), `DNS must use ${otherAppleGroup}: ${resolver}`);
+          assert.ok(resolver.endsWith('#美国'), `Other Apple Service DNS must use 美国: ${resolver}`);
       }
       assert.ok(!config.dns['fake-ip-filter'].includes('setup.icloud.com'));
       const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
@@ -433,8 +434,9 @@ test('Apple product endpoints share one regional group and overseas media stays 
     const policyKey = type === 'DOMAIN-SUFFIX' ? `+.${domain}` : domain;
     const policy = defaults.dns['nameserver-policy'][policyKey];
     assert.ok(policy, `missing DNS policy for ${rule}`);
+    const dnsTarget = target === otherAppleGroup ? '美国' : target;
     for (const resolver of Array.isArray(policy) ? policy : [policy])
-      assert.ok(resolver.endsWith(`#${target}`), `${rule} uses ${policyKey} → ${resolver}`);
+      assert.ok(resolver.endsWith(`#${dnsTarget}`), `${rule} uses ${policyKey} → ${resolver}`);
   }
   for (const domain of [
     'news-client-search.apple.com',
@@ -465,7 +467,7 @@ test('Apple product endpoints share one regional group and overseas media stays 
   for (const host of ['buy.itunes.apple.com', 'p12-buy.itunes.apple.com', 'play.itunes.apple.com'])
     assert.ok(media.rules.includes(`DOMAIN,${host},${appleProductGroup}`));
 });
-test('every literal domain route uses DNS from the same egress group', () => {
+test('literal domain routes use matching DNS except the Other Apple DNS egress policy', () => {
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
@@ -489,12 +491,28 @@ test('every literal domain route uses DNS from the same egress group', () => {
         ) {
           assert.equal(policy, 'rcode://name_error', `${rule} must fail closed with its group`);
         } else {
+          const dnsTarget = target === otherAppleGroup ? '美国' : target;
           for (const resolver of Array.isArray(policy) ? policy : [policy])
-            assert.ok(resolver.endsWith(`#${target}`), `${rule} uses ${policyKey} → ${resolver}`);
+            assert.ok(resolver.endsWith(`#${dnsTarget}`), `${rule} uses ${policyKey} → ${resolver}`);
         }
       }
       assert.ok(checked > 0);
     }
+  }
+});
+test('Other Apple Service traffic stays on its group while its DNS policy uses the US group', () => {
+  for (const subscription of [undefined, clean()]) {
+    const config = build({ subscription }).config;
+    assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
+    assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith('#美国')));
+    for (const host of ['gateway.icloud.com', 'setup.icloud.com']) {
+      assert.ok(config.rules.includes(`DOMAIN,${host},${otherAppleGroup}`));
+      assert.ok(config.dns['nameserver-policy'][host].every((dns) => dns.endsWith('#美国')));
+    }
+    const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
+    assert.ok(group);
+    assert.equal(group.proxies[0], '直连');
+    assert.ok(config['proxy-groups'].some((entry) => entry.name === '美国'));
   }
 });
 test('legacy Apple group switches migrate to the consolidated names and explicit new names win', () => {
@@ -617,7 +635,10 @@ test('every routed domain rule-set uses its route target as DNS egress', () => {
     if (targetGroup?.proxies.length && targetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
       assert.equal(dns, 'rcode://name_error');
     } else if (target === '直连') assert.deepEqual(dns, config.dns['direct-nameserver']);
-    else for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.ok(resolver.endsWith(`#${target}`));
+    else {
+      const dnsTarget = target === otherAppleGroup ? '美国' : target;
+      for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.ok(resolver.endsWith(`#${dnsTarget}`));
+    }
   }
   assert.ok(config.dns['nameserver-policy']['rule-set:ai'].every((dns) => dns.endsWith('#AI')));
   assert.ok(config.dns['nameserver-policy']['rule-set:google'].every((dns) => dns.endsWith('#Google')));
