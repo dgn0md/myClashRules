@@ -1,107 +1,97 @@
 # myClashRules
 
-基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) 全量版的 Mihomo 覆写项目，保留原作者的节点整理、地区/倍率/家宽分组、服务分流、私有 DNS/hosts 兼容、链式代理和 Bettbox 图形化开关；增加 Apple 智能与海外产品的精细分流，以及默认全加密的 DNS 上游。
+myClashRules 是基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) 全量脚本维护的 Mihomo 规则项目。它保留上游节点整理与服务分流能力，并把严格加密 DNS、DNS 与路由出口对齐、Apple 精细分组及纯 IP 域名嗅探整合到同一套生成逻辑。
 
-只提供两个全量使用入口：
+## 本仓库的特色
 
-| 产物                                                 | 用途                                                       |
-| ---------------------------------------------------- | ---------------------------------------------------------- |
-| [Script/mihomoScript.js](Script/mihomoScript.js)     | 对机场展开后的配置执行全量覆写，推荐使用；节点处理能力完整 |
-| [Config/mihomoConfig.yaml](Config/mihomoConfig.yaml) | 完整静态配置，填订阅后使用；也可通过同一脚本生成个人配置   |
+- **全量上游能力继续维护**：地区、倍率、家宽节点分类，节点名称清理与补旗、去重、私有 DNS 和 hosts 处理、自定义节点及链式代理均沿用上游算法。
+- **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
+- **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。
+- **Apple 细分为三个独立组**：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。范围与副作用见[Apple 分流说明](docs/apple-routing.md)。
+- **严格加密 DNS 默认开启**：直连解析使用加密 DNS，代理解析使用经对应代理组的 DoH；严格模式不接受明文私有 DNS 或不安全 TLS DNS，也不静默降级。
+- **补充纯 IP 入站的域名识别**：TUN 内的 HTTP Host、TLS SNI 与可识别 QUIC 握手可补充域名元数据；默认不改写实际目标地址，也不解密 HTTPS。
+- **完整配置与静态配置共用构建链**：静态 YAML 的扩展开关经脚本生成后才生效；传入本地订阅文件时，构建工具也能按脚本算法处理实际节点。
 
-没有精简版。适用于 Mihomo 客户端，原生验证版本为 **v1.19.34**。请关闭客户端额外的 DNS 覆写。订阅格式须为 Clash/Mihomo YAML，脚本输入需要有 `proxies` 数组。
+## 发布入口
 
-## 使用脚本
+| 文件 | 用途 |
+| --- | --- |
+| [全量覆写脚本](Script/mihomoScript.js) | 输入含 `proxies` 数组的 Clash/Mihomo 配置，动态处理节点和完整路由。 |
+| [全量静态配置](Config/mihomoConfig.yaml) | 使用 Mihomo 的 proxy provider 与 rule provider；也可由构建工具从订阅展开生成个人配置。 |
 
-将 `Script/mihomoScript.js` 导入支持 `main(config)` 的脚本覆写客户端。在顶部 `ruleOptionsEnable` 中修改 `true` / `false`，或使用 Bettbox 的图形化选项。正确拼写是 `true`；字符串 `"false"` 与 `ture` 均不是布尔值。
+没有独立精简版。`极简国内外分流模式` 是全量脚本内的选项，不是另一份发布产物。
+
+## 使用覆写脚本
+
+将下列脚本链接导入支持 `main(config)` 的 Mihomo 脚本覆写客户端：
 
 ```text
 https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
 ```
 
-自定义节点填 `customizeProxies`；开启 `链式代理` 后，自定义节点成为落地，“链式中转”只含订阅节点。脚本保留上游 hosts 回环判断、节点 DNS 策略提取、零宽名称识别、去重和 `dialer-proxy` 引用修复。
+在脚本顶部的 `ruleOptionsEnable` 中设置布尔选项。需要 Bettbox 图形界面的客户端可读取脚本提供的策略组开关元数据。自定义节点写入 `customizeProxies`；开启 `链式代理` 后，自定义节点作为落地节点，经 `链式中转` 组连接。
 
-## 使用配置
+## 使用静态配置
 
-```text
-https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
-```
+下载[全量 YAML](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml)，将 `proxy-providers.订阅.url` 改为自己的订阅链接，再导入 Mihomo 客户端。
 
-1. 下载 YAML，修改底部 `proxy-providers.订阅.url` 为自己的订阅链接，然后导入客户端。
-2. 默认所有常用服务组均开启；Apple/微软常规服务默认直连，Apple 智能、Siri、News、TV 等专用接口默认美国。可直接在客户端选择组出口。
-3. 如需开关功能，修改顶部 `x-myClashRules.options` 的 `true/false`，运行以下生成命令，然后导入生成结果。
+静态 YAML 中的 `x-myClashRules.options` 是构建输入，Mihomo 内核不会执行这些扩展字段。更改选项后需重新生成。只需使用静态规则时，可在仓库根目录运行：
 
 ```sh
 npm ci
 node tools/build.js --settings Config/mihomoConfig.yaml --output .local/myConfig.yaml
 ```
 
-**Mihomo 不会执行 `x-myClashRules` 开关。** 只编辑这些扩展字段而不重新生成，不会改变规则。静态配置不能从远程 provider 读取机场顶层的私有 DNS/hosts，无法自动重命名 provider 内节点，也不能动态隐藏空地区；无节点地区回退 `REJECT`。节点更新与地区/倍率过滤仍由内核的 provider 与正则实时完成。
-
-要让 YAML 也完整执行脚本的节点/私有 DNS/hosts 算法，请先将机场配置保存到 `.local/subscription.yaml`，再生成：
+如需让生成配置按脚本处理实际节点、节点 DNS 与 hosts，先将订阅保存到已忽略的 `.local/subscription.yaml`，再运行：
 
 ```sh
 node tools/build.js --settings Config/mihomoConfig.yaml --subscription .local/subscription.yaml --output .local/myConfig.yaml
 ```
 
-此模式嵌入实际节点，需要更新订阅时重新生成。订阅和生成的个人配置可能包含密码，请放在已经忽略的 `.local/`，勿提交到仓库。
+展开模式会把节点写入生成文件。订阅更新后须重新生成；个人订阅和生成文件可能带有密码，不要提交到仓库。
 
-## Apple 精细分流
+## Apple 服务分组
 
-| 开关/组                                       | 默认  | 覆盖范围与取舍                                                                                              |
-| --------------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------- |
-| `Apple智能` | true | PCC、Extensions、国际 gateway 与全部 `icloud-content.com` 内容；中国站 `.com.cn` 保留原规则 |
-| `Siri`                                        | true  | Siri/听写和 `smoot` 搜索接口；搜索接口也被 Spotlight、Safari、News 等共享                                   |
-| `AppleNews`                                   | true  | News/News+ 专用 API、内容及 `apple.news`，不会代理全部新闻网站                                              |
-| `AppleTV`                                     | true  | TV/TV+ 专用接口与每日更新规则；部分 iTunes 播放接口是共享端点                                               |
-| `AppleFitness` / `AppleSports` / `AppleBooks` | true  | 各自专用域名；共享购买、视频资源由相应媒体组处理                                                            |
-| `Apple地区检测`                               | true  | `gspe1-ssl.ls.apple.com`，News 常用的地区判断接口；同时可能改变地图数据源及 eSIM/Watch 地区判断，可独立关闭 |
-| `AppleRelay`                                  | false | iCloud Private Relay 三个官方入口；开启可能把 Safari 大量浏览流量送往代理，与节流目标存在取舍               |
-| `Apple海外媒体`                               | false | 共享 iTunes 购买/媒体接口；需要海外 Books/Arcade 等授权时按需开启，会影响正常商店或 Music 流量              |
-| `Apple模型下载直连`                           | true  | 系统/模型共用资源 CDN 直连，避免大下载占用代理                                                              |
-| `Apple服务默认直连`                           | true  | 商店、更新、iCloud、Music 等普通 Apple 服务；专用例外优先                                                   |
+| 策略组 | 默认行为 | 范围 |
+| --- | --- | --- |
+| `Siri Ai/Apple Intelligence` | 使用 `美国` 选择器；缺少美区候选时拒绝连接。 | Apple Intelligence、Siri、PCC 及部分共享 iCloud/Relay 端点。 |
+| `Apple Product地区` | 初始选择美国，可在客户端切换，包括直连。 | News、TV、Fitness、Sports、Books、地区检测，以及 `apple_ip`。 |
+| `Other Apple Service` | 默认直连。 | 广泛 Apple 域名规则。 |
+| `Apple海外媒体` | 默认关闭。 | 可选共享购买和媒体接口。 |
+| `Apple模型下载直连` | 默认开启。 | 系统与模型共用资源按直连规则处理。 |
 
-这些是网络出口策略。账号/商店地区、硬件、系统语言、订阅、SIM 和服务端资格仍影响产品可用性。共享域名无法区分 HTTPS 路径内的不同产品；本项目不把所有 `apple.com`、`icloud.com` 或 `17.0.0.0/8` 强制代理。Fitness/Sports/Books 的专用入口分流不等于覆盖所有共享后端，实际缺失端点需根据连接日志补充。[Apple 端点与限制](docs/apple-routing.md) 给出来源及判断依据。
+共享域名可能同时服务多个 Apple 产品。国际 iCloud 内容规则按域名后缀匹配，可能覆盖照片、文件等普通流量；它表示路由范围，不证明服务器 IP 的地理位置，也不单独决定账号或设备资格。
 
-`Apple智能` 精确覆盖 `gateway.icloud.com`，并按用户选择通过 `DOMAIN-SUFFIX,icloud-content.com,Apple智能` 覆盖国际内容域本身及全部子域，包括 `ussjc1.icloud-content.com`、`edge-013.hkhkg2.icloud-content.com`、`cvws.icloud-content.com` 和未来的新命名结构。DNS 同步使用 `+.icloud-content.com` 经该组的 DoH，不再维护 edge 编号/地区正则或内联规则集。
+## DNS 与路由边界
 
-中国站 `icloud-content.com.cn`、`gateway.icloud.com.cn` 不命中这些例外，继续原有 Apple/国内规则。此处的“非 CN”按国际站域名后缀判断，不保证解析出的 IP 实际位于境外。国际 iCloud 照片、文件、备份等内容也可能走代理并增加流量；这不是 Siri 专属识别，也不代表已确认 Siri 故障原因或恢复可用。更新后重新连接 VPN，让 `Apple智能` 与 `Siri` 选择同一可用出口，再检查新连接记录。
+默认严格加密 DNS 使用固定 IP 的 AliDNS 与 DNSPod DoH 作为启动、节点和直连解析器；一般代理解析使用 Cloudflare 与 Google DoH，并将请求交给相应策略组。严格模式拒绝系统/明文上游、跳过证书校验和静默回退。需要机场私有 DNS 的订阅必须提供受支持的 DoH/DoT 或明确的 hosts/IP 映射。
 
-## DNS 设计与适用边界
+默认启用 TUN、53 端口接管和纯 IP 域名嗅探；局域网代理监听默认关闭。嗅探仅补充路由可用的域名，不改写目标 IP，不覆盖未进入 TUN 的设备或链路。
 
-默认 `严格加密DNS: true`：国内/节点/启动 DNS 使用固定 IP 的 AliDNS 与 DNSPod DoH，境外 DNS 经代理使用 DoH；没有明文 `fallback`，不使用系统 DNS 或跳过证书验证。DoH 不可用时失败，不降级到 UDP/53。Apple 专用域名使用对应组的境外 DNS，避免落入国内 DNS 策略。
+IP 路由按专用服务集合处理：`apple_ip` 使用 `Apple Product地区`，私网地址直连，各服务 IP 使用对应服务组，`cn_ip` 最后承担剩余流量直连兜底。`cn_ip` 不是按域名地区划分的完整白名单。Apple 组也不会扩大成整个 Apple、Cloudflare 或整个 `17/8` 网段代理。
 
-TUN 的 `dns-hijack` 覆盖 TCP/UDP 53，`strict-route` 配合系统接管，额外 DNS 出站接管已经进入内核的 53 端口流量。内置 DNS 只监听 `127.0.0.1:1053`，默认不向局域网开放代理端口。大陆运营商无法直接读取这些上游加密 DNS 的查询内容，仍能观察连接 IP、时序等网络元数据，公共 DNS 提供者本身也能看到查询。
+这些规则控制网络出口，不提供 Apple 服务解锁保证。账号地区、硬件、系统版本、服务端资格和客户端的流量接管范围仍会影响实际结果。
 
-- **明文私有机场 DNS**：严格模式报错。请向机场取得 DoH/DoT、节点 hosts 映射或 IP；不会把只能由机场 DNS 解析的域名改送公共 DNS。`严格加密DNS: false` 可恢复兼容行为，但此时不再满足无明文上游的要求。
-- **局域网名称**：严格模式不询问路由器/系统明文 DNS，LAN 私有域名默认空响应；请在生成结果 `hosts` 中显式配置，或部署自己的加密 LAN DNS。
-- **系统覆盖**：须开启 TUN 并赋予客户端需要的权限。仅 HTTP/SOCKS 系统代理、未纳入网关的设备、其他 VPN、旁路接口和客户端额外覆写不能由此配置单独约束。Windows 需确认严格路由或关闭智能多宿主解析。
-- **验证**：本项目有真实内核加载与结构验证；未在你的大陆运营商、真实机场和 Apple 设备上抓包，不把配置检查表述为环境实测。部署后按 [验收步骤](docs/validation.md) 检查 IPv4/IPv6 的 53 端口与 DNS 出口。
+## 开发与维护
 
-## 规则与流量
-
-默认开启 `域名嗅探`，从 HTTP Host、TLS SNI 和可识别的 QUIC 握手补充缺失的域名，使纯 IP 入站也有机会命中 GitHub、Siri 等域名规则。保留实际目标 IP（`override-destination: false`），不解密 HTTPS 正文，不替代 DNS 接管。无法识别的协议、没有可见域名的握手仍按 IP/兜底规则处理；可关闭该选项排查兼容问题。静态 YAML 修改开关后须重新生成。[Mihomo 嗅探说明](https://wiki.metacubex.one/config/sniff/)
-
-继续采用原作者的 [Bett Rules](https://github.com/appshubcc/bett-rules) MRS 动态规则，按需加载、每 86400 秒更新；包含优化 CN IP、国内服务例外和 Apple TV 细分。`cn` 域名库参与国内 DNS，不直接将全部 `cn-domain` 强制直连，保留原作者的 CN IP 兜底算法。
-
-Siri 排查期间，`apple_cn` 改用固定版本的 [SukkaW 大陆专用 Apple 域名表](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)（9 条，classical 文本），替代较宽的 `apple@cn`。这会让 `bag.itunes.apple.com`、`fpinit.itunes.apple.com`、`gspe35-ssl.ls.apple.com`、`smp-device-content.apple.com` 落入普通 `Apple` 组；不表示这些域名的服务器一定在境外。需要测试时，在客户端将 `Apple` 组选到全局模式成功的同一个节点并保持规则模式；大陆 IP 仍先由 `cn_ip` 直连，专用 Siri/Apple 智能规则仍优先。测试结束可把 `Apple` 组切回直连。此变更只提供可复现的分流实验，不代表已验证 Siri 恢复。
-
-对照 [规则源评估](docs/rule-sources.md) 后，暂未用更大的聚合直连库覆盖现有规则。节流依靠国内服务/CDN 例外、普通 Apple/微软默认直连、模型资源直连、可选低倍率组与 PCDN 拦截。海外未知流量继续代理兜底，避免为了减少代理而让必需代理的流量误直连。没有用测试样本以外的数据宣称某规则源“绝对更精准”或给出节省比例。
-
-## 开发与检查
+需要 Node.js 24 或更高版本。
 
 ```sh
 npm ci
 npm run build
 npm test
 npm run check
-# 可选：联网下载公开规则（MRS 与 Apple CN 文本规则），并使用已安装的官方 Mihomo
+```
+
+原生 Mihomo 检查可使用已安装的官方内核和当前公开规则文件：
+
+```sh
 node tools/download-rules.js .local/rules
 node tools/native-check.js /path/to/mihomo .local/rules
 ```
 
-测试包括上游节点/DNS 兼容模式回归、ES2026 解析、QuickJS 实际执行，以及严格默认、所有布尔开关、Apple 优先级、依赖引用、链式循环和生成一致性。原生检查覆盖各开关配置及实际规则文件加载；不会开启系统 TUN。
+更多说明：[功能目录](docs/feature-matrix.md)、[Apple 路由范围](docs/apple-routing.md)、[动态规则来源](docs/rule-sources.md)、[上游回归测试](Test/README.md)。
 
 ## 来源与许可
 
-上游基线：[AIsouler/MyClash@4861619](https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1)。保留 [原作者 AGENT.md](docs/upstream/AGENT.md) 与 [MIT 许可](docs/upstream/LICENSE)，图标 URL 沿用其原始 SVG，未改动图形。功能对照与主动变更见 [功能矩阵](docs/feature-matrix.md)。本项目使用 [MIT License](LICENSE)。感谢原作者与其全部上游规则、图标和内核项目。
+本项目基于 [AIsouler/MyClash@4861619](https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1)，保留上游 MIT 许可与作者署名。图标继续使用上游 SVG URL，不修改图形。项目许可见 [LICENSE](LICENSE)。

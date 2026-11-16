@@ -1,30 +1,32 @@
-# 动态规则源评估
+# 动态规则来源与路由方式
 
-本节记录各上游公开的数据格式及其在本项目中的用途。
+本页说明规则数据由哪里来、如何参与路由和 DNS。活动配置仍以 `Script/mihomoScript.js` 为准，静态 YAML 通过 `npm run build` 生成。
 
-| 候选                                                                            | 原始证据                                                                                                                                                                                 | 与需求的关系                                                                                                   | 选择                                        |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| [Bett Rules](https://github.com/appshubcc/bett-rules)                           | [README](https://github.com/appshubcc/bett-rules/blob/master/README.md)：每日同步，CN DNS 校验、海外库去除国内子域、服务 IP 去除大陆地址、MRS 细分                                       | 与 MyClash 原算法、`path-in-bundle`、全量服务分类匹配；CN 域名做 DNS、优化 CN IP 做路由兜底                    | 默认延续；补充独立 Apple 端点和 TV 动态子集 |
-| [MetaCubeX/meta-rules-dat](https://github.com/MetaCubeX/meta-rules-dat)         | [README](https://github.com/MetaCubeX/meta-rules-dat/blob/master/README.md)：MRS、多种 geodata，CN 源为 ChinaMax_Domain                                                                  | 维护活跃且适合 Mihomo；广义 CN 库不直接等价于安全直连清单，不能证明替换后更省流量                              | 作为对照；不盲目替换全部 provider           |
-| [Loyalsoldier/clash-rules](https://github.com/Loyalsoldier/clash-rules)         | [README](https://github.com/Loyalsoldier/clash-rules/blob/master/README.md)：每日构建 direct/proxy/reject 等集合、公开数据来源                                                           | 集合清晰；整体 direct 库替换无法保留全部细分与 DNS/IP 协同设计                                                 | 不整体覆盖                                  |
-| [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) | [AppleNews](https://github.com/blackmatrix7/ios_rule_script/tree/master/rule/Clash/AppleNews)、[AppleTV](https://github.com/blackmatrix7/ios_rule_script/tree/master/rule/Clash/AppleTV) | 覆盖小产品端点及其规则边界；部分规则含进程或共享地区接口，需要区分 DNS domain、路由 classical 与客户端条件 | 作为端点证据，不直接叠加全部分类            |
-| [SukkaW/Surge](https://github.com/SukkaW/Surge) | [Apple China Special Domains 固定版本](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)：大陆专用主机规则 | 用于缩窄 Apple CN 直连范围；不会根据实时解析 IP 判断服务器地区 | 作为 `apple_cn` 上游；固定版本 |
-## 实际采用的路由算法
+## 上游来源
 
-1. 53 端口已入内核的流量转内置 DNS。
-2. Apple 专用域名/TV 动态规则先行，防止被 Apple 国内库或 QUIC 屏蔽覆盖。
-3. 广告规则与上游的国内服务、游戏/下载 CDN 例外。
-4. 启用的 AI、YouTube、Telegram、Apple 等服务域名规则。
-5. 海外域名默认代理；Apple IP 先进入产品地区组，私网 IP 保持直连，其余服务 IP 按对应服务组分流，优化 CN IP 在后作为剩余流量的直连兜底。
+| 来源 | 本项目用途 | 更新与限制 |
+| --- | --- | --- |
+| [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；源内容变化会改变成员。 |
+| [SukkaW Surge](https://github.com/SukkaW/Surge) | [`apple_cn` 固定版本规则](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)：大陆专用 Apple classical 文本规则。 | 固定提交使规则内容可复现；它只表达规则列表，不判断解析 IP 的地理位置。 |
+| [Apple 企业网络清单](https://support.apple.com/en-us/101555) | 约束 PCC、Apple Intelligence、Siri、Relay 与资源端点的精确范围。 | 精确例外由脚本维护，不将整个 Apple 或 CDN 加入代理。 |
+| [AppleFlow](https://github.com/Kianuni/AppleFlow) | [PCC 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Apple-PCC.yaml)、[Siri 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Siri-Direct.yaml)。 | 按固定版本整理端点；不复制整份第三方 AI 主机列表作为第二套活动规则。 |
+| [Domain List Community](https://github.com/v2fly/domain-list-community) 与产品规则源 | Apple 产品分类和其他服务的分类参考。 | 服务专用域名不等于产品所有共享后端。 |
 
-所有精确域名和后缀路由都会生成相同出口的 `nameserver-policy`；动态 domain/classical 规则集也按路由目标组绑定 DNS。Emby 关键词规则使用 classical inline rule-set，让路由与 DNS 共用同一匹配。
+## Provider 类别
 
-`cn` 库用于 DNS 策略与 Fake-IP 过滤，**不是 `RULE-SET,cn,直连` 的全量白名单**。原作者关于“CN DNS + CN IP 兜底”的设计被保留。没有把未知流量改成默认直连来人为压低代理计数。
+| Provider 类型 | 典型用途 | 路由与 DNS |
+| --- | --- | --- |
+| domain MRS | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。 | 路由规则目标组决定该 provider 的 DNS policy 标签。 |
+| ipcidr MRS | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 服务 IP。 | IP 规则直接选择服务组；同服务的 domain provider 使用相同出口。IPCIDR provider 本身没有域名 DNS 查询。 |
+| domain/classical | 固定文本域名列表、精确/后缀路由和 Emby 关键词等匹配。 | 可路由的 domain 与 classical provider 按路由谓词建立 DNS policy；保留集合有专用 policy，关键词规则使用 classical inline set。 |
 
-## 当前节流改变
+## 依赖与优先级
 
-- Apple 专用组收敛为 `Siri Ai/Apple Intelligence`、`Apple Product地区` 与 `Other Apple Service`。Apple AI/Siri 保留精确域名规则；Apple 产品域名与 `apple_ip` 共用地区组，默认选美国并可手动选直连，且 `apple_ip` 排在 `cn_ip → 直连` 前面。普通 Apple 域名规则仍在 `Other Apple Service`，默认直连；模型/系统资源下载继续由独立直连规则控制。
-- Apple AI/News/TV 等只选专用端点，模型/共享资源下载默认直连。
-- 高/低倍率、家宽、自建和链式组保持可选；Private Relay 与共享海外媒体默认不开启代理例外。
-- 只保留路由或 DNS 实际引用的 provider；依赖扫描同时覆盖两者，防止删除只供 DNS 用的 `cn`、`douyin`、`fakeip_filter`。
-- 动态资源每天刷新，缓存路径不混淆 domain / ipcidr；下载失败保持内核正常的缓存/失败行为，不切换到明文 DNS。
+- 只保留被路由规则或 DNS policy 实际引用的 provider，避免删除仅供 DNS 使用的集合。
+- `cn` 域名集合用于国内 DNS 策略与 Fake-IP 过滤；`cn_ip` 是末端直连兜底。二者用途不同。
+- Apple 产品 IP 使用 `apple_ip` 并路由到 `Apple Product地区`。该规则排在 `cn_ip` 前面。
+- 私网 IP 直连规则和服务 IP 规则位于通用 CN IP 兜底之前。
+- 专用 Apple 域名例外排在 Apple CN 与 QUIC 拒绝规则之前。
+- provider 的 IP 与域名集合来自不同数据类别；DNS 侧按域名匹配的 provider 设置策略，不把 IP 地址集合错误地当作 DNS 域名规则。
+
+更新某个 provider 时，同时核对路由引用、DNS policy 引用和规则顺序，并在测试中固定同组 DNS/出口关系。

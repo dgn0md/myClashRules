@@ -1,28 +1,45 @@
-# Apple 分流范围与边界
+# Apple 路由范围与边界
 
-Apple 域名分流依据公开的 Apple 企业网络资料、AppleFlow 清单及产品规则来源。规则在加密连接外层匹配，不解密 HTTPS。优先级由 `Script/mihomoScript.js` 中的规则定义决定。
+Apple 规则按明确的产品入口和共享服务端点分组。它们只选择网络路由和 DNS 出口，不解密 HTTPS，也不改变 Apple 账号、设备或内容授权状态。精确规则由 `Script/mihomoScript.js` 生成。
 
-| 功能 | 规则来源 | 分流范围与限制 |
+## 策略组
+
+| 策略组 | 路由范围 | 默认选择 |
 | --- | --- | --- |
-| PCC / Intelligence Extensions | [Apple 企业网络清单](https://support.apple.com/en-us/101555#aisirisearch)、[AppleFlow PCC 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Apple-PCC.yaml) | 精确端点与指定后缀归入 Siri AI 组；不将整个 CDN 纳入代理。UDP 443 屏蔽规则排在这些例外之后。 |
-| Siri / 搜索 | [Apple 企业网络清单](https://support.apple.com/en-us/101555)、[AppleFlow Siri 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Siri-Direct.yaml) | Siri、听写、Spotlight 搜索相关端点共用 `Siri Ai/Apple Intelligence` 出口；共享端点可能服务其他 Apple 功能，不能只凭域名区分应用用途。 |
-| News 与地区服务 | [AppleNews 规则](https://github.com/blackmatrix7/ios_rule_script/tree/master/rule/Clash/AppleNews)、[DLC Intelligence 分类](https://github.com/v2fly/domain-list-community/blob/master/data/apple-intelligence) | News 专用接口与地区服务归入 `Apple Product地区`，与其他 Apple 产品共用选择器。地区服务也可能影响地图、eSIM、Watch 与运营商相关功能。 |
-| TV / TV+ | [DLC TV+ 分类](https://github.com/v2fly/domain-list-community/blob/master/data/apple-tvplus)、[Bett Rules](https://github.com/appshubcc/bett-rules) | 采用有限的显式规则和动态 TV+ 规则集；部分播放接口与其他媒体服务共享。 |
-| Fitness+ / Sports / Books | [Apple 媒体服务地区表](https://support.apple.com/en-us/118205) | 专用产品规则归入 `Apple Product地区`；共享 API、授权与视频接口不一定能按产品单独区分。 |
-| Private Relay | [Apple 企业网络清单](https://support.apple.com/en-us/101555)、[Private Relay 机制](https://support.apple.com/en-us/102602) | 与 PCC 规则重叠的 Relay 端点使用 Siri AI 组，可能影响 Safari 中继流量；不扩展到整个 iCloud 或 CDN。 |
-| Arcade、购买与共享媒体 | [Apple 媒体服务地区表](https://support.apple.com/en-us/118205)、[DLC iTunes 分类](https://github.com/v2fly/domain-list-community/blob/master/data/itunes) | `Apple海外媒体` 提供可关闭的共享接口出口；不将整个 App Store 或 Music 一并强制代理。 |
-| 软件与系统资源 | [Apple 企业网络清单](https://support.apple.com/en-us/101555) | 共享下载与更新资源使用直连规则；这些资源不只服务 AI 模型。 |
+| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC，以及与这些功能共用的部分 iCloud 和 Private Relay 端点。 | 固定使用 `美国` 选择器；没有符合筛选条件的美国候选时拒绝连接。 |
+| `Apple Product地区` | News、TV/TV+、Fitness、Sports、Books、地区检测、Apple IP 集合。 | 初始美国，可在客户端切换到其他可用候选或直连。 |
+| `Other Apple Service` | Apple 动态域名集合与其他常规 Apple 规则。 | 默认直连。 |
+| `Apple海外媒体` | 少量共享购买和媒体接口。 | 选项默认关闭。 |
+| `Apple模型下载直连` | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
 
-Apple 产品是否在某地区提供，由账号地区、设备资格、内容授权、SIM、系统语言等因素共同决定，单独调整网络出口不能改变这些条件。
+`AI` 组也锁定到美国选择器；Apple AI 组与通用 AI 组没有美国节点候选时不会回退到默认代理或直连。
 
-`Siri Ai/Apple Intelligence` 固定使用 `美国` 选择器；没有美区候选时拒绝连接。`Apple Product地区` 默认美国，并可切换地区或直连；`apple_ip` 与该组共用出口。`Other Apple Service` 承接广泛 Apple 域名规则并默认直连。私网 IP 先直连，服务 IP 规则先于通用 CN IP 直连规则。
+## 规则顺序与 DNS
 
-节点名称只用于生成候选地区组，不能证明出口地理位置。`profile.store-selected: true` 保存运行时选择；策略组顺序只决定初始选择建议。DNS 上游与目标连接都依据运行时的策略组选择。
+1. DNS 53 接管规则先处理进入 TUN 的 DNS 流量。
+2. Apple 精确域名和产品例外先于广告、Apple CN 规则及可选 QUIC 拒绝。
+3. 服务域名规则按启用状态进入对应服务组。
+4. `apple_ip` 进入 `Apple Product地区`；`private_ip` 直连；其他服务 IP 集合按对应服务组分流。
+5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
-第三方 AI 使用动态 `category-ai-!cn` provider 与 `AI` 组及其 DNS policy；不复制 AppleFlow 第三方域名作为第二套活动规则。AppleFlow Siri 清单中由路由规则覆盖的主机使用 Siri AI 组，不采用中文 Siri 直连规则。
+每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。动态 domain/classical provider 的 policy 也与路由目标组使用同一出口。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
 
-部分 Apple 端点不支持普通 HTTP 网页代理。TUN 转发与 HTTPS MITM 是不同机制，本项目不实施 MITM。iOS/macOS 客户端负责授予 Network Extension 权限并决定实际流量覆盖范围。
+`cn` 域名集合参与 DNS 与 Fake-IP 过滤，不能用它替代一份完整的直连白名单。也不会把整个 Apple、Cloudflare 或 `17/8` 地址段强制代理。
 
-QUIC 屏蔽默认关闭。启用后，Apple 专用规则先于 UDP/443 拒绝规则。UDP 能力取决于节点的 `udp` 设置及客户端和服务端的转发能力。`DST-PORT,53` 只接管 TUN 内的 UDP/TCP DNS，不会封锁应用自带的 DoH/DoT。
+## 共享端点与选择边界
 
-国际 iCloud 内容使用有限后缀匹配，DNS policy 与域名出口组一致；中国地区专用命名空间不纳入该匹配。域名后缀表示规则匹配范围，不代表服务器的 IP 地理位置。
+- 国际 iCloud 内容规则按 `icloud-content.com` 后缀匹配；中国地区专用命名空间不匹配该规则。后缀只表示路由范围，不表示服务器实际所在地区。
+- 共享 iCloud/Relay/Apple 媒体端点可能被多个产品使用。网络层只看到域名、IP 与协议元数据，不能根据 HTTPS 路径保证区分每个应用。
+- 国际照片、文件或备份流量可能与 Siri 共用路由组，造成额外代理流量。
+- 产品可用性还受账号地区、设备资格、系统版本、SIM 和服务端策略影响。地区组按节点名称筛选候选，不证明公网出口所在地。
+- 部分 Apple 服务需要客户端的 TUN/Network Extension 能力；普通系统代理不一定覆盖所有流量。
+- QUIC 阻断默认关闭。启用后 Apple 精确规则先于 UDP/443 拒绝规则；规则顺序不能保证代理节点支持 UDP。
+
+## 规则来源
+
+- Apple 企业网络清单：Apple 服务端点与网络要求。
+- AppleFlow：PCC、Apple Intelligence 与 Siri 相关公开规则清单。
+- Domain List Community、Bett Rules 与 Apple 产品服务规则：产品分类和动态域名集合。
+- SukkaW Surge 固定版本：大陆专用 Apple 域名 provider。
+
+这些来源用来界定规则范围；规则并不代表完整的 Apple 后端清单。
