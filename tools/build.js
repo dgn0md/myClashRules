@@ -111,7 +111,7 @@ function template(api, settings) {
       'exclude-type': 'DIRECT|REJECT|REMATCH',
       'health-check': {
         enable: true,
-        url: 'https://www.apple.com/library/test/success.html',
+        url: 'http://cp.cloudflare.com/generate_204',
         interval: 600,
         lazy: true,
       },
