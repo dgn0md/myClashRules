@@ -111,7 +111,7 @@ function template(api, settings) {
       'exclude-type': 'DIRECT|REJECT|REMATCH',
       'health-check': {
         enable: true,
-        url: 'http://cp.cloudflare.com/generate_204',
+        url: 'https://cp.cloudflare.com/generate_204',
         interval: 600,
         lazy: true,
       },

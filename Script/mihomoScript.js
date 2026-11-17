@@ -413,7 +413,7 @@ const baseRuleProviders = {
 // 策略组公共配置
 const groupBaseOption = {
   timeout: 5000,
-  url: 'http://cp.cloudflare.com/generate_204',
+  url: 'https://cp.cloudflare.com/generate_204',
   'max-failed-times': 3,
   'empty-fallback': 'REJECT',
 };
