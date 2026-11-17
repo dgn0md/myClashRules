@@ -1,4 +1,4 @@
-# myClashRules 全量配置；派生自 AIsouler/MyClash（MIT），生成器：tools/build.js。
+# myClashRules 全量配置，由本项目脚本生成；初始代码来自 AIsouler/MyClash（MIT），署名见 LICENSE。
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。只改 true/false 后运行：
 # node tools/build.js --settings Config/mihomoConfig.yaml --output .local/myConfig.yaml
@@ -46,7 +46,7 @@ x-myClashRules:
     域名嗅探: true # 从 HTTP/TLS/QUIC 补充缺失域名，避免纯 IP 入站误走服务 IP 规则
     IPv6: true # DNS AAAA 与全局 IPv6 同步；关闭后不返回 AAAA
     局域网访问: false # 是否将 mixed-port 暴露给局域网
-    PCDN拦截: true # 保留上游 bilibili PCDN hosts 黑洞
+    PCDN拦截: true # 将 Bilibili PCDN hosts 加入黑洞规则
     极简国内外分流模式: false # 是否启用极简国内外分流模式
     生成地区自动选择组: true # 是否生成地区自动选择策略组
     隐藏地区手动选择组: false # 是否隐藏地区手动选择策略组

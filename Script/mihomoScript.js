@@ -1,8 +1,8 @@
 /**
- * mihomo配置覆写脚本（全量版）
- * 作者：AIsouler
- * 源仓库：https://github.com/AIsouler/MyClash
- * 派生项目：dgn0md/myClashRules（保留上游 MIT 许可与作者署名）
+ * myClashRules Mihomo 配置覆写脚本（全量版）
+ * 项目维护：dgn0md/myClashRules（独立维护）
+ * 初始代码来源：https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1
+ * 原始作者：AIsouler；MIT 许可与版权署名见仓库 LICENSE。
  * 脚本链接：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * 友情推荐，非常好用、省电且内存占用低的代理软件：https://github.com/appshubcc/Bettbox
  */
@@ -64,7 +64,7 @@ const ruleOptionsEnable = {
   域名嗅探: true, // 从 HTTP/TLS/QUIC 补充缺失域名，避免纯 IP 入站误走服务 IP 规则
   IPv6: true, // DNS AAAA 与全局 IPv6 同步；关闭后不返回 AAAA
   局域网访问: false, // 是否将 mixed-port 暴露给局域网
-  PCDN拦截: true, // 保留上游 bilibili PCDN hosts 黑洞
+  PCDN拦截: true, // 将 Bilibili PCDN hosts 加入黑洞规则
 
   // 以下为非分流策略配置
   极简国内外分流模式: false, // 是否启用极简国内外分流模式
@@ -1854,8 +1854,8 @@ function main(config) {
 }
 
 /**
- * 派生层：保留上游节点算法，只在最终输出统一处理 DNS、Apple 例外、流量偏好。
- * 静态 YAML 由 tools/build.js 调用同一个 main() 生成，防止两份规则漂移。
+ * 配置收尾处理：统一补齐项目 DNS、Apple 例外与流量偏好配置。
+ * 静态 YAML 由 tools/build.js 调用同一个 main() 生成，确保规则来源一致。
  */
 function finalizeMyClashRules(config) {
   for (const [key, value] of Object.entries(ruleOptionsEnable)) {

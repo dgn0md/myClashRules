@@ -133,7 +133,7 @@ function render(config, api, settings) {
     if (m) descriptions[m[1] || m[2] || m[3]] = m[4];
   }
   const header = [
-    '# myClashRules 全量配置；派生自 AIsouler/MyClash（MIT），生成器：tools/build.js。',
+    '# myClashRules 全量配置，由本项目脚本生成；初始代码来自 AIsouler/MyClash（MIT），署名见 LICENSE。',
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
     '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。只改 true/false 后运行：',
     '# node tools/build.js --settings Config/mihomoConfig.yaml --output .local/myConfig.yaml',

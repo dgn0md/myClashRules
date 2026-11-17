@@ -48,7 +48,7 @@ async function main() {
       console.log(`${'='.repeat(64)}`);
 
       const api = loadScript(script.file);
-      // 节点兼容回归验证原有算法；严格默认与 Apple 新行为由 tests/ 独立覆盖。
+      // 节点兼容回归验证节点识别与整理行为；严格默认与 Apple 新行为由 tests/ 独立覆盖。
       api.ruleOptionsEnable.严格加密DNS = false;
       api.ruleOptionsEnable['Siri Ai/Apple Intelligence'] = false;
       api.ruleOptionsEnable['Apple Product地区'] = false;
