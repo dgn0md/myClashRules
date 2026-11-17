@@ -43,11 +43,11 @@ jobs:
           grep -qF 'function main(config)' "$expected"
           expected_sha="$(sha256sum "$expected" | cut -d ' ' -f 1)"
 
-          max_attempts=12
+          max_attempts=21
           for attempt in $(seq 1 "$max_attempts"); do
             : > "$response"
             if curl --fail --silent --show-error --location \
-              --connect-timeout 10 --max-time 30 \
+              --connect-timeout 5 --max-time 10 \
               --header 'Cache-Control: no-cache' \
               "$cdn_url" --output "$response"; then
               if test -s "$response" && cmp -s "$expected" "$response"; then
