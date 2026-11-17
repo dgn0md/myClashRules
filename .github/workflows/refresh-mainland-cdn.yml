@@ -44,31 +44,39 @@ jobs:
           grep -qF 'function main(config)' "$expected"
           expected_sha="$(sha256sum "$expected" | cut -d ' ' -f 1)"
 
-          max_attempts=21
-          for attempt in $(seq 1 "$max_attempts"); do
-            : > "$response"
-            if curl --fail --silent --show-error --location \
-              --connect-timeout 5 --max-time 10 \
-              --header 'Cache-Control: no-cache' \
-              "$cdn_url" --output "$response"; then
-              if test -s "$response" && cmp -s "$expected" "$response"; then
-                echo "CDN content matches source commit ${GITHUB_SHA} (sha256: ${expected_sha}) on attempt ${attempt}/${max_attempts}."
-                exit 0
-              fi
+          curl --fail --silent --show-error --location \
+            --connect-timeout 10 --max-time 30 \
+            --header 'Cache-Control: no-cache' \
+            "$cdn_url" --output "$response"
+          test -s "$response"
+          if cmp -s "$expected" "$response"; then
+            echo "CDN content matches source commit ${GITHUB_SHA} (sha256: ${expected_sha})."
+            exit 0
+          fi
 
-              actual_sha='empty response'
-              if test -s "$response"; then
-                actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
-              fi
-              echo "::warning::CDN content does not match the source yet (attempt ${attempt}/${max_attempts}; CDN sha256: ${actual_sha})."
-            else
-              echo "::warning::CDN request failed (attempt ${attempt}/${max_attempts})."
-            fi
+          actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
+          script_commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=Script%2FmihomoScript.js&sha=${GITHUB_SHA}&per_page=1"
+          script_commit_info="$(curl --fail --silent --show-error --location \
+            --connect-timeout 10 --max-time 30 "$script_commits_url")"
+          script_commit_sha="$(jq -r '.[0].sha // empty' <<< "$script_commit_info")"
+          script_commit_date="$(jq -r '.[0].commit.committer.date // empty' <<< "$script_commit_info")"
+          if [[ -z "$script_commit_sha" || -z "$script_commit_date" ]]; then
+            echo "::error::Could not determine the latest script commit date."
+            exit 1
+          fi
 
-            if [[ "$attempt" -lt "$max_attempts" ]]; then
-              sleep 15
-            fi
-          done
+          script_commit_epoch="$(date -u --date="$script_commit_date" +%s)"
+          now_epoch="$(date -u +%s)"
+          script_age_seconds=$((now_epoch - script_commit_epoch))
+          max_branch_cache_age_seconds=45000
+          if (( script_age_seconds < 0 )); then
+            script_age_seconds=0
+          fi
 
-          echo "::error::CDN content did not match source commit ${GITHUB_SHA} after ${max_attempts} attempts (source sha256: ${expected_sha})."
+          if (( script_age_seconds < max_branch_cache_age_seconds )); then
+            echo "::warning::CDN branch alias is still cached from an older script (CDN sha256: ${actual_sha}; latest script commit: ${script_commit_sha}; age: ${script_age_seconds}s). Scheduled runs will check again after the branch-alias cache window."
+            exit 0
+          fi
+
+          echo "::error::CDN content is still stale after the branch-alias cache window (CDN sha256: ${actual_sha}; latest script commit: ${script_commit_sha}; age: ${script_age_seconds}s; source sha256: ${expected_sha})."
           exit 1
