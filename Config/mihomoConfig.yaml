@@ -490,6 +490,48 @@ proxy-groups:
       - 新加坡-自动选择
       - 台湾
       - 台湾-自动选择
+      - 韩国
+      - 韩国-自动选择
+      - 澳大利亚
+      - 澳大利亚-自动选择
+      - 印度尼西亚
+      - 印度尼西亚-自动选择
+      - 印度
+      - 印度-自动选择
+      - 加拿大
+      - 加拿大-自动选择
+      - 德国
+      - 德国-自动选择
+      - 英国
+      - 英国-自动选择
+      - 法国
+      - 法国-自动选择
+      - 荷兰
+      - 荷兰-自动选择
+      - 西班牙
+      - 西班牙-自动选择
+      - 俄罗斯
+      - 俄罗斯-自动选择
+      - 乌克兰
+      - 乌克兰-自动选择
+      - 土耳其
+      - 土耳其-自动选择
+      - 挪威
+      - 挪威-自动选择
+      - 瑞士
+      - 瑞士-自动选择
+      - 瑞典
+      - 瑞典-自动选择
+      - 爱尔兰
+      - 爱尔兰-自动选择
+      - 菲律宾
+      - 菲律宾-自动选择
+      - 越南
+      - 越南-自动选择
+      - 泰国
+      - 泰国-自动选择
+      - 马来西亚
+      - 马来西亚-自动选择
       - 低倍率节点
       - 低倍率节点-自动选择
       - 高倍率节点
@@ -511,6 +553,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -528,7 +591,7 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Static.svg
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -542,7 +605,7 @@ proxy-groups:
     hidden: true
     name: 自动选择
     include-all-providers: true
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -556,7 +619,7 @@ proxy-groups:
     hidden: true
     name: 负载均衡
     include-all-providers: true
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -574,6 +637,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -597,6 +681,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -618,6 +723,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -648,6 +774,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -670,6 +817,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -692,6 +860,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -713,6 +902,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -734,6 +944,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -756,6 +987,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -778,6 +1030,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -799,6 +1072,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -820,6 +1114,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -841,6 +1156,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -862,6 +1198,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -884,6 +1241,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -906,6 +1284,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -928,6 +1327,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -950,6 +1370,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -972,6 +1413,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -994,6 +1456,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -1037,6 +1520,27 @@ proxy-groups:
       - 日本
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -1056,6 +1560,27 @@ proxy-groups:
       - 美国
       - 新加坡
       - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 俄罗斯
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
       - 低倍率节点
       - 高倍率节点
       - 家宽节点
@@ -1087,8 +1612,8 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1102,8 +1627,8 @@ proxy-groups:
     hidden: true
     name: 香港-自动选择
     include-all-providers: true
-    filter: (?i)🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1116,8 +1641,8 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇯🇵|日本|东京|大阪|京都|\b(JP|JPN)\b|japan
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1131,8 +1656,8 @@ proxy-groups:
     hidden: true
     name: 日本-自动选择
     include-all-providers: true
-    filter: (?i)🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇯🇵|日本|东京|大阪|京都|\b(JP|JPN)\b|japan
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1145,8 +1670,8 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|\b(US|USA)\b|america|united\s*states
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1160,8 +1685,8 @@ proxy-groups:
     hidden: true
     name: 美国-自动选择
     include-all-providers: true
-    filter: (?i)🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|\b(US|USA)\b|america|united\s*states
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1174,8 +1699,8 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇸🇬|新加坡|狮城|\b(SG|SGP)\b|singapore
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1189,8 +1714,8 @@ proxy-groups:
     hidden: true
     name: 新加坡-自动选择
     include-all-providers: true
-    filter: (?i)🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇸🇬|新加坡|狮城|\b(SG|SGP)\b|singapore
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1203,8 +1728,8 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇹🇼|台湾|台北|高雄|\b(TW|TWN)\b|taiwan
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1218,8 +1743,617 @@ proxy-groups:
     hidden: true
     name: 台湾-自动选择
     include-all-providers: true
-    filter: (?i)🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)🇹🇼|台湾|台北|高雄|\b(TW|TWN)\b|taiwan
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 韩国
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 韩国-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇰🇷|韩国|首尔|釜山|\b(KR|KOR)\b|south\s*korea|korea
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 韩国-自动选择
+    include-all-providers: true
+    filter: (?i)🇰🇷|韩国|首尔|釜山|\b(KR|KOR)\b|south\s*korea|korea
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 澳大利亚
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 澳大利亚-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇦🇺|澳大利亚|澳洲|悉尼|墨尔本|珀斯|\b(AU|AUS)\b|australia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 澳大利亚-自动选择
+    include-all-providers: true
+    filter: (?i)🇦🇺|澳大利亚|澳洲|悉尼|墨尔本|珀斯|\b(AU|AUS)\b|australia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 印度尼西亚
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 印度尼西亚-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇮🇩|印度尼西亚|印尼|雅加达|\b(ID|IDN)\b|indonesia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 印度尼西亚-自动选择
+    include-all-providers: true
+    filter: (?i)🇮🇩|印度尼西亚|印尼|雅加达|\b(ID|IDN)\b|indonesia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 印度
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 印度-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇮🇳|印度($|[^尼])|孟买|新德里|\b(IN|IND)\b|india
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 印度-自动选择
+    include-all-providers: true
+    filter: (?i)🇮🇳|印度($|[^尼])|孟买|新德里|\b(IN|IND)\b|india
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 加拿大
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 加拿大-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇨🇦|加拿大|多伦多|温哥华|蒙特利尔|\b(CA|CAN)\b|canada
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 加拿大-自动选择
+    include-all-providers: true
+    filter: (?i)🇨🇦|加拿大|多伦多|温哥华|蒙特利尔|\b(CA|CAN)\b|canada
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 德国
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 德国-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇩🇪|德国|法兰克福|柏林|\b(DE|DEU)\b|germany
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 德国-自动选择
+    include-all-providers: true
+    filter: (?i)🇩🇪|德国|法兰克福|柏林|\b(DE|DEU)\b|germany
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 英国
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 英国-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇬🇧|英国|伦敦|曼彻斯特|\b(UK|GB|GBR)\b|united\s*kingdom|britain|england
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 英国-自动选择
+    include-all-providers: true
+    filter: (?i)🇬🇧|英国|伦敦|曼彻斯特|\b(UK|GB|GBR)\b|united\s*kingdom|britain|england
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 法国
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 法国-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇫🇷|法国|巴黎|\b(FR|FRA)\b|france
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 法国-自动选择
+    include-all-providers: true
+    filter: (?i)🇫🇷|法国|巴黎|\b(FR|FRA)\b|france
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 荷兰
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 荷兰-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇳🇱|荷兰|阿姆斯特丹|\b(NL|NLD)\b|netherlands|holland
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 荷兰-自动选择
+    include-all-providers: true
+    filter: (?i)🇳🇱|荷兰|阿姆斯特丹|\b(NL|NLD)\b|netherlands|holland
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 西班牙
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 西班牙-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇪🇸|西班牙|马德里|\b(ES|ESP)\b|spain
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 西班牙-自动选择
+    include-all-providers: true
+    filter: (?i)🇪🇸|西班牙|马德里|\b(ES|ESP)\b|spain
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 俄罗斯
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 俄罗斯-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇷🇺|俄罗斯|莫斯科|\b(RU|RUS)\b|russia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 俄罗斯-自动选择
+    include-all-providers: true
+    filter: (?i)🇷🇺|俄罗斯|莫斯科|\b(RU|RUS)\b|russia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 乌克兰
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 乌克兰-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇺🇦|乌克兰|基辅|\b(UA|UKR)\b|ukraine
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 乌克兰-自动选择
+    include-all-providers: true
+    filter: (?i)🇺🇦|乌克兰|基辅|\b(UA|UKR)\b|ukraine
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 土耳其
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 土耳其-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇹🇷|土耳其|伊斯坦布尔|\b(TR|TUR)\b|turkey|türkiye
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 土耳其-自动选择
+    include-all-providers: true
+    filter: (?i)🇹🇷|土耳其|伊斯坦布尔|\b(TR|TUR)\b|turkey|türkiye
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 挪威
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 挪威-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇳🇴|挪威|奥斯陆|\b(NO|NOR)\b|norway
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 挪威-自动选择
+    include-all-providers: true
+    filter: (?i)🇳🇴|挪威|奥斯陆|\b(NO|NOR)\b|norway
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 瑞士
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 瑞士-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇨🇭|瑞士|苏黎世|\b(CH|CHE)\b|switzerland|swiss
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 瑞士-自动选择
+    include-all-providers: true
+    filter: (?i)🇨🇭|瑞士|苏黎世|\b(CH|CHE)\b|switzerland|swiss
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 瑞典
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 瑞典-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇸🇪|瑞典|斯德哥尔摩|\b(SE|SWE)\b|sweden
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 瑞典-自动选择
+    include-all-providers: true
+    filter: (?i)🇸🇪|瑞典|斯德哥尔摩|\b(SE|SWE)\b|sweden
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 爱尔兰
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 爱尔兰-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇮🇪|爱尔兰|都柏林|\b(IE|IRL)\b|ireland
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 爱尔兰-自动选择
+    include-all-providers: true
+    filter: (?i)🇮🇪|爱尔兰|都柏林|\b(IE|IRL)\b|ireland
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 菲律宾
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 菲律宾-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇵🇭|菲律宾|马尼拉|\b(PH|PHL)\b|philippines
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 菲律宾-自动选择
+    include-all-providers: true
+    filter: (?i)🇵🇭|菲律宾|马尼拉|\b(PH|PHL)\b|philippines
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 越南
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 越南-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇻🇳|越南|河内|胡志明|\b(VN|VNM)\b|vietnam
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 越南-自动选择
+    include-all-providers: true
+    filter: (?i)🇻🇳|越南|河内|胡志明|\b(VN|VNM)\b|vietnam
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 泰国
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 泰国-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇹🇭|泰国|曼谷|\b(TH|THA)\b|thailand
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 泰国-自动选择
+    include-all-providers: true
+    filter: (?i)🇹🇭|泰国|曼谷|\b(TH|THA)\b|thailand
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: select
+    name: 马来西亚
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/WorldMap.svg
+    proxies:
+      - 马来西亚-自动选择
+    hidden: false
+    include-all-providers: true
+    exclude-type: DIRECT|REJECT|REMATCH
+    filter: (?i)🇲🇾|马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
+  - timeout: 5000
+    url: https://www.apple.com/library/test/success.html
+    max-failed-times: 3
+    empty-fallback: REJECT
+    type: url-test
+    interval: 600
+    lazy: true
+    tolerance: 50
+    exclude-type: DIRECT|REJECT|REMATCH
+    icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
+    hidden: true
+    name: 马来西亚-自动选择
+    include-all-providers: true
+    filter: (?i)🇲🇾|马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1232,8 +2366,9 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)^(?!.*(?:剩|期)).*(?:(?<![\d.])0(\.[0-5]|[*×✕✖⨯⨉x倍]))|(?:[*×✕✖⨯⨉x]0)|^(?!.*(?:客户端|软件)).*下载|低倍|免费|(?<![A-Za-z])free(?![A-Za-z])
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)(^|[^A-Za-z0-9.])([*×✕✖⨯⨉xX] *(0(\.[0-5][0-9]*)?|\.[0-5][0-9]*)|(0(\.[0-5][0-9]*)?|\.[0-5][0-9]*)
+      *(倍(率)?|[*×✕✖⨯⨉xX]))($|[^A-Za-z0-9.])|低倍|免费|\bfree\b
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1247,8 +2382,9 @@ proxy-groups:
     hidden: true
     name: 低倍率节点-自动选择
     include-all-providers: true
-    filter: (?i)^(?!.*(?:剩|期)).*(?:(?<![\d.])0(\.[0-5]|[*×✕✖⨯⨉x倍]))|(?:[*×✕✖⨯⨉x]0)|^(?!.*(?:客户端|软件)).*下载|低倍|免费|(?<![A-Za-z])free(?![A-Za-z])
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)(^|[^A-Za-z0-9.])([*×✕✖⨯⨉xX] *(0(\.[0-5][0-9]*)?|\.[0-5][0-9]*)|(0(\.[0-5][0-9]*)?|\.[0-5][0-9]*)
+      *(倍(率)?|[*×✕✖⨯⨉xX]))($|[^A-Za-z0-9.])|低倍|免费|\bfree\b
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1261,8 +2397,10 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)(?:[*×✕✖⨯⨉x](?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?)|(?:(?<![\d.])(?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?(?:倍|[*×✕✖⨯⨉x]))
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)(^|[^A-Za-z0-9.])([*×✕✖⨯⨉xX]
+      *(([2-9][0-9]*|[1-9][0-9]+)(\.[0-9]+)?|1\.[0-9]*[1-9][0-9]*)|(([2-9][0-9]*|[1-9][0-9]+)(\.[0-9]+)?|1\.[0-9]*[1-9][0-9]*)
+      *(倍(率)?|[*×✕✖⨯⨉xX]))($|[^A-Za-z0-9.])
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1276,8 +2414,10 @@ proxy-groups:
     hidden: true
     name: 高倍率节点-自动选择
     include-all-providers: true
-    filter: (?i)(?:[*×✕✖⨯⨉x](?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?)|(?:(?<![\d.])(?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?(?:倍|[*×✕✖⨯⨉x]))
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)(^|[^A-Za-z0-9.])([*×✕✖⨯⨉xX]
+      *(([2-9][0-9]*|[1-9][0-9]+)(\.[0-9]+)?|1\.[0-9]*[1-9][0-9]*)|(([2-9][0-9]*|[1-9][0-9]+)(\.[0-9]+)?|1\.[0-9]*[1-9][0-9]*)
+      *(倍(率)?|[*×✕✖⨯⨉xX]))($|[^A-Za-z0-9.])
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1290,8 +2430,8 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    filter: (?i)家宽|住宅|原生\s*IP|家庭宽带|\bISP\b|\bRES\b|residential
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)家宽|住宅|原生(\s*IP)?|家庭宽带|家庭网络|\bISP\b|\bRES\b|residential|home\s*broadband|native\s*IP
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1305,8 +2445,8 @@ proxy-groups:
     hidden: true
     name: 家宽节点-自动选择
     include-all-providers: true
-    filter: (?i)家宽|住宅|原生\s*IP|家庭宽带|\bISP\b|\bRES\b|residential
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
+    filter: (?i)家宽|住宅|原生(\s*IP)?|家庭宽带|家庭网络|\bISP\b|\bRES\b|residential|home\s*broadband|native\s*IP
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1319,7 +2459,7 @@ proxy-groups:
     hidden: false
     include-all-providers: true
     exclude-type: DIRECT|REJECT|REMATCH
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b|🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong|🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan|🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states|🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore|🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan)
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong|🇯🇵|日本|东京|大阪|京都|\b(JP|JPN)\b|japan|🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|\b(US|USA)\b|america|united\s*states|🇸🇬|新加坡|狮城|\b(SG|SGP)\b|singapore|🇹🇼|台湾|台北|高雄|\b(TW|TWN)\b|taiwan|🇰🇷|韩国|首尔|釜山|\b(KR|KOR)\b|south\s*korea|korea|🇦🇺|澳大利亚|澳洲|悉尼|墨尔本|珀斯|\b(AU|AUS)\b|australia|🇮🇩|印度尼西亚|印尼|雅加达|\b(ID|IDN)\b|indonesia|🇮🇳|印度($|[^尼])|孟买|新德里|\b(IN|IND)\b|india|🇨🇦|加拿大|多伦多|温哥华|蒙特利尔|\b(CA|CAN)\b|canada|🇩🇪|德国|法兰克福|柏林|\b(DE|DEU)\b|germany|🇬🇧|英国|伦敦|曼彻斯特|\b(UK|GB|GBR)\b|united\s*kingdom|britain|england|🇫🇷|法国|巴黎|\b(FR|FRA)\b|france|🇳🇱|荷兰|阿姆斯特丹|\b(NL|NLD)\b|netherlands|holland|🇪🇸|西班牙|马德里|\b(ES|ESP)\b|spain|🇷🇺|俄罗斯|莫斯科|\b(RU|RUS)\b|russia|🇺🇦|乌克兰|基辅|\b(UA|UKR)\b|ukraine|🇹🇷|土耳其|伊斯坦布尔|\b(TR|TUR)\b|turkey|türkiye|🇳🇴|挪威|奥斯陆|\b(NO|NOR)\b|norway|🇨🇭|瑞士|苏黎世|\b(CH|CHE)\b|switzerland|swiss|🇸🇪|瑞典|斯德哥尔摩|\b(SE|SWE)\b|sweden|🇮🇪|爱尔兰|都柏林|\b(IE|IRL)\b|ireland|🇵🇭|菲律宾|马尼拉|\b(PH|PHL)\b|philippines|🇻🇳|越南|河内|胡志明|\b(VN|VNM)\b|vietnam|🇹🇭|泰国|曼谷|\b(TH|THA)\b|thailand|🇲🇾|马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1333,7 +2473,7 @@ proxy-groups:
     hidden: true
     name: 其他节点-自动选择
     include-all-providers: true
-    exclude-filter: (?i)(?:群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b|🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong|🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan|🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states|🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore|🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan)
+    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong|🇯🇵|日本|东京|大阪|京都|\b(JP|JPN)\b|japan|🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|\b(US|USA)\b|america|united\s*states|🇸🇬|新加坡|狮城|\b(SG|SGP)\b|singapore|🇹🇼|台湾|台北|高雄|\b(TW|TWN)\b|taiwan|🇰🇷|韩国|首尔|釜山|\b(KR|KOR)\b|south\s*korea|korea|🇦🇺|澳大利亚|澳洲|悉尼|墨尔本|珀斯|\b(AU|AUS)\b|australia|🇮🇩|印度尼西亚|印尼|雅加达|\b(ID|IDN)\b|indonesia|🇮🇳|印度($|[^尼])|孟买|新德里|\b(IN|IND)\b|india|🇨🇦|加拿大|多伦多|温哥华|蒙特利尔|\b(CA|CAN)\b|canada|🇩🇪|德国|法兰克福|柏林|\b(DE|DEU)\b|germany|🇬🇧|英国|伦敦|曼彻斯特|\b(UK|GB|GBR)\b|united\s*kingdom|britain|england|🇫🇷|法国|巴黎|\b(FR|FRA)\b|france|🇳🇱|荷兰|阿姆斯特丹|\b(NL|NLD)\b|netherlands|holland|🇪🇸|西班牙|马德里|\b(ES|ESP)\b|spain|🇷🇺|俄罗斯|莫斯科|\b(RU|RUS)\b|russia|🇺🇦|乌克兰|基辅|\b(UA|UKR)\b|ukraine|🇹🇷|土耳其|伊斯坦布尔|\b(TR|TUR)\b|turkey|türkiye|🇳🇴|挪威|奥斯陆|\b(NO|NOR)\b|norway|🇨🇭|瑞士|苏黎世|\b(CH|CHE)\b|switzerland|swiss|🇸🇪|瑞典|斯德哥尔摩|\b(SE|SWE)\b|sweden|🇮🇪|爱尔兰|都柏林|\b(IE|IRL)\b|ireland|🇵🇭|菲律宾|马尼拉|\b(PH|PHL)\b|philippines|🇻🇳|越南|河内|胡志明|\b(VN|VNM)\b|vietnam|🇹🇭|泰国|曼谷|\b(TH|THA)\b|thailand|🇲🇾|马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
 rule-providers:
   # 远程 MRS 每日更新；本地 inline 规则随配置更新。国内域名库仅参与 DNS，不整体强制直连。
   private:

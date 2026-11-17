@@ -12,7 +12,7 @@ function load() {
   const source = fs.readFileSync(SCRIPT, 'utf8');
   vm.runInContext(
     source +
-      '\nglobalThis.api = {main, ruleOptionsEnable, customizeProxies, regionDefinitions, rateRegionDefinitions, homeRegionDefinitions, excludeFilter};',
+      '\nglobalThis.api = {main, ruleOptionsEnable, customizeProxies, regionDefinitions, rateRegionDefinitions, homeRegionDefinitions, announcementFilter, excludeFilter};',
     sandbox,
     { timeout: 5000 },
   );
@@ -62,7 +62,7 @@ function template(api, settings) {
   // Seeds are never serialized or dialed. Expanded-subscription mode instead uses actual node names.
   const names = api.regionDefinitions
     .flatMap((r) => [`${r.name} 1x`, `${r.name} 0.5x 家宽`, `${r.name} 3x`])
-    .concat(['德国 家宽']);
+    .concat(['德国 家宽', 'Unclassified fixture']);
   const seeds = names.map((name, i) => ({
     name,
     type: 'ss',
@@ -75,9 +75,12 @@ function template(api, settings) {
   const seedNames = new Set(out.proxies.filter((p) => p.password === 'template').map((p) => p.name));
   out.proxies = out.proxies.filter((p) => !seedNames.has(p.name));
   const definitions = [...api.regionDefinitions, ...api.rateRegionDefinitions, ...api.homeRegionDefinitions];
-  const info = api.ruleOptionsEnable.过滤非地区节点 ? [api.excludeFilter.source] : [];
-  if (api.ruleOptionsEnable.过滤低倍率节点) info.push(api.rateRegionDefinitions[0].regex.source);
-  if (api.ruleOptionsEnable.过滤高倍率节点) info.push(api.rateRegionDefinitions[1].regex.source);
+  const filterNonRegion = api.ruleOptionsEnable.过滤非地区节点;
+  const announcements = filterNonRegion ? [api.announcementFilter.source] : [];
+  const softInfo = filterNonRegion ? [api.excludeFilter.source] : [];
+  const excludedRates = [];
+  if (api.ruleOptionsEnable.过滤低倍率节点) excludedRates.push(api.rateRegionDefinitions[0].regex.source);
+  if (api.ruleOptionsEnable.过滤高倍率节点) excludedRates.push(api.rateRegionDefinitions[1].regex.source);
   for (const group of out['proxy-groups']) {
     const members = group.proxies || [];
     if (!members.some((p) => seedNames.has(p))) continue;
@@ -87,9 +90,14 @@ function template(api, settings) {
     const baseName = group.name.replace(/-自动选择$/, '');
     const def = definitions.find((r) => r.name === baseName);
     if (def) group.filter = `(?i)${def.regex.source}`;
-    const excludes = [...info];
-    if (baseName === '其他节点') excludes.push(...api.regionDefinitions.map((r) => r.regex.source));
-    if (excludes.length) group['exclude-filter'] = `(?i)(?:${excludes.join('|')})`;
+    const excludes = [...announcements, ...excludedRates];
+    if (baseName === '其他节点') {
+      excludes.push(...api.regionDefinitions.map((r) => r.regex.source));
+      excludes.push(...softInfo);
+    } else if (baseName === '低倍率节点' || baseName === '高倍率节点' || baseName === '家宽节点') {
+      excludes.push(...softInfo);
+    }
+    if (excludes.length) group['exclude-filter'] = `(?i)(${excludes.join('|')})`;
     if (!group.proxies.length) delete group.proxies;
   }
   const provider = settings.subscription || {};

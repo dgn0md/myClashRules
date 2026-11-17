@@ -125,9 +125,14 @@ const customizeProxies = [];
 // 链式代理启用时，自定义节点的 dialer-proxy 引用目标
 const dialerProxyName = '链式中转';
 
-// 定义全局排除节点的正则表达式，用于排除非地区节点
+// 识别公告、面板和网址。该过滤优先于地区识别，避免带国家名的公告行进入地区组。
+// 保持为 Mihomo Go regexp 兼容语法（不使用 lookaround 或非捕获组）。
+const announcementFilter =
+  /(官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)/i;
+
+// 定义全局软排除节点的正则表达式，用于排除非地区信息节点。
 const excludeFilter =
-  /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
+  /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
 // 屏蔽代理QUIC流量
 const blockForeignQuic = [
@@ -168,39 +173,50 @@ const iconBaseUrl = 'https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/
 // 规则集 URL 公共前缀
 const ruleSetBaseUrl = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/';
 
-// 定义地区策略组
+// 定义地区策略组。regex 只使用 Mihomo Go regexp 支持的语法；
+// nameRegex 用于名称文字与国旗冲突时选择正确国旗。
+function defineRegion(name, flag, nameRegex, icon = `${iconBaseUrl}WorldMap.svg`) {
+  return {
+    name,
+    flag,
+    nameRegex,
+    regex: new RegExp(`${flag}|${nameRegex.source}`, 'i'),
+    icon,
+  };
+}
+
 const regionDefinitions = [
-  {
-    name: '香港',
-    flag: '🇭🇰',
-    regex: /🇭🇰|香港|(?<![A-Za-z])HKG?(?![A-Za-z])|hong\s*kong/i,
-    icon: `${iconBaseUrl}HongKong.svg`,
-  },
-  {
-    name: '日本',
-    flag: '🇯🇵',
-    regex: /🇯🇵|日本|东京|大阪|京都|(?<![A-Za-z])JPN?(?![A-Za-z])|japan/i,
-    icon: `${iconBaseUrl}Japan.svg`,
-  },
-  {
-    name: '美国',
-    flag: '🇺🇸',
-    regex:
-      /🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|(?<![A-Za-z])USA?(?![A-Za-z])|america|united\s*states/i,
-    icon: `${iconBaseUrl}America.svg`,
-  },
-  {
-    name: '新加坡',
-    flag: '🇸🇬',
-    regex: /🇸🇬|新加坡|狮城|(?<![A-Za-z])SGP?(?![A-Za-z])|singapore/i,
-    icon: `${iconBaseUrl}Singapore.svg`,
-  },
-  {
-    name: '台湾',
-    flag: '🇹🇼',
-    regex: /🇹🇼|台湾|台北|高雄|(?<![A-Za-z])TWN?(?![A-Za-z])|taiwan/i,
-    icon: `${iconBaseUrl}Taiwan.svg`,
-  },
+  defineRegion('香港', '🇭🇰', /香港|\b(HK|HKG)\b|hong\s*kong/i, `${iconBaseUrl}HongKong.svg`),
+  defineRegion('日本', '🇯🇵', /日本|东京|大阪|京都|\b(JP|JPN)\b|japan/i, `${iconBaseUrl}Japan.svg`),
+  defineRegion(
+    '美国',
+    '🇺🇸',
+    /美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|\b(US|USA)\b|america|united\s*states/i,
+    `${iconBaseUrl}America.svg`,
+  ),
+  defineRegion('新加坡', '🇸🇬', /新加坡|狮城|\b(SG|SGP)\b|singapore/i, `${iconBaseUrl}Singapore.svg`),
+  defineRegion('台湾', '🇹🇼', /台湾|台北|高雄|\b(TW|TWN)\b|taiwan/i, `${iconBaseUrl}Taiwan.svg`),
+  defineRegion('韩国', '🇰🇷', /韩国|首尔|釜山|\b(KR|KOR)\b|south\s*korea|korea/i),
+  defineRegion('澳大利亚', '🇦🇺', /澳大利亚|澳洲|悉尼|墨尔本|珀斯|\b(AU|AUS)\b|australia/i),
+  defineRegion('印度尼西亚', '🇮🇩', /印度尼西亚|印尼|雅加达|\b(ID|IDN)\b|indonesia/i),
+  defineRegion('印度', '🇮🇳', /印度($|[^尼])|孟买|新德里|\b(IN|IND)\b|india/i),
+  defineRegion('加拿大', '🇨🇦', /加拿大|多伦多|温哥华|蒙特利尔|\b(CA|CAN)\b|canada/i),
+  defineRegion('德国', '🇩🇪', /德国|法兰克福|柏林|\b(DE|DEU)\b|germany/i),
+  defineRegion('英国', '🇬🇧', /英国|伦敦|曼彻斯特|\b(UK|GB|GBR)\b|united\s*kingdom|britain|england/i),
+  defineRegion('法国', '🇫🇷', /法国|巴黎|\b(FR|FRA)\b|france/i),
+  defineRegion('荷兰', '🇳🇱', /荷兰|阿姆斯特丹|\b(NL|NLD)\b|netherlands|holland/i),
+  defineRegion('西班牙', '🇪🇸', /西班牙|马德里|\b(ES|ESP)\b|spain/i),
+  defineRegion('俄罗斯', '🇷🇺', /俄罗斯|莫斯科|\b(RU|RUS)\b|russia/i),
+  defineRegion('乌克兰', '🇺🇦', /乌克兰|基辅|\b(UA|UKR)\b|ukraine/i),
+  defineRegion('土耳其', '🇹🇷', /土耳其|伊斯坦布尔|\b(TR|TUR)\b|turkey|türkiye/i),
+  defineRegion('挪威', '🇳🇴', /挪威|奥斯陆|\b(NO|NOR)\b|norway/i),
+  defineRegion('瑞士', '🇨🇭', /瑞士|苏黎世|\b(CH|CHE)\b|switzerland|swiss/i),
+  defineRegion('瑞典', '🇸🇪', /瑞典|斯德哥尔摩|\b(SE|SWE)\b|sweden/i),
+  defineRegion('爱尔兰', '🇮🇪', /爱尔兰|都柏林|\b(IE|IRL)\b|ireland/i),
+  defineRegion('菲律宾', '🇵🇭', /菲律宾|马尼拉|\b(PH|PHL)\b|philippines/i),
+  defineRegion('越南', '🇻🇳', /越南|河内|胡志明|\b(VN|VNM)\b|vietnam/i),
+  defineRegion('泰国', '🇹🇭', /泰国|曼谷|\b(TH|THA)\b|thailand/i),
+  defineRegion('马来西亚', '🇲🇾', /马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia/i),
 ];
 
 // 定义倍率策略组
@@ -210,14 +226,18 @@ const highRateRegionName = '高倍率节点';
 const rateRegionDefinitions = [
   {
     name: lowRateRegionName,
-    regex:
-      /^(?!.*(?:剩|期)).*(?:(?<![\d.])0(\.[0-5]|[*×✕✖⨯⨉x倍]))|(?:[*×✕✖⨯⨉x]0)|^(?!.*(?:客户端|软件)).*下载|低倍|免费|(?<![A-Za-z])free(?![A-Za-z])/i,
+    regex: new RegExp(
+      '(^|[^A-Za-z0-9.])([*×✕✖⨯⨉xX] *(0(\\.[0-5][0-9]*)?|\\.[0-5][0-9]*)|(0(\\.[0-5][0-9]*)?|\\.[0-5][0-9]*) *(倍(率)?|[*×✕✖⨯⨉xX]))($|[^A-Za-z0-9.])|低倍|免费|\\bfree\\b',
+      'i',
+    ),
     icon: `${iconBaseUrl}Available.svg`,
   },
   {
     name: highRateRegionName,
-    regex:
-      /(?:[*×✕✖⨯⨉x](?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?)|(?:(?<![\d.])(?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?(?:倍|[*×✕✖⨯⨉x]))/i,
+    regex: new RegExp(
+      '(^|[^A-Za-z0-9.])([*×✕✖⨯⨉xX] *(([2-9][0-9]*|[1-9][0-9]+)(\\.[0-9]+)?|1\\.[0-9]*[1-9][0-9]*)|(([2-9][0-9]*|[1-9][0-9]+)(\\.[0-9]+)?|1\\.[0-9]*[1-9][0-9]*) *(倍(率)?|[*×✕✖⨯⨉xX]))($|[^A-Za-z0-9.])',
+      'i',
+    ),
     icon: `${iconBaseUrl}Airport.svg`,
   },
 ];
@@ -228,7 +248,7 @@ const homeRegionName = '家宽节点';
 const homeRegionDefinitions = [
   {
     name: homeRegionName,
-    regex: /家宽|住宅|原生\s*IP|家庭宽带|\bISP\b|\bRES\b|residential/i,
+    regex: /家宽|住宅|原生(\s*IP)?|家庭宽带|家庭网络|\bISP\b|\bRES\b|residential|home\s*broadband|native\s*IP/i,
     icon: `${iconBaseUrl}Home.svg`,
   },
 ];
@@ -958,7 +978,13 @@ function getMatchedRegions(proxyName) {
   }
 
   const matchableName = toMatchableName(proxyName);
-  const regions = allRegionDefinitions.filter((region) => region.regex.test(matchableName));
+  const namedRegions = regionDefinitions.filter((region) => region.nameRegex.test(matchableName));
+  const flagRegions = regionDefinitions.filter((region) => matchableName.includes(region.flag));
+  const classifiedRegions = namedRegions.length ? namedRegions : flagRegions;
+  const regions = [
+    ...classifiedRegions,
+    ...[...rateRegionDefinitions, ...homeRegionDefinitions].filter((region) => region.regex.test(matchableName)),
+  ];
   regionMatchCache.set(proxyName, regions);
 
   return regions;
@@ -977,7 +1003,9 @@ function normalizeProxyName(proxy) {
 
   const matchedRegions = getMatchedRegions(originalName);
 
-  const regionFlag = flag || matchedRegions.find((region) => region.flag)?.flag;
+  const matchableName = toMatchableName(originalName);
+  const namedRegion = regionDefinitions.find((region) => region.nameRegex.test(matchableName));
+  const regionFlag = namedRegion?.flag || matchedRegions.find((region) => region.flag)?.flag || flag;
 
   const normalizedName = regionFlag ? `${regionFlag} ${nameWithoutFlag}` : nameWithoutFlag;
 
@@ -1049,6 +1077,7 @@ function filterAndNormalizeProxies(config) {
     if (lowRateRegex?.test(matchableName) || highRateRegex?.test(matchableName)) return false;
 
     if (!filterNonRegionProxiesEnabled) return true;
+    if (announcementFilter.test(matchableName)) return false;
 
     const isRegionProxy = getMatchedRegions(proxy.name).some((region) => regionDefinitions.includes(region));
 

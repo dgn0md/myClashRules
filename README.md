@@ -4,7 +4,8 @@ myClashRules 是基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) �
 
 ## 本仓库的特色
 
-- **全量上游节点能力继续维护**：地区、倍率、家宽节点分类，节点名称清理与补旗、去重、`dialer-proxy` 与必要的 hosts 节点映射沿用上游算法。
+- **全量节点名称识别**：展开订阅时覆盖样本中的 26 个地区，以及倍率、家宽/住宅节点；按名称文字纠正冲突国旗。默认过滤面板、公告和网址行，包含地区名也会过滤。静态 provider 只能按正则筛选候选，不能重命名或纠正旗帜；地区名称也不证明实际出口地区。
+- **节点整理能力继续维护**：节点名称清理与补旗、去重、`dialer-proxy` 与必要的 hosts 节点映射沿用上游算法。
 - **机场设置由脚本接管**：展开机场配置时只读取并处理节点；机场的 DNS、`fake-ip-filter`、DNS policy、路由、策略组及其他设置不会进入输出。最终 DNS、hosts、路由和开关都由本脚本生成。
 - **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
 - **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。

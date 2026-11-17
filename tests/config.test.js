@@ -11,8 +11,9 @@ const fx = require('../Test/lib/fixtures');
 const siriAiGroup = 'Siri Ai/Apple Intelligence';
 const appleProductGroup = 'Apple Product地区';
 const otherAppleGroup = 'Other Apple Service';
+const proxy = (name) => ({ name, type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' });
 const clean = () => ({
-  proxies: [{ name: '美国 测试', type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' }],
+  proxies: [proxy('美国 测试')],
 });
 function graph(config) {
   const groups = new Map(config['proxy-groups'].map((g) => [g.name, g]));
@@ -65,6 +66,123 @@ function encryptedDns(config) {
   }
   for (const value of dns['default-nameserver']) assert.match(value, /^https:\/\/[\d.]+\/dns-query#DIRECT$/);
 }
+test('sample-style country names cover regional groups and correct conflicting Taiwan flags', () => {
+  const samples = [
+    ['香港', '🇭🇰 fixture HK endpoint'],
+    ['新加坡', '🇸🇬 fixture SG endpoint'],
+    ['菲律宾', '🇵🇭 fixture PH endpoint'],
+    ['印度尼西亚', '🇮🇩 fixture ID endpoint'],
+    ['越南', '🇻🇳 fixture VN endpoint'],
+    ['澳大利亚', '🇦🇺 fixture AU endpoint'],
+    ['印度', '🇮🇳 fixture IN endpoint'],
+    ['韩国', '🇭🇰 fixture KR endpoint'],
+    ['日本', '🇯🇵 fixture JP endpoint'],
+    ['美国', '🇺🇸 fixture US endpoint'],
+    ['加拿大', '🇨🇦 fixture CA endpoint'],
+    ['台湾', '🇨🇳 fixture TW 台湾 endpoint'],
+    ['德国', '🇩🇪 fixture DE endpoint'],
+    ['英国', '🇬🇧 fixture UK endpoint'],
+    ['法国', '🇫🇷 fixture FR endpoint'],
+    ['荷兰', '🇳🇱 fixture NL endpoint'],
+    ['西班牙', '🇪🇸 fixture ES endpoint'],
+    ['俄罗斯', '🇷🇺 fixture RU endpoint'],
+    ['乌克兰', '🇺🇦 fixture UA endpoint'],
+    ['土耳其', '🇹🇷 fixture TR endpoint'],
+    ['挪威', '🇳🇴 fixture NO endpoint'],
+    ['瑞士', '🇨🇭 fixture CH endpoint'],
+    ['瑞典', '🇸🇪 fixture SE endpoint'],
+    ['爱尔兰', '🇮🇪 fixture IE endpoint'],
+    ['泰国', '🇹🇭 fixture TH endpoint'],
+    ['马来西亚', '🇲🇾 fixture MY endpoint'],
+  ];
+  const config = build({ subscription: { proxies: samples.map(([, name]) => proxy(name)) } }).config;
+  for (const [region, name] of samples) {
+    const group = config['proxy-groups'].find((entry) => entry.name === region);
+    assert.ok(group, `missing region group ${region}`);
+    const normalized = name.replace(
+      /^[\u{1F1E6}-\u{1F1FF}]{2}/u,
+      { 台湾: '🇹🇼', 韩国: '🇰🇷' }[region] || name.match(/^[\u{1F1E6}-\u{1F1FF}]{2}/u)?.[0],
+    );
+    assert.ok(group.proxies.includes(normalized), `${name} should be in ${region}`);
+  }
+  assert.ok(config.proxies.some((entry) => entry.name === '🇹🇼 fixture TW 台湾 endpoint'));
+  assert.ok(config.proxies.some((entry) => entry.name === '🇰🇷 fixture KR endpoint'));
+});
+
+test('sample multiplier and residential labels enter their matching groups without treating node indices as rates', () => {
+  const names = [
+    '🇭🇰 fixture 6x home broadband',
+    '🇭🇰 fixture 3x residential',
+    '🇺🇸 fixture 10x residential [manual proxy only]',
+    '🇯🇵 fixture route 14| BGP',
+    '🇹🇼 Taiwan residential endpoint HINET',
+    '🇺🇸 fixture speed 08| ordinary',
+    '🇺🇸 fixture 1.5x residential',
+    '🇸🇬 fixture 0.5x residential',
+    '🇺🇸 fixture 1.0x standard',
+    '🇩🇪 fixture 2倍率 residential',
+  ];
+  const config = build({ subscription: { proxies: names.map(proxy) } }).config;
+  const members = (name) => config['proxy-groups'].find((group) => group.name === name)?.proxies || [];
+  for (const name of names.slice(0, 3)) assert.ok(members('高倍率节点').includes(name), `${name} should be high rate`);
+  assert.ok(members('高倍率节点').includes(names[6]), '1.5x should be high rate');
+  assert.ok(members('低倍率节点').includes(names[7]), '0.5x should be low rate');
+  assert.ok(members('高倍率节点').includes(names[9]), '2倍率 should be high rate');
+  assert.ok(!members('高倍率节点').includes(names[5]), 'node index 08 is not a multiplier');
+  assert.ok(!members('高倍率节点').includes(names[8]), '1.0x is not a high multiplier');
+  for (const name of [names[0], names[1], names[2], names[4]])
+    assert.ok(members('家宽节点').includes(name), `${name} should be residential`);
+  assert.ok(members('日本').includes(names[3]));
+});
+
+test('announcement and website rows are filtered even when they contain a recognized region', () => {
+  const blocked = [
+    'Panel: www.example.invalid',
+    '🇺🇸 residential provider website: https://example.invalid/help',
+    '🇺🇸 US service announcement: https://example.invalid/info',
+  ];
+  const validWarningNode = '🇺🇸 10x US residential [manual proxy only]';
+  const config = build({ subscription: { proxies: [...blocked, validWarningNode].map(proxy) } }).config;
+  for (const name of blocked) assert.ok(!config.proxies.some((entry) => entry.name.includes(name)));
+  assert.ok(config.proxies.some((entry) => entry.name === validWarningNode));
+  assert.ok(config['proxy-groups'].find((group) => group.name === '美国').proxies.includes(validWarningNode));
+});
+
+test('static provider has all sample region groups and compatible filters preserve regional backups', () => {
+  const config = build().config;
+  const regions = [
+    '香港', '日本', '美国', '新加坡', '台湾', '韩国', '澳大利亚', '印度', '加拿大', '德国', '英国', '法国',
+    '荷兰', '西班牙', '俄罗斯', '乌克兰', '土耳其', '挪威', '瑞士', '瑞典', '爱尔兰', '菲律宾', '印度尼西亚',
+    '越南', '泰国', '马来西亚',
+  ];
+  for (const region of regions) {
+    const group = config['proxy-groups'].find((entry) => entry.name === region);
+    assert.ok(group, `static provider missing ${region}`);
+    assert.ok(group.filter);
+    assert.ok(group['exclude-filter']?.includes('官网'));
+    assert.ok(!group['exclude-filter']?.includes('备用'), `${region} should retain backup nodes`);
+    assert.doesNotMatch(group.filter, /\(\?:|\(\?[=!<]/, `${region} filter must be Mihomo-compatible`);
+  }
+  const other = config['proxy-groups'].find((entry) => entry.name === '其他节点');
+  assert.ok(other['exclude-filter']?.includes('panel'));
+});
+
+test('static provider applies enabled rate filters to every node-bearing group', () => {
+  const rates = load().rateRegionDefinitions;
+  const cases = [
+    ['过滤低倍率节点', '低倍率节点'],
+    ['过滤高倍率节点', '高倍率节点'],
+  ];
+  for (const [option, name] of cases) {
+    const pattern = rates.find((entry) => entry.name === name).regex.source;
+    const config = build({ settings: { options: { [option]: true } } }).config;
+    for (const groupName of ['手动选择', '美国', '家宽节点', '其他节点']) {
+      const group = config['proxy-groups'].find((entry) => entry.name === groupName);
+      assert.ok(group?.['exclude-filter']?.includes(pattern), `${option} must exclude matching nodes from ${groupName}`);
+    }
+  }
+});
+
 test('default script and provider YAML have complete graphs and encrypted DNS', () => {
   for (const config of [build({ subscription: fx.typicalSubscription() }).config, build().config]) {
     graph(config);
