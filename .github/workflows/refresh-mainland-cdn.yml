@@ -1,4 +1,4 @@
-name: Refresh mainland JS CDN cache
+name: Refresh and verify mainland JS CDN cache
 
 on:
   schedule:
@@ -19,21 +19,55 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Request and inspect cached script
+      - name: Compare CDN script with source commit
         shell: bash
         run: |
           set -euo pipefail
-          url='https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js'
+          if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo "::error::Run this workflow on main so the CDN and source revision refer to the same branch."
+            exit 1
+          fi
+
+          source_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/Script/mihomoScript.js"
+          cdn_url="https://cdn.jsdmirror.com/gh/${GITHUB_REPOSITORY}@main/Script/mihomoScript.js"
+          expected="$(mktemp)"
           response="$(mktemp)"
-          trap 'rm -f "$response"' EXIT
+          trap 'rm -f "$expected" "$response"' EXIT
 
           curl --fail --silent --show-error --location \
-            --retry 3 --retry-all-errors \
-            --header 'Cache-Control: no-cache' \
-            "$url" --output "$response"
+            --connect-timeout 10 --max-time 30 \
+            "$source_url" --output "$expected"
+          test -s "$expected"
+          grep -qF 'function main(config)' "$expected"
+          expected_sha="$(sha256sum "$expected" | cut -d ' ' -f 1)"
 
-          test -s "$response"
-          grep -q 'function main(config)' "$response"
-          echo "Mainland CDN returned a non-empty Mihomo script: $url"
+          max_attempts=12
+          for attempt in $(seq 1 "$max_attempts"); do
+            : > "$response"
+            if curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 30 \
+              --header 'Cache-Control: no-cache' \
+              "$cdn_url" --output "$response"; then
+              if test -s "$response" && cmp -s "$expected" "$response"; then
+                echo "CDN content matches source commit ${GITHUB_SHA} (sha256: ${expected_sha}) on attempt ${attempt}/${max_attempts}."
+                exit 0
+              fi
+
+              actual_sha='empty response'
+              if test -s "$response"; then
+                actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
+              fi
+              echo "::warning::CDN content does not match the source yet (attempt ${attempt}/${max_attempts}; CDN sha256: ${actual_sha})."
+            else
+              echo "::warning::CDN request failed (attempt ${attempt}/${max_attempts})."
+            fi
+
+            if [[ "$attempt" -lt "$max_attempts" ]]; then
+              sleep 15
+            fi
+          done
+
+          echo "::error::CDN content did not match source commit ${GITHUB_SHA} after ${max_attempts} attempts (source sha256: ${expected_sha})."
+          exit 1
