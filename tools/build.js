@@ -25,6 +25,9 @@ function readYaml(file) {
 }
 function configure(api, settings) {
   const options = settings.options || {};
+  const legacyOptionAliases = {
+    自动选择: '自动选择ex(大陆&香港)',
+  };
   const legacyAppleOptions = {
     Apple: 'Other Apple Service',
     Apple智能: 'Siri Ai/Apple Intelligence',
@@ -38,9 +41,15 @@ function configure(api, settings) {
   };
   const removedAppleOptions = new Set(['AppleRelay']);
   const migratedAppleOptions = new Map();
+  const migratedOptions = new Map();
   for (const [key, value] of Object.entries(options)) {
     if (typeof value !== 'boolean') throw new Error(`${key} 必须填写 true 或 false`);
     if (removedAppleOptions.has(key)) continue;
+    const aliasTarget = legacyOptionAliases[key];
+    if (aliasTarget) {
+      if (!Object.prototype.hasOwnProperty.call(options, aliasTarget)) migratedOptions.set(aliasTarget, value);
+      continue;
+    }
     const target = legacyAppleOptions[key];
     if (target) {
       if (!Object.prototype.hasOwnProperty.call(options, target)) {
@@ -51,6 +60,7 @@ function configure(api, settings) {
     if (!Object.prototype.hasOwnProperty.call(api.ruleOptionsEnable, key)) throw new Error(`未知配置项：${key}`);
     api.ruleOptionsEnable[key] = value;
   }
+  for (const [key, value] of migratedOptions) api.ruleOptionsEnable[key] = value;
   for (const [key, value] of migratedAppleOptions) api.ruleOptionsEnable[key] = value;
   if (settings.customProxies) {
     if (!Array.isArray(settings.customProxies)) throw new Error('customProxies 必须为节点数组');
@@ -90,7 +100,8 @@ function template(api, settings) {
     const baseName = group.name.replace(/-自动选择$/, '');
     const def = definitions.find((r) => r.name === baseName);
     if (def) group.filter = `(?i)${def.regex.source}`;
-    const excludes = [...announcements, ...excludedRates];
+    const configuredExclude = group['exclude-filter']?.replace(/^\(\?i\)/, '');
+    const excludes = [...(configuredExclude ? [configuredExclude] : []), ...announcements, ...excludedRates];
     if (baseName === '其他节点') {
       excludes.push(...api.regionDefinitions.map((r) => r.regex.source));
       excludes.push(...softInfo);

@@ -11,6 +11,7 @@ const fx = require('../Test/lib/fixtures');
 const siriAiGroup = 'Siri Ai/Apple Intelligence';
 const appleProductGroup = 'Apple Product地区';
 const otherAppleGroup = 'Other Apple Service';
+const autoSelectExMainlandHongKongGroup = '自动选择ex(大陆&香港)';
 const proxy = (name) => ({ name, type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' });
 const clean = () => ({
   proxies: [proxy('美国 测试')],
@@ -165,6 +166,72 @@ test('static provider has all sample region groups and compatible filters preser
   }
   const other = config['proxy-groups'].find((entry) => entry.name === '其他节点');
   assert.ok(other['exclude-filter']?.includes('panel'));
+});
+
+test('mainland/Hong Kong auto-select group excludes those labels and keeps Taiwan', () => {
+  const subscription = {
+    proxies: [
+      proxy('🇭🇰 香港 01'),
+      proxy('HK 02 Hong Kong'),
+      proxy('🇭🇰 Node 03'),
+      proxy('HKG node 04'),
+      proxy('🇨🇳 中国大陆 01'),
+      proxy('大陆 上海 02'),
+      proxy('CN node 03'),
+      proxy('China-Guangzhou 04'),
+      proxy('🇨🇳 中国台湾 TW 01'),
+      proxy('🇯🇵 日本 01'),
+      proxy('US Los Angeles 01'),
+      proxy('PRC Mainland 02'),
+    ],
+  };
+  const config = build({ subscription }).config;
+  const group = config['proxy-groups'].find((entry) => entry.name === autoSelectExMainlandHongKongGroup);
+  assert.ok(group);
+  assert.equal(group.type, 'url-test');
+  assert.equal(group.interval, 600);
+  assert.ok(group.proxies.includes('🇹🇼 中国台湾 TW 01'));
+  assert.ok(group.proxies.includes('🇯🇵 日本 01'));
+  assert.ok(group.proxies.includes('🇺🇸 US Los Angeles 01'));
+  assert.deepEqual(group.proxies, ['🇹🇼 中国台湾 TW 01', '🇯🇵 日本 01', '🇺🇸 US Los Angeles 01']);
+
+  const staticConfig = build().config;
+  const staticGroup = staticConfig['proxy-groups'].find((entry) => entry.name === autoSelectExMainlandHongKongGroup);
+  assert.equal(staticGroup['include-all-providers'], true);
+  assert.match(staticGroup['exclude-filter'], /香港/);
+  assert.match(staticGroup['exclude-filter'], /大陆/);
+  assert.ok(staticConfig['proxy-groups'].find((entry) => entry.name === '默认代理').proxies.includes(autoSelectExMainlandHongKongGroup));
+  assert.ok(staticConfig['proxy-groups'].find((entry) => entry.name === 'GLOBAL').proxies.includes(autoSelectExMainlandHongKongGroup));
+  assert.ok(!staticConfig['proxy-groups'].some((entry) => entry.name === '自动选择'));
+  const serviceGroupsWithGeneralCandidates = [
+    'FCM', 'YouTube', 'GitHub', 'Microsoft', otherAppleGroup, 'Telegram', 'Steam', 'Twitter', 'Line', 'Netflix',
+    'Emby', 'PikPak', 'Spotify', 'Crypto', 'PayPal', 'Patreon', 'EHentai', appleProductGroup,
+  ];
+  for (const name of serviceGroupsWithGeneralCandidates) {
+    assert.ok(
+      staticConfig['proxy-groups'].find((entry) => entry.name === name).proxies.includes(autoSelectExMainlandHongKongGroup),
+      `${name} should offer the replacement auto-select group`,
+    );
+  }
+  for (const name of ['Google', 'AI', 'TikTok', 'Meta', siriAiGroup]) {
+    assert.ok(
+      !staticConfig['proxy-groups'].find((entry) => entry.name === name).proxies.includes(autoSelectExMainlandHongKongGroup),
+      `${name} should retain its restricted regional candidates`,
+    );
+  }
+
+  const disabled = build({ settings: { options: { [autoSelectExMainlandHongKongGroup]: false } } }).config;
+  assert.ok(!disabled['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
+  const migrated = build({ settings: { options: { 自动选择: false } } });
+  assert.ok(!migrated.config['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
+  assert.equal(YAML.parse(migrated.text)['x-myClashRules'].options[autoSelectExMainlandHongKongGroup], false);
+  const explicitNewOptionWins = build({
+    settings: { options: { 自动选择: false, [autoSelectExMainlandHongKongGroup]: true } },
+  }).config;
+  assert.ok(explicitNewOptionWins['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
+  const minimal = build({ settings: { options: { 极简国内外分流模式: true } } }).config;
+  assert.ok(minimal['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
+  assert.ok(minimal['proxy-groups'].find((entry) => entry.name === '默认代理').proxies.includes(autoSelectExMainlandHongKongGroup));
 });
 
 test('static provider applies enabled rate filters to every node-bearing group', () => {

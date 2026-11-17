@@ -258,7 +258,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
           'Other Apple Service',
           'Siri Ai/Apple Intelligence',
           '默认代理',
-          '自动选择',
+          '自动选择ex(大陆&香港)',
           '直连',
           '日本',
           '日本-自动选择',

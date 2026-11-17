@@ -36,6 +36,8 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 
 在脚本顶部的 `ruleOptionsEnable` 中设置布尔选项。需要 Bettbox 图形界面的客户端可读取脚本提供的策略组开关元数据。自定义节点写入 `customizeProxies`；开启 `链式代理` 后，自定义节点作为落地节点，经 `链式中转` 组连接。
 
+`自动选择ex(大陆&香港)` 开关默认生成同名测速组，取代原自动选择组，并作为 `GLOBAL`、`默认代理` 和通用服务组的候选。它按节点名称排除大陆和香港候选并保留台湾节点；有地区候选限制的服务组仍遵循其地区范围。构建器兼容旧设置键 `自动选择`；静态 YAML 更改后需重新生成。
+
 ## 使用静态配置
 
 下载[全量 YAML](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml)，将 `proxy-providers.订阅.url` 改为自己的订阅链接，再导入 Mihomo 客户端。

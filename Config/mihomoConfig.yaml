@@ -9,7 +9,7 @@
 x-myClashRules:
   options:
     手动选择: true # 是否启用手动选择策略组
-    自动选择: true # 是否启用自动选择策略组
+    自动选择ex(大陆&香港): true # 是否启用排除大陆和香港节点的自动选择策略组
     负载均衡: true # 是否启用负载均衡策略组
     FCM: true # GoogleFCM服务
     YouTube: true # YouTube视频平台
@@ -452,7 +452,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - FCM
       - YouTube
@@ -579,7 +579,7 @@ proxy-groups:
       - 家宽节点
       - 其他节点
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Proxy.svg
   - timeout: 5000
@@ -603,9 +603,9 @@ proxy-groups:
     exclude-type: DIRECT|REJECT|REMATCH
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Auto.svg
     hidden: true
-    name: 自动选择
+    name: 自动选择ex(大陆&香港)
+    exclude-filter: (?i)((🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong|🇨🇳|大陆|内地|\b(CN|CHN|PRC)\b|\bChina\b|\bMainland\b)|(官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
     include-all-providers: true
-    exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?))
   - timeout: 5000
     url: https://cp.cloudflare.com/generate_204
     max-failed-times: 3
@@ -630,7 +630,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -674,7 +674,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -782,7 +782,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -825,7 +825,7 @@ proxy-groups:
       - 直连
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -868,7 +868,7 @@ proxy-groups:
       - 直连
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -910,7 +910,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -952,7 +952,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1028,7 +1028,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1103,7 +1103,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1145,7 +1145,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1187,7 +1187,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1230,7 +1230,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1273,7 +1273,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1316,7 +1316,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1359,7 +1359,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1402,7 +1402,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1445,7 +1445,7 @@ proxy-groups:
     proxies:
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本
@@ -1533,7 +1533,7 @@ proxy-groups:
       - 美国
       - 默认代理
       - 手动选择
-      - 自动选择
+      - 自动选择ex(大陆&香港)
       - 负载均衡
       - 香港
       - 日本

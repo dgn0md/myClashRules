@@ -14,6 +14,7 @@ const Compatible_With_Bettbox = { ruleOptionsEnable: true };
 const appleAiGroupName = 'Siri Ai/Apple Intelligence';
 const appleProductGroupName = 'Apple Product地区';
 const appleOtherGroupName = 'Other Apple Service';
+const autoSelectExMainlandHongKongGroupName = '自动选择ex(大陆&香港)';
 
 /**
  * 自定义配置选项
@@ -23,7 +24,7 @@ const appleOtherGroupName = 'Other Apple Service';
 const ruleOptionsEnable = {
   // 基础策略组
   手动选择: true, // 是否启用手动选择策略组
-  自动选择: true, // 是否启用自动选择策略组
+  '自动选择ex(大陆&香港)': true, // 是否启用排除大陆和香港节点的自动选择策略组
   负载均衡: true, // 是否启用负载均衡策略组
 
   // 以下为分流策略配置
@@ -218,6 +219,11 @@ const regionDefinitions = [
   defineRegion('泰国', '🇹🇭', /泰国|曼谷|\b(TH|THA)\b|thailand/i),
   defineRegion('马来西亚', '🇲🇾', /马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia/i),
 ];
+
+// 按节点名称排除大陆与香港候选；不匹配“中国台湾”，以保留台湾节点。
+// 该表达式同时用于展开订阅与静态 provider，语法保持 Mihomo Go regexp 兼容。
+const autoSelectExMainlandHongKongNodeNameRegex =
+  /🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong|🇨🇳|大陆|内地|\b(CN|CHN|PRC)\b|\bChina\b|\bMainland\b/i;
 
 // 定义倍率策略组
 const lowRateRegionName = '低倍率节点';
@@ -457,9 +463,11 @@ const baseGroups = [
     icon: `${iconBaseUrl}Static.svg`,
   },
   {
-    name: '自动选择',
+    name: autoSelectExMainlandHongKongGroupName,
     baseOption: urlTestBaseOption,
     includeAll: true,
+    excludeProxyNameRegex: autoSelectExMainlandHongKongNodeNameRegex,
+    excludeFilter: autoSelectExMainlandHongKongNodeNameRegex.source,
     icon: `${iconBaseUrl}Auto.svg`,
   },
   {
@@ -1320,21 +1328,25 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
       : null;
 
   if (minimalModeEnabled) {
-    const autoSelectGroupEnabled = ruleOptionsEnable.自动选择;
+    const autoSelectExMainlandHongKongEnabled = ruleOptionsEnable[autoSelectExMainlandHongKongGroupName];
 
     const finalRuleProviders = { ...baseRuleProviders };
 
     const defaultGroup = {
       ...selectBaseOption,
       name: '默认代理',
-      proxies: [...allProxiesNames, ...(autoSelectGroupEnabled ? ['自动选择'] : [])],
+      proxies: [
+        ...allProxiesNames,
+        ...(autoSelectExMainlandHongKongEnabled ? [autoSelectExMainlandHongKongGroupName] : []),
+      ],
       icon: `${iconBaseUrl}Proxy.svg`,
     };
 
-    const autoSelectGroup = {
+    const autoSelectExMainlandHongKongGroup = {
       ...urlTestBaseOption,
-      name: '自动选择',
-      proxies: allProxiesNames,
+      name: autoSelectExMainlandHongKongGroupName,
+      proxies: allProxiesNames.filter((name) => !autoSelectExMainlandHongKongNodeNameRegex.test(toMatchableName(name))),
+      'exclude-filter': `(?i)(${autoSelectExMainlandHongKongNodeNameRegex.source})`,
       hidden: true,
     };
 
@@ -1353,7 +1365,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
         '默认代理',
         ...customGroupNames,
         ...(chainGroup ? [chainGroup.name] : []),
-        ...(autoSelectGroupEnabled ? [autoSelectGroup.name] : []),
+        ...(autoSelectExMainlandHongKongEnabled ? [autoSelectExMainlandHongKongGroup.name] : []),
         '直连',
       ],
       icon: `${iconBaseUrl}Global.svg`,
@@ -1361,7 +1373,10 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
 
     return {
       globalGroup,
-      functionalGroups: [defaultGroup, ...(autoSelectGroupEnabled ? [autoSelectGroup] : [])],
+      functionalGroups: [
+        defaultGroup,
+        ...(autoSelectExMainlandHongKongEnabled ? [autoSelectExMainlandHongKongGroup] : []),
+      ],
       functionalRules: [],
       functionalIpRules: [],
       priorityRules: [],
@@ -1394,7 +1409,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
         ? [...serviceRegionGroupNames]
         : ['REJECT']
       : svc.includeAll
-        ? [...allProxiesNames]
+        ? allProxiesNames.filter((name) => !svc.excludeProxyNameRegex?.test(toMatchableName(name)))
         : svc.reject
           ? ['REJECT', 'REJECT-DROP', 'PASS']
           : [
@@ -1413,6 +1428,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
       name: svc.name,
       ...(svc.icon && { icon: svc.icon }),
       proxies: groupProxies,
+      ...(svc.excludeFilter && { 'exclude-filter': `(?i)(${svc.excludeFilter})` }),
       ...(selected !== undefined && { 'default-selected': selected }),
     });
   }
