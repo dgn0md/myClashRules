@@ -247,14 +247,29 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       }
     }
   });
-  h.test('极简模式只额外保留 Apple 特例所需策略组且 MATCH 走默认代理', () =>
+  h.test('极简模式保留 Apple 特例所需地区组且 MATCH 走默认代理', () =>
     withOptions(api, { 极简国内外分流模式: true }, () => {
       const out = api.main(fx.typicalSubscription());
       const groups = out['proxy-groups'];
       h.assertDeep(
         groups.map((g) => g.name),
-        ['GLOBAL', 'Other Apple Service', '默认代理', '自动选择', '直连', '美国', '美国-自动选择'],
-        '极简模式只额外生成 Apple AI/Siri/PCC 美国候选组与 setup.icloud.com 服务组',
+        [
+          'GLOBAL',
+          'Other Apple Service',
+          'Siri Ai/Apple Intelligence',
+          '默认代理',
+          '自动选择',
+          '直连',
+          '日本',
+          '日本-自动选择',
+          '美国',
+          '美国-自动选择',
+          '新加坡',
+          '新加坡-自动选择',
+          '台湾',
+          '台湾-自动选择',
+        ],
+        '极简模式生成 Apple AI/Siri 所需且排除香港的地区组与 setup.icloud.com 服务组',
       );
       h.assert(!out.dns['fake-ip-filter'].includes('rule-set:googlefcm'), '不应注入 FCM fake-IP 规则');
       h.assert(!out.rules.some((rule) => /,(Google|AI|Telegram|Steam|AdBlock)$/.test(rule)), '不应生成分流规则');
@@ -324,10 +339,10 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       h.assertEqual(groupByName(out['proxy-groups'], '香港').hidden, true);
     }),
   );
-  h.test('分流组添加所有节点=true → 普通分流组含全部节点且 AI 仍锁定共享美国组', () =>
+  h.test('分流组添加所有节点=true → AI 仍只提供允许的地区组', () =>
     withOptions(api, { 分流组添加所有节点: true }, () => {
       const out = api.main(fx.minimalSubscription());
-      h.assertDeep(groupByName(out['proxy-groups'], 'AI').proxies, ['美国'], 'AI 组仍只通过共享美国组出站');
+      h.assertDeep(groupByName(out['proxy-groups'], 'AI').proxies, ['日本', '美国'], 'AI 组只提供非香港地区组');
     }),
   );
   h.test('关闭 AI 分流组 → 移除组/规则/规则集', () =>

@@ -74,7 +74,7 @@ node tools/check-doh.js
 
    将 `en0` 换成真实外网接口；多网卡/IPv6 场景需覆盖所有出口。检查 TUN/代理关闭时的对照样本，避免因 DNS 缓存而得到假阴性。
 
-4. 在代理连接日志核对 `Apple智能` / `Siri` / `AppleNews` / `AppleTV`、普通 Apple 直连与两个 DNS 出口。AI/News/TV 的出口与账号受支持地区应一致；缺少美国节点时手动改选。
+4. 在代理连接日志核对 `Apple智能` / `Siri` / `AppleNews` / `AppleTV`、普通 Apple 直连与两个 DNS 出口。AI/News/TV 的出口与账号受支持地区应一致；AI 与 Siri 的地区选择排除受限地区，默认美国（有美国候选时），DNS 跟随策略组当前出口。
 5. 临时阻断两个 DoH 地址，再次查询未缓存域名。预期失败，外网接口仍不出现 UDP/TCP 53；恢复网络后重试。不要为了“能打开”添加明文 DNS。
 6. 在 Windows 多网卡、其他 VPN、移动蜂窝/Wi-Fi 切换、睡眠唤醒后重复。任何未进入 TUN/网关的设备或接口都不能由本配置单独保证接管。
 7. 检查 Siri、News、TV 的真实账号可用性与共享接口影响。若关闭 `Apple地区检测` 后 News 不可用，应结合地图/eSIM/Watch 的需求选择，而不是无条件扩大代理范围。

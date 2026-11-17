@@ -6,13 +6,13 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 
 | 策略组 | 路由范围 | 默认选择 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。 | 固定使用 `美国` 选择器；没有符合筛选条件的美国候选时拒绝连接。 |
+| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。 | 可选地区组排除香港、澳门、大陆及美国制裁/出口限制涉及地区，默认美国（有美国候选时）；无可用地区候选时拒绝连接。DNS 与路由跟随该组当前选择。 |
 | `Apple Product地区` | News、TV/TV+、Fitness、Sports、Books、Apple IP 集合与 `apple-dns.net` / `apple-dns.com` 服务域名。 | 初始美国，可在客户端切换到其他可用候选或直连。 |
-| `Other Apple Service` | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 默认直连；对应 Apple DNS policy 使用 `美国` 组。 |
+| `Other Apple Service` | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 连接默认直连；DNS 使用 `Siri Ai/Apple Intelligence` 当前选择的出口。 |
 | `Apple海外媒体` | 少量共享购买和媒体接口。 | 选项默认关闭。 |
 | `Apple模型下载直连` | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
 
-`AI` 组也锁定到美国选择器；Apple AI 组与通用 AI 组没有美国节点候选时不会回退到默认代理或直连。
+`AI`、`Google`、`TikTok`、`Meta` 与 Apple AI 组都只提供允许地区组，排除香港、澳门、大陆、俄罗斯、白俄罗斯、古巴、伊朗、朝鲜、克里米亚、顿涅茨克和卢甘斯克；默认选择美国（有美国候选时）。DNS policy 指向各自服务组，因此解析出口随该组当前选择变化；没有任何合格地区候选时，Apple AI 组拒绝连接，不回退到默认代理或直连。组名按完整地区名匹配，因此台湾仍是允许选项。
 
 ## 规则顺序与 DNS
 
@@ -22,7 +22,7 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 4. `apple_ip` 进入 `Apple Product地区`；`private_ip` 直连；其他服务 IP 集合按对应服务组分流。
 5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
-每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。DNS policy 通常与路由目标组使用同一出口。明确例外是 `Other Apple Service`：通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS 查询固定经 `美国` 组；服务连接仍按 `Other Apple Service` 当前选择路由，默认直连。`apple-dns.net` 与 `apple-dns.com` 通过更具体的后缀规则进入 `Apple Product地区`，DNS policy 也跟随该组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
+每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。DNS policy 跟随对应的出口策略组。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 通过更具体的后缀规则进入 `Apple Product地区`，DNS policy 也跟随该组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
 
 `cn` 域名集合参与 DNS 与 Fake-IP 过滤，不能用它替代一份完整的直连白名单。也不会把整个 Apple、Cloudflare 或 `17/8` 地址段强制代理。
 

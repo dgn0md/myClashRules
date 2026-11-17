@@ -33,7 +33,7 @@ x-myClashRules:
     Patreon: true # Patreon创作者赞助平台
     EHentai: true # E-Hentai网站
     AdBlock: true # 广告拦截
-    Siri Ai/Apple Intelligence: true # PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国并在缺少美区节点时拒绝
+    Siri Ai/Apple Intelligence: true # PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国；无允许地区候选时拒绝
     Apple Product地区: true # News、TV、Fitness、Sports、Books 与 Apple IP，默认美国并可选直连
     Apple海外媒体: false # iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
     Apple模型下载直连: true # 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
@@ -284,8 +284,8 @@ dns:
       - https://cloudflare-dns.com/dns-query#Microsoft
       - https://dns.google/dns-query#Microsoft
     rule-set:apple:
-      - https://cloudflare-dns.com/dns-query#美国
-      - https://dns.google/dns-query#美国
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     rule-set:telegram:
       - https://cloudflare-dns.com/dns-query#Telegram
       - https://dns.google/dns-query#Telegram
@@ -335,11 +335,11 @@ dns:
       - https://cloudflare-dns.com/dns-query#默认代理
       - https://dns.google/dns-query#默认代理
     gateway.icloud.com:
-      - https://cloudflare-dns.com/dns-query#美国
-      - https://dns.google/dns-query#美国
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     setup.icloud.com:
-      - https://cloudflare-dns.com/dns-query#美国
-      - https://dns.google/dns-query#美国
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     fsend.cn:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
@@ -714,11 +714,6 @@ proxy-groups:
     name: Google
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Google.svg
     proxies:
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
       - 日本
       - 美国
       - 新加坡
@@ -733,7 +728,6 @@ proxy-groups:
       - 法国
       - 荷兰
       - 西班牙
-      - 俄罗斯
       - 乌克兰
       - 土耳其
       - 挪威
@@ -744,10 +738,7 @@ proxy-groups:
       - 越南
       - 泰国
       - 马来西亚
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
+    default-selected: 美国
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -756,7 +747,31 @@ proxy-groups:
     name: AI
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/OpenAI.svg
     proxies:
+      - 日本
       - 美国
+      - 新加坡
+      - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
+    default-selected: 美国
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -978,11 +993,6 @@ proxy-groups:
     name: TikTok
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/TikTok.svg
     proxies:
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
       - 日本
       - 美国
       - 新加坡
@@ -997,7 +1007,6 @@ proxy-groups:
       - 法国
       - 荷兰
       - 西班牙
-      - 俄罗斯
       - 乌克兰
       - 土耳其
       - 挪威
@@ -1008,11 +1017,7 @@ proxy-groups:
       - 越南
       - 泰国
       - 马来西亚
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
-    default-selected: 日本
+    default-selected: 美国
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1063,11 +1068,6 @@ proxy-groups:
     name: Meta
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Meta.svg
     proxies:
-      - 默认代理
-      - 手动选择
-      - 自动选择
-      - 负载均衡
-      - 香港
       - 日本
       - 美国
       - 新加坡
@@ -1082,7 +1082,6 @@ proxy-groups:
       - 法国
       - 荷兰
       - 西班牙
-      - 俄罗斯
       - 乌克兰
       - 土耳其
       - 挪威
@@ -1093,10 +1092,7 @@ proxy-groups:
       - 越南
       - 泰国
       - 马来西亚
-      - 低倍率节点
-      - 高倍率节点
-      - 家宽节点
-      - 其他节点
+    default-selected: 美国
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3
@@ -1503,6 +1499,29 @@ proxy-groups:
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Apple.svg
     proxies:
       - 美国
+      - 日本
+      - 新加坡
+      - 台湾
+      - 韩国
+      - 澳大利亚
+      - 印度尼西亚
+      - 印度
+      - 加拿大
+      - 德国
+      - 英国
+      - 法国
+      - 荷兰
+      - 西班牙
+      - 乌克兰
+      - 土耳其
+      - 挪威
+      - 瑞士
+      - 瑞典
+      - 爱尔兰
+      - 菲律宾
+      - 越南
+      - 泰国
+      - 马来西亚
   - timeout: 5000
     url: https://www.apple.com/library/test/success.html
     max-failed-times: 3

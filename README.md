@@ -9,6 +9,7 @@ myClashRules 是基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) �
 - **机场设置由脚本接管**：展开机场配置时只读取并处理节点；机场的 DNS、`fake-ip-filter`、DNS policy、路由、策略组及其他设置不会进入输出。最终 DNS、hosts、路由和开关都由本脚本生成。
 - **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
 - **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。
+- **服务组地区选择**：`AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 只提供允许的地区节点组，排除香港、澳门、大陆及美国制裁/出口限制涉及地区；默认选择美国（有美国候选时）。这些组的 DNS 解析出口跟随该组当前选择。
 - **Apple 细分为三个独立组**：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。范围与副作用见[Apple 分流说明](docs/apple-routing.md)。
 - **严格加密 DNS 默认开启**：机场 DNS 设置完全丢弃，最终配置使用脚本生成的加密解析；严格模式校验生成结果，不接受明文上游或不安全 TLS，也不静默降级。
 - **补充纯 IP 入站的域名识别**：TUN 内的 HTTP Host、TLS SNI 与可识别 QUIC 握手可补充域名元数据；默认不改写实际目标地址，也不解密 HTTPS。
@@ -60,7 +61,7 @@ node tools/build.js --settings Config/mihomoConfig.yaml --subscription .local/su
 
 | 策略组 | 默认行为 | 范围 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | 使用 `美国` 选择器；缺少美区候选时拒绝连接。 | Apple Intelligence、Siri、PCC、地区检测端点及部分共享 Relay/iCloud 内容端点。 |
+| `Siri Ai/Apple Intelligence` | 可选地区组排除香港、澳门、大陆及美国制裁/出口限制涉及地区；默认美国（有美国候选时）。无可用地区候选时拒绝连接，DNS 跟随当前选择。 | Apple Intelligence、Siri、PCC、地区检测端点及部分共享 Relay/iCloud 内容端点。 |
 | `Apple Product地区` | 初始选择美国，可在客户端切换，包括直连。 | News、TV、Fitness、Sports、Books，以及 `apple_ip`。 |
 | `Other Apple Service` | 默认直连。 | 广泛 Apple 域名规则，以及精确主机 `gateway.icloud.com`、`setup.icloud.com`。 |
 | `Apple海外媒体` | 默认关闭。 | 可选共享购买和媒体接口。 |

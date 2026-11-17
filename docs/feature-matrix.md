@@ -22,8 +22,9 @@
 | 倍率与家宽节点 | 识别带 `x`、`倍` 等标记的倍率，区分低倍率与大于 1 的高倍率；识别家宽、住宅、原生 IP、ISP、RES 等住宅标签。 | `1x` 不归高倍率；节点编号如 `08` 不按倍率解释。默认只分类，倍率过滤开关默认关闭。 |
 | 单一来源与双全量产物 | 脚本管理行为，YAML 通过构建器再生成；无第二份精简规则。 | 静态 YAML 中的扩展选项须重新生成。 |
 | 细分 Apple 路由 | 采用 `Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service` 三组。 | 共享 HTTPS 主机无法按应用路径拆分；详见[Apple 路由范围](apple-routing.md)。 |
-| DNS 与路由出口 | DNS resolver 通常跟随精确域名、后缀或动态 domain/classical provider 的路由目标组。 | Apple 例外：`Other Apple Service` 的连接仍由该组选择，默认直连；其通用 Apple DNS policy 固定使用 `美国` 组，显式 `.apple-dns.net` / `.apple-dns.com` 规则则改用 `Apple Product地区` DNS。私网、CN、douyin 等保留集合使用专用 policy；IP-CIDR provider 不发起域名查询。 |
+| DNS 与路由出口 | DNS resolver 跟随精确域名、后缀或动态 domain/classical provider 对应的 DNS 出口组。 | `Other Apple Service` 的连接仍由该组选择，默认直连；其通用 Apple DNS policy 跟随 `Siri Ai/Apple Intelligence` 当前选择，`.apple-dns.net` / `.apple-dns.com` 跟随 `Apple Product地区`。私网、CN、douyin 等保留集合使用专用 policy；IP-CIDR provider 不发起域名查询。 |
 | 服务 IP 细分 | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 的 IP provider 分别使用对应服务组。 | 专用 IP 规则在通用 `cn_ip` 直连兜底之前；私网 IP 仍直连。 |
+| 服务组地区选择 | `AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 排除香港、澳门、大陆，以及俄罗斯、白俄罗斯、古巴、伊朗、朝鲜、克里米亚、顿涅茨克和卢甘斯克地区组；默认美国（有美国候选时）。 | 按完整地区组名筛选，台湾仍可选；服务组 DNS policy 跟随各自当前选择。`Other Apple Service` 的 DNS 复用 Siri 组。 |
 | 机场配置覆盖 | 展开模式只读取机场 `proxies`，并可用机场 hosts 映射改写节点 server；其他机场设置不进入输出。 | DNS、`fake-ip-filter`、DNS policy、路由、策略组、hosts 表和其他非节点设置均由脚本重建；静态 provider 模式无法读取远端订阅节点或 hosts。 |
 | 严格加密 DNS | DNS 上游、policy 与 Fake-IP 例外由脚本生成；严格模式校验最终输出，拒绝明文 DNS、system/DHCP 和不安全 TLS 配置，不会静默降级。 | 机场 DNS 设置全部丢弃；即使机场 DNS 含 system/DHCP、明文或跳过证书校验，也不会阻断脚本覆写。 |
 | 纯 IP 域名嗅探 | 使用 HTTP Host、TLS SNI 与受支持的 QUIC 元数据补充规则匹配。 | 不解密 HTTPS，不改写目标地址；未进入 TUN 或无可见域名的流量仍按其他规则处理。 |
@@ -34,7 +35,7 @@
 
 | 策略组 | 负责范围 | 默认与出口 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、地区检测端点及少量共享 Relay/iCloud 内容端点。 | 通过美国组；没有符合名称筛选的美国候选时使用拒绝策略。 |
+| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、地区检测端点及少量共享 Relay/iCloud 内容端点。 | 默认美国，可切换到其他允许地区；没有可用地区候选时拒绝连接，DNS 跟随当前选择。 |
 | `Apple Product地区` | News、TV、Fitness、Sports、Books、`apple_ip` 与 Apple DNS 的 `.apple-dns.net` / `.apple-dns.com` 域名。 | 默认美国，客户端可改选其他候选或直连。 |
 | `Other Apple Service` | 广泛 Apple 动态域名集合、常规 Apple 服务及精确主机 `gateway.icloud.com`、`setup.icloud.com`。 | 默认直连。 |
 
@@ -53,6 +54,7 @@
 - 严格加密 DNS、TUN、DNS 53 接管、纯 IP 域名嗅探、IPv6 与 PCDN 拦截默认开启。
 - Apple 服务默认启用；`Apple海外媒体` 默认关闭。
 - `Apple Product地区` 初始选择美国；`Other Apple Service` 默认直连。
+- `AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 默认选择美国；上述排除地区组不作为这些组的候选。
 - 局域网访问、非国内目标 QUIC 阻断、链式代理默认关闭。
 - 低/高倍率节点过滤默认关闭；非地区信息节点过滤默认开启。
 - `cn_ip` 仅是规则顺序靠后的直连兜底，不代表全部中国域名或地址集合都可直连。
