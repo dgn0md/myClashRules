@@ -4,15 +4,15 @@ myClashRules 是面向 Mihomo 的完整规则与配置生成项目，提供订�
 
 ## 项目能力
 
-- **全量节点名称识别**：展开订阅时覆盖样本中的 26 个地区，以及倍率、家宽/住宅节点；按名称文字纠正冲突国旗。默认过滤面板、公告和网址行，包含地区名也会过滤。静态 provider 只能按正则筛选候选，不能重命名或纠正旗帜；地区名称也不证明实际出口地区。
+- **全量节点名称识别**：自动识别 26 个地区节点名称，以及倍率、家宽/住宅节点；按名称文字纠正冲突国旗。默认过滤面板、公告和网址行，包含地区名也会过滤。静态 provider 只能按正则筛选候选，不能重命名或纠正旗帜；地区名称也不证明实际出口地区。
 - **完整订阅节点整理**：节点名称清理与补旗、去重、`dialer-proxy` 与必要的 hosts 节点映射均由项目脚本处理。
 - **机场设置由脚本接管**：展开机场配置时只读取并处理节点；机场的 DNS、`fake-ip-filter`、DNS policy、路由、策略组及其他设置不会进入输出。最终 DNS、hosts、路由和开关都由本脚本生成。
 - **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
 - **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。
-- **服务组地区选择**：`AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 只提供允许的地区节点组，排除香港、澳门、大陆及美国制裁/出口限制涉及地区；默认选择美国（有美国候选时）。这些组的 DNS 解析出口跟随该组当前选择。
-- **Apple 细分为三个独立组**：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。范围与副作用见[Apple 分流说明](docs/apple-routing.md)。
+- **服务组地区选择**：`AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 等几十个自动分流策略组。这些组的 DNS 解析出口跟随该组当前选择。
+- **Apple 细分为三个独立组**：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。范围与作用见[Apple 分流说明](docs/apple-routing.md)。
 - **严格加密 DNS 默认开启**：机场 DNS 设置完全丢弃，最终配置使用脚本生成的加密解析；严格模式校验生成结果，不接受明文上游或不安全 TLS，也不静默降级。
-- **补充纯 IP 入站的域名识别**：TUN 内的 HTTP Host、TLS SNI 与可识别 QUIC 握手可补充域名元数据；默认不改写实际目标地址，也不解密 HTTPS。
+- **纯 IP 入站的域名识别**：TUN 内的 HTTP Host、TLS SNI 与可识别 QUIC 握手可补充域名元数据；默认不改写实际目标地址，也不解密 HTTPS。
 - **完整配置与静态配置共用构建链**：静态 YAML 的扩展开关经脚本生成后才生效；传入本地订阅文件时，构建工具也能按脚本算法处理实际节点。
 
 ## 发布入口
@@ -20,10 +20,8 @@ myClashRules 是面向 Mihomo 的完整规则与配置生成项目，提供订�
 | 文件 | 用途 |
 | --- | --- |
 | [全量覆写脚本](Script/mihomoScript.js) | 输入含 `proxies` 数组的 Clash/Mihomo 配置，动态处理节点和完整路由。 |
-| [大陆 JS CDN](https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js) | 面向大陆访问；GitHub Actions 每 3 小时请求并验证脚本响应。 |
+| [大陆CDN](https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js) | GitHub Actions 每 3 小时请求并验证脚本响应。 |
 | [全量静态配置](Config/mihomoConfig.yaml) | 使用 Mihomo 的 proxy provider 与 rule provider；也可由构建工具从订阅展开生成个人配置。 |
-
-没有独立精简版。`极简国内外分流模式` 是全量脚本内的选项，不是另一份发布产物。
 
 ## 使用覆写脚本
 
