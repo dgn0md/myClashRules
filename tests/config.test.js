@@ -183,6 +183,29 @@ test('static provider applies enabled rate filters to every node-bearing group',
   }
 });
 
+test('regional selectors default to their own auto-select groups only when those groups exist', () => {
+  const regions = load().regionDefinitions.map((entry) => entry.name);
+  for (const config of [build().config, build({ subscription: fx.typicalSubscription() }).config]) {
+    const groups = new Map(config['proxy-groups'].map((entry) => [entry.name, entry]));
+    for (const region of regions) {
+      const group = groups.get(region);
+      if (!group) continue;
+      assert.equal(group['default-selected'], `${region}-自动选择`, `${region} should default to its url-test`);
+      assert.ok(group.proxies.includes(group['default-selected']));
+    }
+    for (const name of ['低倍率节点', '高倍率节点', '家宽节点', '其他节点'])
+      assert.equal(groups.get(name)?.['default-selected'], undefined, `${name} should keep its existing selection behavior`);
+  }
+  const noAutoSelect = build({
+    subscription: fx.typicalSubscription(),
+    settings: { options: { 生成地区自动选择组: false } },
+  }).config;
+  for (const region of regions) {
+    const group = noAutoSelect['proxy-groups'].find((entry) => entry.name === region);
+    if (group) assert.equal(group['default-selected'], undefined, `${region} has no auto-select target`);
+  }
+});
+
 test('default script and provider YAML have complete graphs and encrypted DNS', () => {
   for (const config of [build({ subscription: fx.typicalSubscription() }).config, build().config]) {
     graph(config);

@@ -1128,12 +1128,14 @@ function createRegionGroup(name, icon, proxies) {
 
   if (generateRegionAutoSelectEnabled) {
     const urlTestName = `${name}-自动选择`;
+    const isCountryRegion = regionDefinitions.some((region) => region.name === name);
     return [
       {
         ...selectBaseOption,
         name,
         icon,
         proxies: [...proxies, urlTestName],
+        ...(isCountryRegion && { 'default-selected': urlTestName }),
         hidden: hideManualSelectGroupEnabled,
       },
       {
