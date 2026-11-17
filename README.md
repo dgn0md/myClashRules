@@ -1,11 +1,11 @@
 # myClashRules
 
-myClashRules 是基于 [AIsouler/MyClash](https://github.com/AIsouler/MyClash) 全量脚本维护的 Mihomo 规则项目。它保留上游节点整理与服务分流能力，并把严格加密 DNS、DNS 与路由出口对齐、Apple 精细分组及纯 IP 域名嗅探整合到同一套生成逻辑。
+myClashRules 是面向 Mihomo 的完整规则与配置生成项目，提供订阅节点整理、服务分流、严格加密 DNS、DNS 解析出口控制、Apple 服务细分路由和纯 IP 域名识别。脚本覆写、静态配置与本地订阅展开共用同一套规则生成逻辑。
 
-## 本仓库的特色
+## 项目能力
 
 - **全量节点名称识别**：展开订阅时覆盖样本中的 26 个地区，以及倍率、家宽/住宅节点；按名称文字纠正冲突国旗。默认过滤面板、公告和网址行，包含地区名也会过滤。静态 provider 只能按正则筛选候选，不能重命名或纠正旗帜；地区名称也不证明实际出口地区。
-- **节点整理能力继续维护**：节点名称清理与补旗、去重、`dialer-proxy` 与必要的 hosts 节点映射沿用上游算法。
+- **完整订阅节点整理**：节点名称清理与补旗、去重、`dialer-proxy` 与必要的 hosts 节点映射均由项目脚本处理。
 - **机场设置由脚本接管**：展开机场配置时只读取并处理节点；机场的 DNS、`fake-ip-filter`、DNS policy、路由、策略组及其他设置不会进入输出。最终 DNS、hosts、路由和开关都由本脚本生成。
 - **单一规则来源**：`Script/mihomoScript.js` 定义选项、组、DNS 和路由；`Config/mihomoConfig.yaml` 是由它生成的全量静态配置。仓库只发布这两个全量产物。
 - **DNS 与出口保持一致**：可路由的显式域名规则和动态 domain/classical 规则集使用与目标组对应的 DNS policy；私网、CN、douyin 等保留专用 DNS policy。Apple IP 与各服务 IP 规则先于 `cn_ip` 直连兜底。
@@ -34,7 +34,7 @@ https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.j
 https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 ```
 
-第二个链接使用大陆 CDN；定时任务每 3 小时访问该地址，使镜像缓存过期后重新从上游获取。CDN 的分支缓存仍可能有传播延迟。
+第二个链接使用大陆 CDN；定时任务每 3 小时访问该地址，使镜像缓存过期后重新从 GitHub 源站获取。CDN 的分支缓存仍可能有传播延迟。
 
 在脚本顶部的 `ruleOptionsEnable` 中设置布尔选项。需要 Bettbox 图形界面的客户端可读取脚本提供的策略组开关元数据。自定义节点写入 `customizeProxies`；开启 `链式代理` 后，自定义节点作为落地节点，经 `链式中转` 组连接。
 
@@ -97,8 +97,8 @@ node tools/download-rules.js .local/rules
 node tools/native-check.js /path/to/mihomo .local/rules
 ```
 
-更多说明：[功能目录](docs/feature-matrix.md)、[Apple 路由范围](docs/apple-routing.md)、[动态规则来源](docs/rule-sources.md)、[上游回归测试](Test/README.md)。
+更多说明：[功能目录](docs/feature-matrix.md)、[Apple 路由范围](docs/apple-routing.md)、[动态规则来源](docs/rule-sources.md)、[节点处理与兼容性测试](Test/README.md)。
 
 ## 来源与许可
 
-本项目基于 [AIsouler/MyClash@4861619](https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1)，保留上游 MIT 许可与作者署名。图标继续使用上游 SVG URL，不修改图形。项目许可见 [LICENSE](LICENSE)。
+本项目以独立仓库维护规则、DNS、路由与配置生成。项目起始代码来自 [AIsouler/MyClash@4861619](https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1)；相关 MIT 许可与作者署名见 [LICENSE](LICENSE)。图标按原 SVG URL 引用，不修改图形。
