@@ -20,7 +20,7 @@ myClashRules 是面向 Mihomo 的完整规则与配置生成项目，提供订�
 | 文件 | 用途 |
 | --- | --- |
 | [全量覆写脚本](Script/mihomoScript.js) | 输入含 `proxies` 数组的 Clash/Mihomo 配置，动态处理节点和完整路由。 |
-| [大陆CDN](https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js) | GitHub Actions 每 3 小时请求并验证脚本响应。 |
+| [jsDelivr CDN](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js) | GitHub Actions 每 3 小时请求并验证脚本响应。 |
 | [全量静态配置](Config/mihomoConfig.yaml) | 使用 Mihomo 的 proxy provider 与 rule provider；也可由构建工具从订阅展开生成个人配置。 |
 
 ## 使用覆写脚本
@@ -29,10 +29,10 @@ myClashRules 是面向 Mihomo 的完整规则与配置生成项目，提供订�
 
 ```text
 https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
-https://cdn.jsdmirror.com/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
+https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 ```
 
-第二个链接使用大陆 CDN；定时任务每 3 小时访问该地址，使镜像缓存过期后重新从 GitHub 源站获取。CDN 的分支缓存仍可能有传播延迟。
+第二个链接使用 jsDelivr CDN；定时任务每 3 小时检查该地址与 GitHub 源码。分支别名有缓存窗口，更新可能延迟。
 
 在脚本顶部的 `ruleOptionsEnable` 中设置布尔选项。需要 Bettbox 图形界面的客户端可读取脚本提供的策略组开关元数据。自定义节点写入 `customizeProxies`；开启 `链式代理` 后，自定义节点作为落地节点，经 `链式中转` 组连接。
 

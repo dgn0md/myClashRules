@@ -1,4 +1,4 @@
-name: Refresh and verify mainland JS CDN cache
+name: Verify jsDelivr script CDN
 
 on:
   schedule:
@@ -32,7 +32,7 @@ jobs:
           fi
 
           source_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/Script/mihomoScript.js"
-          cdn_url="https://cdn.jsdmirror.com/gh/${GITHUB_REPOSITORY}@main/Script/mihomoScript.js"
+          cdn_url="https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/Script/mihomoScript.js"
           expected="$(mktemp)"
           response="$(mktemp)"
           trap 'rm -f "$expected" "$response"' EXIT
