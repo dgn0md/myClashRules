@@ -8,6 +8,7 @@ on:
       - main
     paths:
       - Script/mihomoScript.js
+      - .github/workflows/refresh-mainland-cdn.yml
   workflow_dispatch:
 
 permissions: {}
