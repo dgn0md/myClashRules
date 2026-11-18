@@ -11,8 +11,8 @@ const cdnUrl = 'https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/miho
 
 const MARKERS = `/**
  * 最新 Raw SHA-256：${'0'.repeat(64)}
- * Raw 链接：[${rawUrl}](${rawUrl})
- * CDN 链接：[${cdnUrl}](${cdnUrl})
+ * Raw 脚本：${rawUrl}
+ * CDN 脚本：${cdnUrl}
  * 示例脚本内容
  */
 `;
@@ -38,9 +38,9 @@ test('source and generated CDN copy carry distinct version identifiers', () => {
   assert.equal(computeCdnScriptSha256(cdnScript), cdn.cdnSha256);
   assert.notEqual(rawSha256, cdn.cdnSha256);
   assert.ok(cdnScript.includes(cdnUrl));
-  assert.ok(text.includes(rawUrl));
-  assert.ok(text.includes(cdnUrl));
+  assert.ok(!text.includes(rawUrl));
+  assert.ok(!text.includes(cdnUrl));
+  assert.ok(text.includes('https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml'));
   assert.ok(text.includes('https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml'));
-  assert.ok(text.includes(`最新 Raw SHA-256：${rawSha256}`));
-  assert.ok(text.includes(`缓存 CDN SHA-256：${cdn.cdnSha256}`));
+  assert.ok(text.includes('MIT License；Copyright (c) 2026 dgn0md、AIsouler。'));
 });

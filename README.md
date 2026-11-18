@@ -37,7 +37,7 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
 
 GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 `Config/mihomoConfig.yaml`。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
 
-CDN 脚本由 GitHub Actions 从源脚本生成；源脚本和 CDN 副本分别显示 Raw 与 CDN SHA-256，生成 YAML 注释会同时列出两者。
+CDN 脚本由 GitHub Actions 从源脚本生成；源脚本和 CDN 副本分别显示 Raw 与 CDN SHA-256，YAML 注释只列出 YAML 文件的 Raw/CDN 下载地址。
 
 ## 边界
 

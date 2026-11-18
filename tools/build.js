@@ -4,7 +4,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const YAML = require('yaml');
-const { buildCdnScript } = require('./build-cdn-script');
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'Script/mihomoScript.js');
 function load() {
@@ -139,7 +138,6 @@ function template(api, settings) {
 }
 function render(config, api, settings) {
   const scriptSource = fs.readFileSync(SCRIPT, 'utf8');
-  const { sourceSha256, cdnSha256 } = buildCdnScript(scriptSource);
   const optionsBlock = /const ruleOptionsEnable = \{([\s\S]*?)\n\};/.exec(scriptSource)[1];
   const descriptions = {};
   for (const line of optionsBlock.split('\n')) {
@@ -147,14 +145,13 @@ function render(config, api, settings) {
     if (m) descriptions[m[1] || m[2] || m[3]] = m[4];
   }
   const header = [
-    '# myClashRules 全量配置，由本项目脚本生成；初始代码来自 AIsouler/MyClash（MIT），署名见 LICENSE。',
-    `# Raw 链接：[https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js)`,
-    `# CDN 链接：[https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js)`,
-    '# 配置 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml',
-    `# 最新 Raw SHA-256：${sourceSha256}`,
-    `# 缓存 CDN SHA-256：${cdnSha256}`,
+    '# myClashRules Mihomo 全量静态配置',
+    '# 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。',
+    '# 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。',
+    '# Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml',
+    '# CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml',
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
-    '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。',
+    '# 此 YAML 的开关由 GitHub Actions 生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后自动重新生成。',
     '# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。',
     '# 严格模式无明文上游 DNS；需 TUN/网关接管才覆盖系统流量。不可达时不降级。',
     '# 请勿将真实订阅链接/节点提交到 Git。true 是正确拼写，ture 会被拒绝。',
