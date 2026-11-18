@@ -7,9 +7,15 @@ on:
     branches:
       - main
     paths:
-      - Script/mihomoScript.js
-      - .github/workflows/refresh-mainland-cdn.yml
+      - Script/mihomoScript.cdn.js
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Sync script and generate config
+    branches:
+      - main
+    types:
+      - completed
 
 permissions: {}
 
@@ -19,6 +25,7 @@ concurrency:
 
 jobs:
   refresh:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,8 +38,17 @@ jobs:
             exit 1
           fi
 
-          source_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/Script/mihomoScript.js"
-          cdn_url="https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/Script/mihomoScript.js"
+          main_commit_info="$(curl --fail --silent --show-error --location \
+            --connect-timeout 10 --max-time 30 \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/main")"
+          main_commit_sha="$(jq -r '.sha // empty' <<< "$main_commit_info")"
+          if [[ -z "$main_commit_sha" ]]; then
+            echo "::error::Could not determine the current main commit."
+            exit 1
+          fi
+
+          source_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${main_commit_sha}/Script/mihomoScript.cdn.js"
+          cdn_url="https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/Script/mihomoScript.cdn.js"
           expected="$(mktemp)"
           response="$(mktemp)"
           trap 'rm -f "$expected" "$response"' EXIT
@@ -42,6 +58,7 @@ jobs:
             "$source_url" --output "$expected"
           test -s "$expected"
           grep -qF 'function main(config)' "$expected"
+          grep -qF 'CDN 对应源脚本 SHA-256：' "$expected"
           expected_sha="$(sha256sum "$expected" | cut -d ' ' -f 1)"
 
           curl --fail --silent --show-error --location \
@@ -50,12 +67,12 @@ jobs:
             "$cdn_url" --output "$response"
           test -s "$response"
           if cmp -s "$expected" "$response"; then
-            echo "CDN content matches source commit ${GITHUB_SHA} (sha256: ${expected_sha})."
+            echo "CDN content matches source commit ${main_commit_sha} (sha256: ${expected_sha})."
             exit 0
           fi
 
           actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
-          script_commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=Script%2FmihomoScript.js&sha=${GITHUB_SHA}&per_page=1"
+          script_commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=Script%2FmihomoScript.cdn.js&sha=${main_commit_sha}&per_page=1"
           script_commit_info="$(curl --fail --silent --show-error --location \
             --connect-timeout 10 --max-time 30 "$script_commits_url")"
           script_commit_sha="$(jq -r '.[0].sha // empty' <<< "$script_commit_info")"

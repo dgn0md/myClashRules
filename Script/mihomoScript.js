@@ -1,12 +1,9 @@
 /**
  * myClashRules Mihomo 配置覆写脚本（全量版）
  * 项目维护：dgn0md/myClashRules（独立维护）
- * 初始代码来源：https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1
- * 原始作者：AIsouler；MIT 许可与版权署名见仓库 LICENSE。
- * 脚本唯一 SHA-256（哈希字段值不参与计算）：92b9bd4f96ceb11a944d647844c0d352882ed00eac616cdcc029ef4515e7ddc5
+ * 脚本 SHA-256：09e1c24a13789551a082ce30e345be45013fa8a9e075f68f0726ee107a3b170b
  * 脚本链接：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
- * CDN 脚本链接：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
- * CDN 缓存源脚本 SHA-256（哈希字段值不参与计算）：92b9bd4f96ceb11a944d647844c0d352882ed00eac616cdcc029ef4515e7ddc5
+ * CDN 脚本链接：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  */
 
 // --- 静态配置区域 ---

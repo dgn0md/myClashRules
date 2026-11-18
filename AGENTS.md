@@ -3,8 +3,8 @@
 ## 项目范围与产物
 
 - 项目基于 AIsouler/MyClash `4861619be366c7bacabfed6d581bb8c450de1ca1` 全量版；上游约定见 `docs/upstream/AGENT.md`。
-- 只维护 `Script/mihomoScript.js` 与 `Config/mihomoConfig.yaml` 两个全量产物，不增加精简版。`极简国内外分流模式` 是脚本选项。
-- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，由 GitHub Actions 自动更新脚本 SHA-256 标识、生成并提交 YAML，无需本地构建。
+- 只维护全量脚本源文件 `Script/mihomoScript.js` 与配置文件 `Config/mihomoConfig.yaml`，不增加精简版。`Script/mihomoScript.cdn.js` 是 GitHub Actions 生成的 CDN 副本；`极简国内外分流模式` 是脚本选项。
+- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，由 GitHub Actions 更新脚本 SHA、生成带源脚本 SHA 标记的 CDN 副本、生成并提交 YAML，无需本地构建。
 - YAML 的 `x-myClashRules` 扩展字段只供构建工具读取，Mihomo 内核不会执行。
 
 ## 必须保留的行为

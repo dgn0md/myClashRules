@@ -148,9 +148,9 @@ function render(config, api, settings) {
   }
   const header = [
     '# myClashRules 全量配置，由本项目脚本生成；初始代码来自 AIsouler/MyClash（MIT），署名见 LICENSE。',
-    '# 脚本 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js',
+    '# 脚本 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js',
     '# 配置 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml',
-    `# CDN 缓存对应的源脚本 SHA-256（脚本头部两个 SHA 字段值归零后计算）：${scriptSha256}`,
+    `# CDN 对应源脚本 SHA-256：${scriptSha256}`,
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
     '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。',
     '# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。',

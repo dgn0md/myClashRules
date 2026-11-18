@@ -17,10 +17,10 @@
 
 ## 发布入口
 
-| 产物 | 仓库文件 | CDN / 下载 |
-| --- | --- | --- |
-| 全量覆写脚本 | [Script/mihomoScript.js](Script/mihomoScript.js) | [jsDelivr CDN](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js) |
-| 全量静态配置 | [Config/mihomoConfig.yaml](Config/mihomoConfig.yaml) | [jsDelivr CDN](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml) · [raw 下载](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) |
+| **产物** | **Raw下载** | **CDN下载** |
+| ------ | --------- | --------- |
+| 全量覆写脚本 | [mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js) | [mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js) |
+| 全量静态配置 | [mihomoConfig.yaml](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) | [mihomoConfig.yaml](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml) |
 
 ## 使用
 
@@ -28,7 +28,7 @@
 
 ```text
 https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
-https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
+https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
 ```
 
 静态配置可下载上表中的 YAML，填写 `proxy-providers.订阅.url` 后导入 Mihomo。静态 provider 由内核读取订阅，无法在构建时处理远端节点名称或机场 hosts。需要完整节点处理时，使用本地订阅展开模式，见[功能目录](docs/feature-matrix.md)。
@@ -37,7 +37,7 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 
 GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 `Config/mihomoConfig.yaml`。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
 
-脚本头部和生成 YAML 注释会显示同一源脚本 SHA-256；该标识由 GitHub Actions 在更新 CDN/配置产物时刷新。
+CDN 脚本由 GitHub Actions 从源脚本生成，并在副本中注明对应源脚本的 SHA-256。生成 YAML 注释也会显示该源脚本 SHA-256。
 
 ## 边界
 
