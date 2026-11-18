@@ -3,8 +3,10 @@
  * 项目维护：dgn0md/myClashRules（独立维护）
  * 初始代码来源：https://github.com/AIsouler/MyClash/commit/4861619be366c7bacabfed6d581bb8c450de1ca1
  * 原始作者：AIsouler；MIT 许可与版权署名见仓库 LICENSE。
+ * 脚本唯一 SHA-256（哈希字段值不参与计算）：92b9bd4f96ceb11a944d647844c0d352882ed00eac616cdcc029ef4515e7ddc5
  * 脚本链接：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
- * 友情推荐，非常好用、省电且内存占用低的代理软件：https://github.com/appshubcc/Bettbox
+ * CDN 脚本链接：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
+ * CDN 缓存源脚本 SHA-256（哈希字段值不参与计算）：92b9bd4f96ceb11a944d647844c0d352882ed00eac616cdcc029ef4515e7ddc5
  */
 
 // --- 静态配置区域 ---

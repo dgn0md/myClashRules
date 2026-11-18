@@ -16,6 +16,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Update the script SHA identifier
+        run: node tools/script-sha.js --update
       - name: Generate static config from repository sources
         run: npm run build
       - run: npm test

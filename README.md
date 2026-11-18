@@ -20,7 +20,7 @@
 | 产物 | 仓库文件 | CDN / 下载 |
 | --- | --- | --- |
 | 全量覆写脚本 | [Script/mihomoScript.js](Script/mihomoScript.js) | [jsDelivr CDN](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js) |
-| 全量静态配置 | [Config/mihomoConfig.yaml](Config/mihomoConfig.yaml) | [下载 YAML](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) |
+| 全量静态配置 | [Config/mihomoConfig.yaml](Config/mihomoConfig.yaml) | [jsDelivr CDN](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml) · [raw 下载](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) |
 
 ## 使用
 
@@ -36,6 +36,8 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 静态 YAML 中的扩展开关不会由 Mihomo 内核执行。更改 `Config/mihomoConfig.yaml` 中的选项并推送后，GitHub Actions 会自动重新生成并提交 YAML，无需本地构建。
 
 GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 `Config/mihomoConfig.yaml`。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
+
+脚本头部和生成 YAML 注释会显示同一源脚本 SHA-256；该标识由 GitHub Actions 在更新 CDN/配置产物时刷新。
 
 ## 边界
 
