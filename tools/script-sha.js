@@ -5,7 +5,7 @@ const path = require('node:path');
 
 const SCRIPT = path.resolve(__dirname, '../Script/mihomoScript.js');
 const HASH_FIELDS = [
-  /^([ \t]*\* 脚本 SHA-256：)[0-9a-f]{64}$/gm,
+  /^([ \t]*\* 最新 Raw SHA-256：)[0-9a-f]{64}$/gm,
 ];
 
 function replaceHashFields(source, value) {

@@ -4,10 +4,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { build } = require('../tools/build');
 const { computeScriptSha256, updateScriptSha256 } = require('../tools/script-sha');
-const { buildCdnScript } = require('../tools/build-cdn-script');
+const { buildCdnScript, computeCdnScriptSha256 } = require('../tools/build-cdn-script');
+
+const rawUrl = 'https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js';
+const cdnUrl = 'https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js';
 
 const MARKERS = `/**
- * 脚本 SHA-256：${'0'.repeat(64)}
+ * 最新 Raw SHA-256：${'0'.repeat(64)}
+ * Raw 链接：[${rawUrl}](${rawUrl})
+ * CDN 链接：[${cdnUrl}](${cdnUrl})
  * 示例脚本内容
  */
 `;
@@ -20,16 +25,22 @@ test('script SHA-256 is stable when its own identifier fields are updated', () =
   assert.notEqual(computeScriptSha256(result.text.replace('示例脚本内容', '更新后的脚本内容')), result.sha256);
 });
 
-test('source keeps its own SHA while the generated CDN script identifies that source', () => {
+test('source and generated CDN copy carry distinct version identifiers', () => {
   const script = fs.readFileSync('Script/mihomoScript.js', 'utf8');
-  const sha256 = computeScriptSha256(script);
-  const cdnScript = buildCdnScript(script).text;
+  const rawSha256 = computeScriptSha256(script);
+  const cdn = buildCdnScript(script);
+  const cdnScript = cdn.text;
   const text = build().text;
-  assert.match(script, new RegExp(`脚本 SHA-256：${sha256}`));
-  assert.doesNotMatch(script, /CDN 对应源脚本 SHA-256/);
-  assert.match(cdnScript, new RegExp(`CDN 对应源脚本 SHA-256：${sha256}`));
-  assert.ok(cdnScript.includes('https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js'));
-  assert.ok(text.includes('https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js'));
+  assert.match(script, new RegExp(`最新 Raw SHA-256：${rawSha256}`));
+  assert.doesNotMatch(script, /缓存 CDN SHA-256/);
+  assert.match(cdnScript, new RegExp(`最新 Raw SHA-256：${rawSha256}`));
+  assert.match(cdnScript, new RegExp(`缓存 CDN SHA-256：${cdn.cdnSha256}`));
+  assert.equal(computeCdnScriptSha256(cdnScript), cdn.cdnSha256);
+  assert.notEqual(rawSha256, cdn.cdnSha256);
+  assert.ok(cdnScript.includes(cdnUrl));
+  assert.ok(text.includes(rawUrl));
+  assert.ok(text.includes(cdnUrl));
   assert.ok(text.includes('https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml'));
-  assert.ok(text.includes(`CDN 对应源脚本 SHA-256：${sha256}`));
+  assert.ok(text.includes(`最新 Raw SHA-256：${rawSha256}`));
+  assert.ok(text.includes(`缓存 CDN SHA-256：${cdn.cdnSha256}`));
 });

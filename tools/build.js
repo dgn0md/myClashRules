@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const YAML = require('yaml');
-const { computeScriptSha256 } = require('./script-sha');
+const { buildCdnScript } = require('./build-cdn-script');
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'Script/mihomoScript.js');
 function load() {
@@ -139,7 +139,7 @@ function template(api, settings) {
 }
 function render(config, api, settings) {
   const scriptSource = fs.readFileSync(SCRIPT, 'utf8');
-  const scriptSha256 = computeScriptSha256(scriptSource);
+  const { sourceSha256, cdnSha256 } = buildCdnScript(scriptSource);
   const optionsBlock = /const ruleOptionsEnable = \{([\s\S]*?)\n\};/.exec(scriptSource)[1];
   const descriptions = {};
   for (const line of optionsBlock.split('\n')) {
@@ -148,9 +148,11 @@ function render(config, api, settings) {
   }
   const header = [
     '# myClashRules 全量配置，由本项目脚本生成；初始代码来自 AIsouler/MyClash（MIT），署名见 LICENSE。',
-    '# 脚本 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js',
+    `# Raw 链接：[https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js)`,
+    `# CDN 链接：[https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js)`,
     '# 配置 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml',
-    `# CDN 对应源脚本 SHA-256：${scriptSha256}`,
+    `# 最新 Raw SHA-256：${sourceSha256}`,
+    `# 缓存 CDN SHA-256：${cdnSha256}`,
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
     '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。',
     '# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。',

@@ -63,7 +63,8 @@ jobs:
             "$source_url" --output "$expected"
           test -s "$expected"
           grep -qF 'function main(config)' "$expected"
-          grep -qF 'CDN 对应源脚本 SHA-256：' "$expected"
+          grep -qF '最新 Raw SHA-256：' "$expected"
+          grep -qF '缓存 CDN SHA-256：' "$expected"
           expected_sha="$(sha256sum "$expected" | cut -d ' ' -f 1)"
 
           curl --fail --silent --show-error --location \
