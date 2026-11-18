@@ -1,10 +1,12 @@
-# 项目维护约定
+# 仓库项目维护约定
+
+适用于仓库所有贡献者，统一描述项目功能边界、产物生成流程和验收要求。
 
 ## 项目范围与产物
 
 - 项目基于 AIsouler/MyClash `4861619be366c7bacabfed6d581bb8c450de1ca1` 全量版；上游约定见 `docs/upstream/AGENT.md`。
-- 只维护全量脚本源文件 `Script/mihomoScript.js` 与配置文件 `Config/mihomoConfig.yaml`，不增加精简版。`Script/mihomoScript.cdn.js` 是 GitHub Actions 生成的 CDN 副本；`极简国内外分流模式` 是脚本选项。
-- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，由 GitHub Actions 更新 Raw SHA-256、生成带独立 CDN SHA-256 的副本、生成并提交 YAML，无需本地构建。
+- 只维护全量脚本源文件 `Script/mihomoScript.js` 与源配置文件 `Config/mihomoConfig.yaml`，不增加精简版。`Script/mihomoScript.cdn.js` 与 `Config/mihomoConfig.cdn.yaml` 均由 GitHub Actions 生成；`极简国内外分流模式` 是脚本选项。
+- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，GitHub Actions 更新脚本与 YAML 的 Raw SHA-256，生成带独立 CDN SHA-256 的 CDN 副本，并提交 YAML 产物，无需本地构建。
 - YAML 的 `x-myClashRules` 扩展字段只供构建工具读取，Mihomo 内核不会执行。
 
 ## 必须保留的行为
