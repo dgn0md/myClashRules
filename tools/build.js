@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const YAML = require('yaml');
+const { updateConfigSha256 } = require('./config-sha');
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'Script/mihomoScript.js');
 function load() {
@@ -148,8 +149,9 @@ function render(config, api, settings) {
     '# myClashRules Mihomo 全量静态配置',
     '# 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。',
     '# 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。',
+    `# 最新 Raw SHA-256：${'0'.repeat(64)}`,
     '# Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml',
-    '# CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml',
+    '# CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml',
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
     '# 此 YAML 的开关由 GitHub Actions 生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后自动重新生成。',
     '# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。',
@@ -177,7 +179,7 @@ function render(config, api, settings) {
     const value = doc.get(key, true);
     if (value) value.commentBefore = ' ' + comment;
   }
-  return header + '\n\n' + doc.toString({ lineWidth: 120 });
+  return updateConfigSha256(header + '\n\n' + doc.toString({ lineWidth: 120 })).text;
 }
 function build({ settings = {}, subscription } = {}) {
   const api = load();

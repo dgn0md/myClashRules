@@ -41,6 +41,6 @@ test('source and generated CDN copy carry distinct version identifiers', () => {
   assert.ok(!text.includes(rawUrl));
   assert.ok(!text.includes(cdnUrl));
   assert.ok(text.includes('https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml'));
-  assert.ok(text.includes('https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml'));
+  assert.ok(text.includes('https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml'));
   assert.ok(text.includes('MIT License；Copyright (c) 2026 dgn0md、AIsouler。'));
 });

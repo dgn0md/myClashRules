@@ -20,7 +20,7 @@
 | **产物** | **Raw下载** | **CDN下载** |
 | ------ | --------- | --------- |
 | 全量覆写脚本 | [mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js) | [mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js) |
-| 全量静态配置 | [mihomoConfig.yaml](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) | [mihomoConfig.yaml](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml) |
+| 全量静态配置 | [mihomoConfig.yaml](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) | [mihomoConfig.cdn.yaml](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml) |
 
 ## 使用
 
@@ -33,11 +33,11 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
 
 静态配置可下载上表中的 YAML，填写 `proxy-providers.订阅.url` 后导入 Mihomo。静态 provider 由内核读取订阅，无法在构建时处理远端节点名称或机场 hosts。需要完整节点处理时，使用本地订阅展开模式，见[功能目录](docs/feature-matrix.md)。
 
-静态 YAML 中的扩展开关不会由 Mihomo 内核执行。更改 `Config/mihomoConfig.yaml` 中的选项并推送后，GitHub Actions 会自动重新生成并提交 YAML，无需本地构建。
+静态 YAML 中的扩展开关不会由 Mihomo 内核执行。更改 `Config/mihomoConfig.yaml` 中的选项并推送后，GitHub Actions 会自动重新生成 Raw YAML 和带独立 CDN SHA-256 的 `Config/mihomoConfig.cdn.yaml`，无需本地构建。
 
-GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 `Config/mihomoConfig.yaml`。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
+GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 Raw YAML 和 CDN YAML。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
 
-CDN 脚本由 GitHub Actions 从源脚本生成；源脚本和 CDN 副本分别显示 Raw 与 CDN SHA-256，YAML 注释只列出 YAML 文件的 Raw/CDN 下载地址。
+脚本和 YAML 都由 GitHub Actions 生成 CDN 副本；Raw 文件显示 Raw SHA-256，CDN 文件同时显示 Raw 与独立的 CDN SHA-256。YAML CDN 入口直接链接 `mihomoConfig.cdn.yaml`。
 
 ## 边界
 

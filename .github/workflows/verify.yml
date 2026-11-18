@@ -20,7 +20,7 @@ jobs:
         run: node tools/script-sha.js --update
       - name: Generate the CDN script copy
         run: node tools/build-cdn-script.js
-      - name: Generate static config from repository sources
+      - name: Generate static YAML and CDN copy from repository sources
         run: npm run build
       - run: npm test
       - run: npm run check

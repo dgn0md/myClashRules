@@ -6,9 +6,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "node tools/build.js",
+    "build": "node tools/build.js && node tools/build-cdn-config.js",
     "test": "node Test/run-tests.js && node --test tests/*.test.js",
-    "check": "node tools/build.js --check"
+    "check": "node tools/build.js --check && node tools/build-cdn-config.js --check"
   },
   "devDependencies": {
     "espree": "11.2.0",
