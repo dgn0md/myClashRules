@@ -2,8 +2,8 @@
 # Raw 链接：[https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js)
 # CDN 链接：[https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js)
 # 配置 CDN：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.yaml
-# 最新 Raw SHA-256：affc451a8f2a38fd759ab8c0e9875c66da2904f0f94f8b57aec8569e29d9b33d
-# 缓存 CDN SHA-256：340afe726f83d33d795e60e2ed52ce5c04318d6c0b00eefc505ddabeac606967
+# 最新 Raw SHA-256：2992e2f35d28edd67472f19d4b63c2f865d33843c7757b86d5e0669eafd4dcec
+# 缓存 CDN SHA-256：d7627b9fcadc6e0e2f8439dde67fbd8206d1e63d9e36f56aab407dbd04dc00f6
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
