@@ -4,6 +4,45 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { build } = require('./build');
+const RETRYABLE_STATUSES = new Set([403, 408, 425, 429, 500, 502, 503, 504]);
+const JSDELIVR_RULES_PREFIX = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/';
+const UPSTREAM_RULES_PREFIX = 'https://raw.githubusercontent.com/appshubcc/bett-rules/meta/geo/';
+
+function upstreamUrl(url) {
+  return url.startsWith(JSDELIVR_RULES_PREFIX)
+    ? `${UPSTREAM_RULES_PREFIX}${url.slice(JSDELIVR_RULES_PREFIX.length)}`
+    : undefined;
+}
+
+async function fetchRule(name, url, { sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
+  const fallback = upstreamUrl(url);
+  const sources = fallback ? [url, fallback] : [url];
+  let lastError;
+  for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
+    const source = sources[sourceIndex];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let response;
+      try {
+        response = await fetch(source, { signal: AbortSignal.timeout(60000) });
+      } catch (error) {
+        lastError = new Error(`${name}: ${source}: ${error.message}`);
+      }
+      if (response?.ok) {
+        if (source !== url) console.warn(`${name}: CDN unavailable; fetched from upstream GitHub`);
+        return { response, source };
+      }
+      if (response) {
+        if (!RETRYABLE_STATUSES.has(response.status))
+          throw new Error(`${name}: HTTP ${response.status} from ${source}`);
+        lastError = new Error(`${name}: HTTP ${response.status} from ${source}`);
+      }
+      if (attempt < 2) await sleep(1000 * 2 ** attempt);
+    }
+    if (sourceIndex + 1 < sources.length) console.warn(`${lastError.message}; retrying from upstream GitHub`);
+  }
+  throw lastError || new Error(`${name}: rule download failed`);
+}
+
 async function run() {
   const dir = path.resolve(process.argv[2] || '.local/rules');
   fs.mkdirSync(dir, { recursive: true });
@@ -13,8 +52,7 @@ async function run() {
   async function worker() {
     while (cursor < entries.length) {
       const [name, spec] = entries[cursor++];
-      const response = await fetch(spec.url, { signal: AbortSignal.timeout(60000) });
-      if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
+      const { response, source } = await fetchRule(name, spec.url);
       const bytes = Buffer.from(await response.arrayBuffer());
       if (spec.format === 'mrs') {
         // MRS is Zstandard-compressed; semantic validation is done by native-check.js with Mihomo.
@@ -30,6 +68,7 @@ async function run() {
       manifest.push({
         name,
         url: spec.url,
+        ...(source !== spec.url ? { downloadedFrom: source } : {}),
         ...(spec.format !== 'mrs' ? { format: spec.format } : {}),
         behavior: spec.behavior,
         bytes: bytes.length,
@@ -45,7 +84,11 @@ async function run() {
   );
   console.log(`Verified ${manifest.length} public rule downloads in ${dir}`);
 }
-run().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  run().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { fetchRule, upstreamUrl };
