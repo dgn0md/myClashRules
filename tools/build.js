@@ -201,7 +201,7 @@ function cli(args) {
   const output = path.resolve(flags.output || path.join(ROOT, 'Config/mihomoConfig.yaml'));
   if (flags.check) {
     if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== result.text)
-      throw new Error('生成配置已漂移，请执行 npm run build');
+      throw new Error('生成配置与脚本不一致；请等待或手动运行 GitHub Actions：Sync script and generate config');
     console.log('Generated YAML is up to date.');
   } else {
     fs.mkdirSync(path.dirname(output), { recursive: true });

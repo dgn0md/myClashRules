@@ -4,7 +4,7 @@
 
 - 项目基于 AIsouler/MyClash `4861619be366c7bacabfed6d581bb8c450de1ca1` 全量版；上游约定见 `docs/upstream/AGENT.md`。
 - 只维护 `Script/mihomoScript.js` 与 `Config/mihomoConfig.yaml` 两个全量产物，不增加精简版。`极简国内外分流模式` 是脚本选项。
-- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；修改后用 `npm run build` 更新 YAML。
+- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，由 GitHub Actions 自动运行 `npm run build` 并提交更新后的 YAML，无需本地生成。
 - YAML 的 `x-myClashRules` 扩展字段只供构建工具读取，Mihomo 内核不会执行。
 
 ## 必须保留的行为
@@ -27,4 +27,4 @@
 - 区分静态 provider 与带 `--subscription` 的本地展开模式；不得声称静态 provider 能读取订阅中的私有 DNS、hosts 或动态节点名称。
 - 不在功能文档混入个人观察、设备日志、真实出口地址或验证记录；不得新增或提交机场链接、密码、节点清单、缓存和运行日志。
 - 图标沿用原 SVG URL，不修改 SVG；遵守 `docs/upstream/AGENT.md`，不补回 CDN 域名直连规则。
-- 验收运行 `npm test`、`npm run check` 和可获得的 Mihomo 原生配置校验。单元测试或配置解析不能描述成用户网络抓包或 Apple 服务可用性实测；行为变化须有回归断言。
+- GitHub Actions 的 `Verify full overrides` 在 runner 上生成 YAML 后运行 `npm test`、`npm run check` 和可获得的 Mihomo 原生配置校验；不要要求本地生成 YAML。单元测试或配置解析不能描述成用户网络抓包或 Apple 服务可用性实测；行为变化须有回归断言。

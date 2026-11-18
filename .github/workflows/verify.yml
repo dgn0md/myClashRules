@@ -16,6 +16,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Generate static config from repository sources
+        run: npm run build
       - run: npm test
       - run: npm run check
       - name: Download and verify pinned Mihomo

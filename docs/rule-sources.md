@@ -1,6 +1,6 @@
 # 动态规则来源与路由方式
 
-本页说明规则数据由哪里来、如何参与路由和 DNS。活动配置仍以 `Script/mihomoScript.js` 为准，静态 YAML 通过 `npm run build` 生成。
+本页说明规则数据由哪里来、如何参与路由和 DNS。活动配置仍以 `Script/mihomoScript.js` 为准，静态 YAML 由 GitHub Actions 运行构建器生成并回写；开发者无需本地生成。
 
 ## 规则与技术依据来源
 

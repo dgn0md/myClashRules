@@ -8,7 +8,7 @@
 - **DNS 与出口联动**：脚本生成加密 DNS 和对应 policy；可路由的域名及动态规则集通常按目标组选择解析出口。严格模式不接受生成配置里的明文或不安全 DNS，也不静默回退。它描述的是配置行为，不代表所有设备流量都已被接管。
 - **机场配置只接管节点**：展开订阅时处理节点；机场 DNS、路由、策略组和其他非节点设置由脚本重建。机场 hosts 只在满足节点改写条件时用于改写节点 server，不复制到结果配置。
 - **纯 IP 域名识别**：从支持的 HTTP Host、TLS SNI 与 QUIC 元数据补充路由所需域名；不解密 HTTPS，也不改写目标地址。
-- **脚本与静态配置同源**：`Script/mihomoScript.js` 是规则和选项的来源；`Config/mihomoConfig.yaml` 由脚本构建。YAML 中的 `x-myClashRules` 扩展字段供构建工具读取，修改后需重新生成。
+- **脚本与静态配置同源**：`Script/mihomoScript.js` 是规则和选项的来源；`Config/mihomoConfig.yaml` 由 GitHub Actions 构建并回写。YAML 中的 `x-myClashRules` 扩展字段供构建工具读取。
 - **自动选择排除组**：`自动选择ex(大陆&香港)` 按节点名称排除大陆和香港候选，保留台湾节点。
 
 ## 常规能力
@@ -33,7 +33,9 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 
 静态配置可下载上表中的 YAML，填写 `proxy-providers.订阅.url` 后导入 Mihomo。静态 provider 由内核读取订阅，无法在构建时处理远端节点名称或机场 hosts。需要完整节点处理时，使用本地订阅展开模式，见[功能目录](docs/feature-matrix.md)。
 
-静态 YAML 中的扩展开关不会由 Mihomo 内核执行。更改选项后运行 `npm run build` 重新生成配置。
+静态 YAML 中的扩展开关不会由 Mihomo 内核执行。更改 `Config/mihomoConfig.yaml` 中的选项并推送后，GitHub Actions 会自动重新生成并提交 YAML，无需本地构建。
+
+GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 `Config/mihomoConfig.yaml`。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
 
 ## 边界
 
@@ -45,7 +47,6 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.js
 
 ```sh
 npm ci
-npm run build
 npm test
 npm run check
 ```
