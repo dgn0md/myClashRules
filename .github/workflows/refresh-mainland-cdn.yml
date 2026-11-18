@@ -17,7 +17,8 @@ on:
     types:
       - completed
 
-permissions: {}
+permissions:
+  contents: read
 
 concurrency:
   group: refresh-mainland-cdn
@@ -31,6 +32,8 @@ jobs:
     steps:
       - name: Compare CDN script with source commit
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
@@ -40,6 +43,8 @@ jobs:
 
           main_commit_info="$(curl --fail --silent --show-error --location \
             --connect-timeout 10 --max-time 30 \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/main")"
           main_commit_sha="$(jq -r '.sha // empty' <<< "$main_commit_info")"
           if [[ -z "$main_commit_sha" ]]; then
@@ -74,7 +79,10 @@ jobs:
           actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
           script_commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=Script%2FmihomoScript.cdn.js&sha=${main_commit_sha}&per_page=1"
           script_commit_info="$(curl --fail --silent --show-error --location \
-            --connect-timeout 10 --max-time 30 "$script_commits_url")"
+            --connect-timeout 10 --max-time 30 \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "$script_commits_url")"
           script_commit_sha="$(jq -r '.[0].sha // empty' <<< "$script_commit_info")"
           script_commit_date="$(jq -r '.[0].commit.committer.date // empty' <<< "$script_commit_info")"
           if [[ -z "$script_commit_sha" || -z "$script_commit_date" ]]; then

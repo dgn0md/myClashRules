@@ -16,6 +16,7 @@ on:
       - package.json
       - package-lock.json
       - .github/workflows/sync-config.yml
+      - .github/workflows/refresh-mainland-cdn.yml
   workflow_dispatch:
 
 permissions: {}
