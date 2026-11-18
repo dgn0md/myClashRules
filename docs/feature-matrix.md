@@ -12,6 +12,8 @@
 | 纯 IP 入站识别 | 以 HTTP Host、TLS SNI 和受支持的 QUIC 元数据补充域名，不改写目标地址。 |
 | 单一构建来源 | 脚本管理行为；静态 YAML 经构建工具生成，扩展开关须重新构建。 |
 | 自动选择排除组 | `自动选择ex(大陆&香港)` 根据节点名称过滤大陆、香港候选并保留台湾节点。 |
+| 本地控制面 | 生成配置默认不提供外部控制 API 或自动下载控制面；本地客户端可单独配置受密钥保护的管理入口。 |
+| 隔离策略诊断 | 本地 `diagnose` 命令以真实 Mihomo 规则和合成回环出口，报告 TCP 域名/IP 的命中规则、策略链及域名 DNS policy 候选。 |
 
 Apple 组范围与 DNS 特例见 [Apple 路由说明](apple-routing.md)；provider 和规则优先级见[规则来源说明](rule-sources.md)。
 
@@ -25,6 +27,8 @@ Apple 组范围与 DNS 特例见 [Apple 路由说明](apple-routing.md)；provid
 | --- | --- | --- |
 | 脚本覆写 | 含 `proxies` 数组的 Mihomo/Clash 配置 | 脚本处理节点并生成完整配置。 |
 | 静态 YAML | 配置 `proxy-providers.订阅.url` 后导入内核 | 内核按 provider 读取订阅；构建时看不到节点名称或机场 hosts。 |
-| 本地展开 | 选项 YAML 与 `--subscription` 本地文件 | 构建工具将节点交给同一脚本处理，订阅更新后需重新生成。 |
+| 本地展开 | 选项 YAML 与 `--subscription` 本地文件 | 构建工具将节点交给同一脚本处理，默认输出到忽略的 `.local/expanded.yaml`；订阅更新后需重新生成。 |
 
 YAML 中的 `x-myClashRules` 是构建输入，Mihomo 不执行这些扩展字段。开发命令和节点处理测试见 [Test/README.md](../Test/README.md)。
+
+静态 provider 在加载时会移除“大陆旗帜 + 台湾文字”的冲突旗帜，再对节点名称运行 Mihomo 正则。展开模式还会处理其他文字与国旗冲突、零宽字符和重名节点，因此两种模式对其他异常名称的地区归类仍可能不同。需要完整节点归类时使用本地展开模式。

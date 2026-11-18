@@ -26,6 +26,8 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 
 `cn` 域名集合参与 DNS 与 Fake-IP 过滤，不能用它替代一份完整的直连白名单。也不会把整个 Apple、Cloudflare 或 `17/8` 地址段强制代理。
 
+如果订阅没有合格的 Siri 地区候选，Siri 组仍拒绝连接。当 `Other Apple Service` 保持默认直连时，通用 Apple 集合及 `gateway.icloud.com`、`setup.icloud.com` 改用国内加密直连 DNS，维持普通 Apple 服务的直连可用性；一旦出现合格候选，其 DNS 再跟随 Siri 组。关闭普通 Apple 默认直连时，不启用此解析回退。
+
 ## 共享端点与选择边界
 
 - 国际 iCloud 内容规则按 `icloud-content.com` 后缀匹配；中国地区专用命名空间不匹配该规则。后缀只表示路由范围，不表示服务器实际所在地区。

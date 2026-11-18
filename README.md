@@ -10,6 +10,7 @@
 - **纯 IP 域名识别**：从支持的 HTTP Host、TLS SNI 与 QUIC 元数据补充路由所需域名；不解密 HTTPS，也不改写目标地址。
 - **脚本与静态配置同源**：`Script/mihomoScript.js` 是规则和选项的来源；`Config/mihomoConfig.yaml` 由 GitHub Actions 构建并回写。YAML 中的 `x-myClashRules` 扩展字段供构建工具读取。
 - **自动选择排除组**：`自动选择ex(大陆&香港)` 按节点名称排除大陆和香港候选，保留台湾节点。
+- **默认控制面最小化**：发布配置不启动外部控制 API，也不自动下载 Web 控制面；需要管理界面时由本地客户端单独配置并保护 API 密钥。
 
 ## 常规能力
 
@@ -35,7 +36,7 @@ https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
 
 静态 YAML 中的扩展开关不会由 Mihomo 内核执行。更改 `Config/mihomoConfig.yaml` 中的选项并推送后，GitHub Actions 会自动重新生成 Raw YAML 和带独立 CDN SHA-256 的 `Config/mihomoConfig.cdn.yaml`，无需本地构建。
 
-GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化时，Action 才会提交更新后的 Raw YAML 和 CDN YAML。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
+GitHub Actions 每天定时验证并重生静态配置；脚本、配置开关、构建器或依赖锁文件变更时也会触发。只有生成内容变化且行为与原生校验通过时，Action 才会提交更新后的 Raw YAML 和 CDN YAML。也可在仓库的 Actions 页面手动运行 `Sync script and generate config`。
 
 脚本和 YAML 都由 GitHub Actions 生成 CDN 副本；Raw 文件显示 Raw SHA-256，CDN 文件同时显示 Raw 与独立的 CDN SHA-256。YAML CDN 入口直接链接 `mihomoConfig.cdn.yaml`。
 
@@ -45,7 +46,7 @@ GitHub Actions 每天定时刷新静态配置；脚本、配置开关、构建�
 
 ## 开发
 
-需要 Node.js 24 或更高版本。
+当前开发和 CI 锁定 Node.js 24.19.0 与 npm 11.17.0。
 
 ```sh
 npm ci
@@ -54,5 +55,7 @@ npm run check
 ```
 
 更多说明：[功能目录](docs/feature-matrix.md)、[Apple 路由](docs/apple-routing.md)、[动态规则来源](docs/rule-sources.md)、[节点处理测试](Test/README.md)。
+
+可用 `./tools/npmw run diagnose -- --probe-domain gateway.icloud.com` 或 `--probe-ip 17.0.0.1` 在隔离的 Mihomo 回环环境中查看实际命中的规则与策略链；`--select 'Other Apple Service=美国'` 可模拟一次组内选择。诊断使用合成节点和本机下载的规则快照，所有出口终止在本地，不代表真实订阅当前选择、设备网络或 UDP 行为。
 
 图标继续引用上游 SVG URL；相关 MIT 许可与署名见 [LICENSE](LICENSE)。

@@ -54,6 +54,7 @@ async function run() {
       const [name, spec] = entries[cursor++];
       const { response, source } = await fetchRule(name, spec.url);
       const bytes = Buffer.from(await response.arrayBuffer());
+      const digest = createHash('sha256').update(bytes).digest('hex');
       if (spec.format === 'mrs') {
         // MRS is Zstandard-compressed; semantic validation is done by native-check.js with Mihomo.
         if (bytes.length < 16 || bytes.subarray(0, 4).toString('hex') !== '28b52ffd')
@@ -72,7 +73,7 @@ async function run() {
         ...(spec.format !== 'mrs' ? { format: spec.format } : {}),
         behavior: spec.behavior,
         bytes: bytes.length,
-        sha256: createHash('sha256').update(bytes).digest('hex'),
+        sha256: digest,
       });
     }
   }

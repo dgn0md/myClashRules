@@ -6,6 +6,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawnSync } = require('node:child_process');
 const { build, load } = require('../tools/build');
+const { loadScript } = require('../Test/lib/loader');
 const YAML = require('yaml');
 const fx = require('../Test/lib/fixtures');
 const siriAiGroup = 'Siri Ai/Apple Intelligence';
@@ -166,6 +167,12 @@ test('static provider has all sample region groups and compatible filters preser
   }
   const other = config['proxy-groups'].find((entry) => entry.name === '其他节点');
   assert.ok(other['exclude-filter']?.includes('panel'));
+});
+test('static provider removes contradictory mainland flag from Taiwan names before group filters', () => {
+  const provider = build().config['proxy-providers'].订阅;
+  assert.equal(provider.override['proxy-name'].length, 2);
+  for (const rule of provider.override['proxy-name']) assert.match(rule.pattern, /台湾/);
+  assert.match(provider.override['proxy-name'][0].pattern, /🇨🇳/);
 });
 
 test('mainland/Hong Kong auto-select group excludes those labels and keeps Taiwan', () => {
@@ -783,6 +790,20 @@ test('Other Apple DNS retains a Siri egress selector when Siri routing is disabl
   assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
   graph(config);
 });
+test('Other Apple direct route keeps encrypted DNS when no eligible Siri region exists', () => {
+  const config = build({ subscription: { proxies: [proxy('香港 测试')] } }).config;
+  assert.deepEqual(config['proxy-groups'].find((group) => group.name === siriAiGroup).proxies, ['REJECT']);
+  assert.equal(config['proxy-groups'].find((group) => group.name === otherAppleGroup).proxies[0], '直连');
+  for (const key of ['rule-set:apple', 'gateway.icloud.com', 'setup.icloud.com'])
+    assert.deepEqual(config.dns['nameserver-policy'][key], config.dns['direct-nameserver']);
+  assert.equal(config.dns['nameserver-policy']['api-siri-prod.apple.com'], 'rcode://name_error');
+});
+test('strict DNS validates every generated upstream field', () => {
+  const unsafe = loadScript('Script/mihomoScript.js', (source) =>
+    source.replace("const chinaDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];",
+      "const chinaDNS = ['udp://223.5.5.5'];"));
+  assert.throws(() => unsafe.main(clean()), /严格加密DNS.*default-nameserver/);
+});
 test('legacy Apple group switches migrate to the consolidated names and explicit new names win', () => {
   const legacy = {
     Apple: false,
@@ -1024,7 +1045,8 @@ test('provider IP preference and both rate filters preserve ordinary region grou
   assert.equal(config['proxy-providers'].订阅.override['ip-version'], 'ipv4-prefer');
   assert.ok(config['proxy-groups'].some((g) => g.name === '香港'));
   const both = build({ settings: { options: { 代理IPV4优先: true, 代理IPV6优先: true } } }).config;
-  assert.ok(!both['proxy-providers'].订阅.override);
+  assert.ok(!('ip-version' in both['proxy-providers'].订阅.override));
+  assert.ok(both['proxy-providers'].订阅.override['proxy-name']);
 });
 test('airport fake-IP filters, DNS policies, and extra DNS settings never leak into generated output', () => {
   const subscription = clean();
@@ -1061,7 +1083,8 @@ test('airport fake-IP filters, DNS policies, and extra DNS settings never leak i
   assert.equal(config.tun.stack, 'mixed');
   assert.equal(config.tun.enable, true);
   assert.equal(config.profile['store-fake-ip'], true);
-  assert.equal(config['external-controller'], '127.0.0.1:9090');
+  assert.equal(config['external-controller'], undefined);
+  assert.equal(config['external-ui-url'], undefined);
   assert.ok(!('airport-sentinel' in config));
 });
 test('CLI applies edited booleans and preserves the subscription URL from a settings YAML', () => {
@@ -1080,4 +1103,23 @@ test('CLI applies edited booleans and preserves the subscription URL from a sett
   assert.equal(generated['proxy-providers'].订阅.url, settings['proxy-providers'].订阅.url);
   assert.ok(generated['proxy-groups'].some((group) => group.name === siriAiGroup));
   assert.ok(generated.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+});
+test('CLI refuses private subscription output inside tracked repository paths', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'myclash-private-'));
+  const subscription = path.join(dir, 'subscription.yaml');
+  fs.writeFileSync(subscription, YAML.stringify(clean()));
+  const result = spawnSync(process.execPath,
+    ['tools/build.js', '--subscription', subscription, '--output', 'Config/mihomoConfig.yaml'],
+    { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /只能输出到仓库内 .local/);
+  const settings = YAML.parse(build().text);
+  settings['proxy-providers'].订阅.url = 'https://subscription.example.test/private-fixture';
+  const input = path.join(dir, 'private-settings.yaml');
+  fs.writeFileSync(input, YAML.stringify(settings));
+  const withUrl = spawnSync(process.execPath,
+    ['tools/build.js', '--settings', input, '--output', 'Config/mihomoConfig.yaml'],
+    { encoding: 'utf8' });
+  assert.notEqual(withUrl.status, 0);
+  assert.match(withUrl.stderr, /只能输出到仓库内 .local/);
 });

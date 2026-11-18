@@ -113,6 +113,13 @@ function template(api, settings) {
     if (!group.proxies.length) delete group.proxies;
   }
   const provider = settings.subscription || {};
+  // Provider names are filtered by Mihomo at runtime. Remove a contradictory mainland
+  // flag before its filters run when the name explicitly identifies Taiwan.
+  const taiwanName = '(台湾|台北|高雄|\\b(TW|TWN)\\b|taiwan)';
+  const taiwanFlagCorrection = [
+    { pattern: `(?i)🇨🇳(.*${taiwanName})`, target: '$1' },
+    { pattern: `(?i)(${taiwanName}.*)🇨🇳`, target: '$1' },
+  ];
   out['proxy-providers'] = {
     订阅: {
       type: 'http',
@@ -127,11 +134,12 @@ function template(api, settings) {
         interval: 600,
         lazy: true,
       },
-      ...(api.ruleOptionsEnable.代理IPV4优先 !== api.ruleOptionsEnable.代理IPV6优先
-        ? {
-            override: { 'ip-version': api.ruleOptionsEnable.代理IPV4优先 ? 'ipv4-prefer' : 'ipv6-prefer' },
-          }
-        : {}),
+      override: {
+        'proxy-name': taiwanFlagCorrection,
+        ...(api.ruleOptionsEnable.代理IPV4优先 !== api.ruleOptionsEnable.代理IPV6优先
+          ? { 'ip-version': api.ruleOptionsEnable.代理IPV4优先 ? 'ipv4-prefer' : 'ipv6-prefer' }
+          : {}),
+      },
     },
   };
   // Provider mode cannot inspect private DNS/hosts in a remote subscription. Use expanded mode for such providers.
@@ -153,7 +161,7 @@ function render(config, api, settings) {
     '# Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml',
     '# CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml',
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
-    '# 此 YAML 的开关由 GitHub Actions 生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后自动重新生成。',
+    '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。',
     '# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。',
     '# 严格模式无明文上游 DNS；需 TUN/网关接管才覆盖系统流量。不可达时不降级。',
     '# 请勿将真实订阅链接/节点提交到 Git。true 是正确拼写，ture 会被拒绝。',
@@ -204,7 +212,13 @@ function cli(args) {
   const settings = input['x-myClashRules'] || input;
   if (input['proxy-providers']?.订阅?.url) settings.subscription = { url: input['proxy-providers'].订阅.url };
   const result = build({ settings, subscription: flags.subscription ? readYaml(flags.subscription) : undefined });
-  const output = path.resolve(flags.output || path.join(ROOT, 'Config/mihomoConfig.yaml'));
+  const output = path.resolve(flags.output || path.join(ROOT, flags.subscription ? '.local/expanded.yaml' : 'Config/mihomoConfig.yaml'));
+  const relativeOutput = path.relative(ROOT, output);
+  const insideRepository = relativeOutput !== '' && !relativeOutput.startsWith('..' + path.sep) && !path.isAbsolute(relativeOutput);
+  const privateInput = Boolean(flags.subscription || settings.customProxies?.length ||
+    (settings.subscription?.url && settings.subscription.url !== 'https://example.invalid/replace-with-your-subscription'));
+  if (privateInput && insideRepository && relativeOutput !== '.local' && !relativeOutput.startsWith('.local' + path.sep))
+    throw new Error('订阅、真实节点或私有 URL 只能输出到仓库内 .local/，或显式指定仓库外路径');
   if (flags.check) {
     if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== result.text)
       throw new Error('生成配置与脚本不一致；请等待或手动运行 GitHub Actions：Sync script and generate config');

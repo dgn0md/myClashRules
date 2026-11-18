@@ -22,6 +22,24 @@ async function run() {
   const binary = process.argv[2];
   const rulesDir = process.argv[3];
   if (!binary) throw new Error('用法：node tools/native-check.js /path/to/mihomo [/path/to/downloaded-rules]');
+  const args = process.argv.slice(4);
+  let probe = null;
+  const selections = [];
+  for (let i = 0; i < args.length; i++) {
+    if (['--probe-domain', '--probe-ip'].includes(args[i]) && args[i + 1]) {
+      if (probe) throw new Error('每次只能诊断一个目标');
+      probe = { type: args[i].slice(8), value: args[++i] };
+    } else if (args[i] === '--select' && args[i + 1]) {
+      const value = args[++i];
+      const split = value.indexOf('=');
+      if (split < 1 || split === value.length - 1) throw new Error('--select 使用 组名=成员名');
+      selections.push([value.slice(0, split), value.slice(split + 1)]);
+    } else throw new Error(`未知或缺少值的参数：${args[i]}`);
+  }
+  if (probe?.type === 'domain' && (!/^(?=.{1,253}$)[a-z0-9.-]+$/i.test(probe.value) || !probe.value.includes('.')))
+    throw new Error('诊断域名格式无效');
+  if (probe?.type === 'ip' && !net.isIP(probe.value)) throw new Error('诊断 IP 格式无效');
+  if (selections.length && !probe) throw new Error('--select 需要同时指定诊断目标');
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'myclash-native-'));
   console.log(`Evidence directory: ${temp}`);
   const cases = [{ name: 'default', settings: {} }];
@@ -55,6 +73,7 @@ async function run() {
   console.log(`Mihomo syntax checks: ${cases.length} cases passed`);
   if (!rulesDir) return;
   const config = build().config;
+  const productionDnsPolicy = structuredClone(config.dns['nameserver-policy']);
   for (const [name, spec] of Object.entries(config['rule-providers'])) {
     if (spec.type === 'inline') continue;
     const file = path.resolve(rulesDir, `${name}${path.extname(spec.path)}`);
@@ -78,15 +97,20 @@ async function run() {
   config['mixed-port'] = proxyPort;
   config['external-controller'] = `127.0.0.1:${port}`;
   for (const [host] of CASES) config.hosts[host] = '127.0.0.1';
+  if (probe?.type === 'domain') config.hosts[probe.value] = '127.0.0.1';
   delete config['external-ui'];
   delete config['external-ui-url'];
   config.profile = { 'store-selected': false, 'store-fake-ip': false };
-  const nodes = ['香港 1x', '日本 1x', '美国 1x', '新加坡 1x', '台湾 1x', '日本 0.5x 家宽', '美国 3x', '德国 家宽'].map(
+  const nodes = ['香港 1x', '日本 1x', '美国 1x', '新加坡 1x', '台湾 1x', '🇨🇳 台湾 矛盾 1x', '日本 0.5x 家宽', '美国 3x', '德国 家宽'].map(
     (name) => ({ name, type: 'socks5', server: '127.0.0.1', port: local.socksPort }),
   );
+  if (probe) config.proxies = config.proxies.map((entry) => entry.type === 'direct'
+    ? { name: entry.name, type: 'socks5', server: '127.0.0.1', port: local.socksPort }
+    : entry);
   const provider = path.join(temp, 'subscription.yaml');
   fs.writeFileSync(provider, YAML.stringify({ proxies: nodes }));
-  config['proxy-providers'] = { 订阅: { type: 'file', path: provider, 'health-check': { enable: false } } };
+  const providerOverride = config['proxy-providers'].订阅.override;
+  config['proxy-providers'] = { 订阅: { type: 'file', path: provider, override: providerOverride, 'health-check': { enable: false } } };
   for (const [name, spec] of Object.entries(config['rule-providers'])) {
     if (spec.type === 'inline') continue;
     const filename = `${name}${path.extname(spec.path)}`;
@@ -126,11 +150,36 @@ async function run() {
       assert.ok(proxies[name].all.length > 0, `${name} empty`);
     assert.ok(proxies['日本'].all.includes('日本 1x'));
     assert.ok(!proxies['日本'].all.includes('美国 1x'));
+    const taiwanConflictName = proxies['台湾'].all.find((name) => name.includes('台湾 矛盾 1x'));
+    assert.ok(taiwanConflictName, 'Taiwan name with contradictory mainland flag was not classified');
+    assert.ok(proxies['自动选择ex(大陆&香港)'].all.includes(taiwanConflictName), 'Taiwan node was excluded by its contradictory flag');
     assert.equal(proxies['Apple Product地区'].now, '美国');
     assert.equal(proxies['Siri Ai/Apple Intelligence'].now, '美国');
     assert.equal(proxies['Other Apple Service'].now, '直连');
     assert.equal(proxies.Microsoft.now, '直连');
     const routes = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort, track: local.track, api });
+    for (const [group, member] of selections) {
+      if (!proxies[group]?.all?.includes(member)) throw new Error(`${group} 不包含 ${member}`);
+      const response = await fetch(`http://127.0.0.1:${port}/proxies/${encodeURIComponent(group)}`, {
+        method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: member }),
+      });
+      assert.equal(response.status, 204, `无法切换 ${group} 到 ${member}`);
+    }
+    if (probe) {
+      const [result] = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort, track: local.track, api,
+        cases: [[probe.value, null]] });
+      const dnsCandidates = [];
+      if (probe.type === 'domain') {
+        const host = probe.value.toLowerCase();
+        for (const [key, resolvers] of Object.entries(productionDnsPolicy)) {
+          if (key === host || (key.startsWith('+.') && (host === key.slice(2) || host.endsWith(key.slice(1)))) ||
+              (key.startsWith('rule-set:') && key.slice(9) === result.payload))
+            dnsCandidates.push({ key, resolvers });
+        }
+      }
+      console.log('Routing diagnosis: ' + JSON.stringify({ target: probe, rule: result.rule,
+        payload: result.payload, chains: result.chains, dnsPolicyCandidates: dnsCandidates, selections }));
+    }
     const selected = await fetch(`http://127.0.0.1:${port}/proxies/Other%20Apple%20Service`, {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },

@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：c9125a741ec8c9bb9fe07150ffcab66bc88f70475d3fd0cabd95f2474606ac51
+ * 最新 Raw SHA-256：d307327aa48c5a87f4bf3778786560a3a0f2709a003c93ef263745c6cfff1587
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：68c0d799b0737a9c482a6411539e4514789bfaf4c7d42d16f599b49bada7749d
+ * 缓存 CDN SHA-256：b8b57559d0becbcde892e133308ef00f5626dec5ed8eeb3cd1a90a01d9b4174f
  */
 
 // --- 静态配置区域 ---
@@ -1816,10 +1816,6 @@ function main(config) {
   newConfig['keep-alive-interval'] = 60;
   newConfig['find-process-mode'] = 'strict';
 
-  newConfig['external-controller'] = '127.0.0.1:9090';
-  newConfig['external-ui'] = 'ui';
-  newConfig['external-ui-url'] = 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip';
-
   newConfig['profile'] = {
     'store-selected': true,
     'store-fake-ip': true,
@@ -2025,6 +2021,16 @@ function finalizeMyClashRules(config) {
     }
   }
   // DNS egress follows the route target group, with Other Apple Service explicitly using Siri's selector.
+  const dnsForRoute = (target, dnsEgressGroupName, dnsEgressGroup) => {
+    if (target === '直连') return chinaDNS;
+    if (dnsEgressGroup?.proxies.length &&
+        dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
+      // Ordinary Apple traffic remains directly usable when there is no eligible Siri region.
+      if (target === appleOtherGroupName && options.Apple服务默认直连) return chinaDNS;
+      return 'rcode://name_error';
+    }
+    return foreignDNS.map((dns) => dns.replace('#默认代理', `#${dnsEgressGroupName}`));
+  };
   const domainRuleSetEgress = new Map();
   for (const rule of config.rules) {
     const match = /^RULE-SET,([^,]+),([^,]+)(?:,|$)/.exec(rule);
@@ -2039,14 +2045,7 @@ function finalizeMyClashRules(config) {
     if (['private', 'cn', 'douyin'].includes(providerName)) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
     const dnsEgressGroup = config['proxy-groups'].find((group) => group.name === dnsEgressGroupName);
-    if (dnsEgressGroup?.proxies.length && dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
-      config.dns['nameserver-policy'][`rule-set:${providerName}`] = 'rcode://name_error';
-    } else {
-      config.dns['nameserver-policy'][`rule-set:${providerName}`] =
-        target === '直连'
-          ? chinaDNS
-          : foreignDNS.map((dns) => dns.replace('#默认代理', `#${dnsEgressGroupName}`));
-    }
+    config.dns['nameserver-policy'][`rule-set:${providerName}`] = dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
   if (!options.PCDN拦截) {
     for (const name of Object.keys(config.hosts))
@@ -2084,31 +2083,28 @@ function finalizeMyClashRules(config) {
     if (!targetGroup) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
     const dnsEgressGroup = groups.find((group) => group.name === dnsEgressGroupName);
-    if (
-      dnsEgressGroup?.proxies.length &&
-      dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
-    ) {
-      config.dns['nameserver-policy'][policyKey] = 'rcode://name_error';
-    } else {
-      config.dns['nameserver-policy'][policyKey] = foreignDNS.map((dns) =>
-        dns.replace('#默认代理', `#${dnsEgressGroupName}`),
-      );
-    }
+    config.dns['nameserver-policy'][policyKey] = dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
   if (options.严格加密DNS) {
     config.dns['use-system-hosts'] = false;
     // 不向系统 DNS 查询 LAN 名称；局域网名称通过用户 hosts 显式维护。
     config.dns['nameserver-policy']['rule-set:private'] = 'rcode://success';
     config.dns['nameserver-policy']['rule-set:douyin'] = chinaDNS;
-    const encrypted = (value, path) => {
-      for (const dns of Array.isArray(value) ? value : [value]) {
-        if (!/^\s*(https|tls):\/\/[^\s#]+(?:#DIRECT)?$/i.test(dns) || /skip-cert-verify|@/i.test(dns)) {
-          throw new Error(`严格加密DNS：脚本生成的 ${path} 含不受支持或明文 DNS；严格模式不会降级。`);
-        }
+    const encrypted = (value, field) => {
+      for (const server of Array.isArray(value) ? value : [value]) {
+        if (typeof server !== 'string') throw new Error(`严格加密DNS：${field} 必须使用加密 DNS`);
+        if (/^rcode:\/\/(success|name_error|refused)$/i.test(server)) continue;
+        const parts = server.split('#');
+        if (parts.length > 2 || !/^(https|tls):\/\/[^\s#@]+$/i.test(parts[0]) ||
+            /skip-cert-verify|@/i.test(server) ||
+            (parts.length === 2 && !['DIRECT', ...groups.map((group) => group.name)].includes(parts[1])))
+          throw new Error(`严格加密DNS：脚本生成的 ${field} 含不受支持或明文 DNS；严格模式不会降级。`);
       }
     };
-    for (const [domain, dns] of Object.entries(config.dns['proxy-server-nameserver-policy'] || {}))
-      encrypted(dns, domain);
+    for (const field of ['default-nameserver', 'proxy-server-nameserver', 'nameserver', 'direct-nameserver'])
+      encrypted(config.dns[field] || [], field);
+    for (const field of ['nameserver-policy', 'proxy-server-nameserver-policy'])
+      for (const [domain, server] of Object.entries(config.dns[field] || {})) encrypted(server, `${field}.${domain}`);
     // 没有 fallback / system / 明文启动 DNS；直连解析遵守 Apple/AI 的专属 policy。
     delete config.dns.fallback;
     delete config.dns['fallback-filter'];

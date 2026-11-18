@@ -145,13 +145,13 @@ async function verifyRouting({ port, sinkPort, track, api, cases = CASES }) {
     for (let attempt = 0; attempt < 20; attempt++) {
       active = (await api('/connections')).connections || [];
       connection = active.find(
-        (c) => c.metadata.host === host && String(c.metadata.sourcePort) === String(socket.localPort),
+        (c) => String(c.metadata.sourcePort) === String(socket.localPort),
       );
       if (connection) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     assert.ok(connection, `No active connection for ${host}: ${JSON.stringify(active)}`);
-    assert.ok(
+    if (expected) assert.ok(
       connection.chains.includes(expected),
       `${host}: expected ${expected}; actual ${JSON.stringify(connection)}`,
     );
