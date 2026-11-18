@@ -7,6 +7,7 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/refresh-mainland-cdn.yml
       - Script/mihomoScript.cdn.js
       - Config/mihomoConfig.cdn.yaml
   workflow_dispatch:
@@ -86,10 +87,10 @@ jobs:
               return 0
             fi
 
-            local actual_sha encoded_path commits_url commit_info commit_sha commit_date previous_sha previous_file commit_epoch now_epoch age_seconds
+            local actual_sha encoded_path commits_url commit_info commit_sha commit_date commit_count candidate_index candidate_sha candidate_date candidate_epoch candidate_age candidate_file commit_epoch now_epoch age_seconds
             actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
             encoded_path="$(jq -rn --arg value "$artifact_path" '$value | @uri')"
-            commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=${encoded_path}&sha=${main_commit_sha}&per_page=2"
+            commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=${encoded_path}&sha=${main_commit_sha}&per_page=100"
             commit_info="$(curl --fail --silent --show-error --location \
               --connect-timeout 10 --max-time 30 \
               --header "Authorization: Bearer ${GH_TOKEN}" \
@@ -97,7 +98,7 @@ jobs:
               "$commits_url")"
             commit_sha="$(jq -r '.[0].sha // empty' <<< "$commit_info")"
             commit_date="$(jq -r '.[0].commit.committer.date // empty' <<< "$commit_info")"
-            previous_sha="$(jq -r '.[1].sha // empty' <<< "$commit_info")"
+            commit_count="$(jq 'length' <<< "$commit_info")"
             if [[ -z "$commit_sha" || -z "$commit_date" ]]; then
               echo "::error::Could not determine the latest commit for ${artifact_path}."
               return 1
@@ -110,19 +111,33 @@ jobs:
               age_seconds=0
             fi
             if (( age_seconds < 45000 )); then
-              if [[ -n "$previous_sha" ]]; then
-                previous_file="${tmp_dir}/previous-${safe_name}"
+              for ((candidate_index = 1; candidate_index < commit_count; candidate_index++)); do
+                candidate_sha="$(jq -r ".[$candidate_index].sha // empty" <<< "$commit_info")"
+                candidate_date="$(jq -r ".[$candidate_index].commit.committer.date // empty" <<< "$commit_info")"
+                if [[ -z "$candidate_sha" || -z "$candidate_date" ]]; then
+                  continue
+                fi
+                candidate_epoch="$(date -u --date="$candidate_date" +%s)"
+                candidate_age=$((now_epoch - candidate_epoch))
+                if (( candidate_age < 0 )); then
+                  candidate_age=0
+                fi
+                if (( candidate_age >= 45000 )); then
+                  continue
+                fi
+                candidate_file="${tmp_dir}/known-${safe_name}-${candidate_index}"
                 curl --fail --silent --show-error --location \
                   --connect-timeout 10 --max-time 30 \
-                  "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${previous_sha}/${artifact_path}" \
-                  --output "$previous_file"
-                if cmp -s "$previous_file" "$response"; then
-                  echo "::warning::CDN branch alias is serving the previous known ${artifact_path} (CDN sha256: ${actual_sha}; latest file commit: ${commit_sha}; age: ${age_seconds}s). Scheduled runs will check again."
-                  rm -f "$expected" "$response" "$previous_file"
+                  "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${candidate_sha}/${artifact_path}" \
+                  --output "$candidate_file"
+                if cmp -s "$candidate_file" "$response"; then
+                  echo "::warning::CDN branch alias is serving a recent known version of ${artifact_path} (CDN sha256: ${actual_sha}; cached file commit: ${candidate_sha}; age: ${candidate_age}s). Scheduled runs will check again."
+                  rm -f "$expected" "$response" "$candidate_file"
                   return 0
                 fi
-              fi
-              echo "::error::CDN content is neither current nor the previous known ${artifact_path} (CDN sha256: ${actual_sha})."
+                rm -f "$candidate_file"
+              done
+              echo "::error::CDN content for ${artifact_path} is not a recent known repository version (CDN sha256: ${actual_sha}; latest file commit: ${commit_sha}; age: ${age_seconds}s)."
               return 1
             fi
 
