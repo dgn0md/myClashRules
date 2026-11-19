@@ -241,6 +241,34 @@ test('mainland/Hong Kong auto-select group excludes those labels and keeps Taiwa
   assert.ok(minimal['proxy-groups'].find((entry) => entry.name === '默认代理').proxies.includes(autoSelectExMainlandHongKongGroup));
 });
 
+test('GLOBAL and default proxy prefer the requested available groups in both modes', () => {
+  for (const minimal of [false, true]) {
+    for (const subscription of [undefined, fx.typicalSubscription(), fx.minimalSubscription()]) {
+      for (const enabled of [false, true]) {
+        const config = build({
+          subscription,
+          settings: {
+            options: {
+              极简国内外分流模式: minimal,
+              [autoSelectExMainlandHongKongGroup]: enabled,
+            },
+          },
+        }).config;
+        const groups = new Map(config['proxy-groups'].map((entry) => [entry.name, entry]));
+        const global = groups.get('GLOBAL');
+        const proxy = groups.get('默认代理');
+        if (groups.has('美国')) assert.equal(global.proxies[0], '美国');
+        else assert.ok(!global.proxies.includes('美国'));
+        if (enabled) assert.equal(proxy.proxies[0], autoSelectExMainlandHongKongGroup);
+        else assert.ok(!(proxy.proxies || []).includes(autoSelectExMainlandHongKongGroup));
+        assert.equal(new Set(global.proxies).size, global.proxies.length);
+        assert.equal(new Set(proxy.proxies || []).size, (proxy.proxies || []).length);
+        graph(config);
+      }
+    }
+  }
+});
+
 test('static provider applies enabled rate filters to every node-bearing group', () => {
   const rates = load().rateRegionDefinitions;
   const cases = [

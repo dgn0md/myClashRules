@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：9317e1262b62b939bb62e161d754ad9bee41e1ab1da679aa5ace1887b8eb722e
+ * 最新 Raw SHA-256：556fa3fca5952d13162d5712705d468d9835da6d4416f3324458ff8ebd722729
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：4276739109df66959b63eadfdb015fbe7d9391664e3d5c3ece5c38aa470c95e3
+ * 缓存 CDN SHA-256：9d43969cbfa79f35587a54e575093f97156857e76e20780557009301a85efc2b
  */
 
 // --- 静态配置区域 ---
@@ -1920,6 +1920,16 @@ function finalizeMyClashRules(config) {
 
   const groups = config['proxy-groups'];
   const usGroup = groups.find((group) => group.name === unitedStatesRegion.name);
+  // 首项决定首次加载时的选择；已有客户端选择缓存仍由内核保留。
+  for (const [name, preferred] of [
+    ['GLOBAL', unitedStatesRegion.name],
+    ['默认代理', autoSelectExMainlandHongKongGroupName],
+  ]) {
+    const group = groups.find((entry) => entry.name === name);
+    if (!group || !groups.some((entry) => entry.name === preferred)) continue;
+    group.proxies = [preferred, ...group.proxies.filter((entry) => entry !== preferred)];
+    delete group['default-selected'];
+  }
   const specialRules = [];
   // 极简模式仅关闭常规服务组；安全与 Apple 精细例外仍由各自开关控制。
   for (const [name, domains] of Object.entries(appleEndpointDefinitions)) {

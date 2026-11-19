@@ -16,6 +16,7 @@
 
 提供 26 个地区节点组、倍率和家宽节点分类、AI / Google / YouTube / Microsoft 等常见服务分流，以及手动选择、测速、负载均衡和链式代理等配置选项。
 私网 IP 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用代理出口及 `no-resolve`，关闭服务组或启用极简模式时改用 `默认代理`。Apple、Microsoft、Steam、Netflix、Spotify IP 也使用 `no-resolve` 并保留原有出口组；`cn_ip` 不加该参数，保留末端解析直连兜底。AI 当前使用域名集合，没有独立 IP 集合。
+`GLOBAL` 首次默认选择 `美国`，`默认代理` 首次默认选择 `自动选择ex(大陆&香港)`；仅在相应候选组存在时生效，已有客户端选择缓存优先。
 测速域名 `cp.cloudflare.com` 的路由及加密 DNS policy 指向 `默认代理`；测速请求本身由内核通过被测节点发起。
 
 国内 DNS 白名单不强制修改连接路由；关闭相应 DNS 开关后，该集合不再授权国内解析；其他启用集合或专项例外仍可覆盖同一域名。Apple 精确 CDN 与无合格 Siri 地区时的普通 Apple 解析例外保持原有行为。节点域名及 DNS 服务器启动解析仍使用国内加密 DNS；因此此机制减少业务域名披露，不代表完全不向国内解析器发送查询。来源、重叠处理和边界见 [规则来源说明](docs/rule-sources.md)。

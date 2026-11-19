@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：d9c116156129a4ba4febd950bc3062ab5aa5c8375bb5f685cd17eeaaa613f61f
+# 最新 Raw SHA-256：b2ca3d8690dfdac3546dd1bbe7c19df0d0b19c19ae7a4ab0c75602eb6ee48127
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -452,6 +452,7 @@ proxy-groups:
     type: select
     name: GLOBAL
     proxies:
+      - 美国
       - 默认代理
       - 手动选择
       - 自动选择ex(大陆&香港)
@@ -486,7 +487,6 @@ proxy-groups:
       - 香港-自动选择
       - 日本
       - 日本-自动选择
-      - 美国
       - 美国-自动选择
       - 新加坡
       - 新加坡-自动选择
@@ -550,6 +550,7 @@ proxy-groups:
     type: select
     name: 默认代理
     proxies:
+      - 自动选择ex(大陆&香港)
       - 香港
       - 日本
       - 美国
@@ -581,7 +582,6 @@ proxy-groups:
       - 家宽节点
       - 其他节点
       - 手动选择
-      - 自动选择ex(大陆&香港)
       - 负载均衡
     icon: https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/Proxy.svg
   - timeout: 5000
