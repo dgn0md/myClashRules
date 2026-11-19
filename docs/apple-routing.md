@@ -22,11 +22,15 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 4. `apple_ip` 使用 `no-resolve` 进入 `Apple Product地区`；`private_ip` 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用对应代理组及 `no-resolve`，组关闭时回退到 `默认代理`；其他服务 IP 集合按对应服务组分流。
 5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
-每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。DNS policy 跟随对应的出口策略组。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 通过更具体的后缀规则进入 `Apple Product地区`，DNS policy 也跟随该组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
+代理服务的精确域名或后缀域名规则生成对应的 `nameserver-policy`，解析出口跟随服务组。普通直连规则不自动生成国内 DNS 授权，使用独立白名单与默认国外解析；Apple 模型/系统资源的四个精确 CDN 例外保留国内加密 DNS。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 通过更具体的后缀规则进入 `Apple Product地区`，DNS policy 也跟随该组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
 
-`cn` 域名集合参与 DNS 与 Fake-IP 过滤，不能用它替代一份完整的直连白名单。也不会把整个 Apple、Cloudflare 或 `17/8` 地址段强制代理。
+通用 `cn` 集合不再参与 DNS policy 或 Fake-IP 过滤，仅在可选 QUIC 规则引用时保留；`cn_ip` 继续承担连接直连兜底，解析仍遵循 DNS policy。国内 DNS 使用独立小范围白名单，不引入整份 `apple_cdn`、Apple 或 Cloudflare 网段。Apple CN 仍使用固定版本集合，不随新的下载 DNS 开关改变。
 
 如果订阅没有合格的 Siri 地区候选，Siri 组仍拒绝连接。当 `Other Apple Service` 保持默认直连时，通用 Apple 集合及 `gateway.icloud.com`、`setup.icloud.com` 改用国内加密直连 DNS，维持普通 Apple 服务的直连可用性；一旦出现合格候选，其 DNS 再跟随 Siri 组。关闭普通 Apple 默认直连时，不启用此解析回退。
+
+## 后续维护原则
+
+Apple 行为变更同时遵守 [国内 DNS 白名单维护原则](dns-whitelist.md)。模型资源四个精确端点、固定 `apple_cn` 和普通 Apple 无合格 Siri 候选时的条件回退是明确例外，不能据此把整份 `apple_cdn`、整个 Apple 或共享 CDN 加入国内 DNS。下载 DNS 开关独立于 Siri/产品组；修改时验证显式 DNS policy 优先于动态集合，并同时覆盖有/无合格候选、普通 Apple 默认直连开启/关闭的场景。
 
 ## 共享端点与选择边界
 

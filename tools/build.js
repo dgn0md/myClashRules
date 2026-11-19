@@ -174,12 +174,12 @@ function render(config, api, settings) {
   const options = doc.getIn(['x-myClashRules', 'options'], true);
   for (const pair of options.items) pair.value.comment = ' ' + (descriptions[pair.key.value] || '');
   const comments = {
-    dns: 'DNS：国内加密直连，境外加密经代理；Apple 精确 policy 优先。不要添加 system/UDP 兜底。',
+    dns: 'DNS：白名单使用国内加密解析，其他业务使用国外 DoH；直连不自动授权国内 DNS。保留 Apple 专项例外与节点/DoH 启动解析。',
     tun: 'TUN 接管 TCP/UDP 53；strict-route 在支持的平台防多网卡旁路。关闭 TUN 需上级 DNS 接管。',
     'proxy-providers': '填入 Clash/Mihomo 订阅 URL；静态 provider 模式不能读取机场的顶层 DNS/hosts。',
     proxies: '自定义节点与五种直连出口；链式落地须在 x-myClashRules.customProxies 配置并重新生成。',
     'proxy-groups': '全量服务/地区/倍率/家宽组。静态地区无节点时回退 REJECT；脚本只生成有节点的组。',
-    'rule-providers': '远程 MRS 每日更新；本地 inline 规则随配置更新。国内域名库仅参与 DNS，不整体强制直连。',
+    'rule-providers': '远程 MRS/文本规则每日更新；DNS 白名单独立于路由；本地 inline 规则随配置更新。',
     rules:
       '顺序：DNS 接管 → Apple 精确域名例外 → 广告/国内服务 → 服务域名 → 海外域名 → Apple IP → 私网 IP → 其他服务 IP → CN IP → 兜底。',
   };

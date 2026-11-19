@@ -1,13 +1,13 @@
 # 功能目录
 
-规则与选项以 `Script/mihomoScript.js` 为准；静态 YAML 由同一脚本生成。
+规则与选项以 `Script/mihomoScript.js` 为准；静态 YAML 由同一脚本生成。后续功能与默认值变更同时遵守 [国内 DNS 白名单维护原则](dns-whitelist.md)。
 
 ## 本仓库重点维护
 
 | 功能 | 实现范围 |
 | --- | --- |
 | Apple 分流 | Siri / Apple Intelligence、Apple 产品地区服务、其他 Apple 服务分组；连接出口与 DNS policy 按专项规则配置。 |
-| DNS 控制 | 生成加密 DNS、按域名和规则集指定解析出口；严格模式不静默回退到明文 DNS。 |
+| DNS 控制 | `国内CDNDNS`、`微软下载DNS`、`Steam下载DNS` 默认开启，独立控制国内解析白名单；直连出口不自动使用国内 DNS。其余业务使用国外 DoH，地区服务使用专属出口；严格模式不明文降级。 |
 | 机场覆写 | 展开模式只处理节点和节点 hosts 映射，其他机场配置不进入输出。 |
 | 纯 IP 入站识别 | 以 HTTP Host、TLS SNI 和受支持的 QUIC 元数据补充域名，不改写目标地址。 |
 | 单一构建来源 | 脚本管理行为；静态 YAML 经构建工具生成，扩展开关须重新构建。 |
@@ -22,6 +22,10 @@ Apple 组范围与 DNS 特例见 [Apple 路由说明](apple-routing.md)；provid
 提供地区、倍率和家宽节点分类，常见服务域名与 IP 分流，以及手动、自动测速、负载均衡、IPv4/IPv6、TUN 和链式代理等选项。地区候选由节点名称识别，不能证明真实出口地区。
 私网 IP 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用代理出口及 `no-resolve`，关闭服务组或启用极简模式时改用 `默认代理`。Apple、Microsoft、Steam、Netflix、Spotify IP 也使用 `no-resolve` 并保留原有出口组；`cn_ip` 不加该参数，保留末端解析直连兜底。AI 当前使用域名集合，没有独立 IP 集合。
 测速域名 `cp.cloudflare.com` 的路由和加密 DNS policy 使用 `默认代理`；内核测速请求通过被测节点发起。
+
+DNS 白名单在极简模式和服务组关闭时仍由各自开关控制，HTTP provider 每 86400 秒直接更新。白名单只决定解析器，不强制改变路由。节点域名/DoH 启动解析与 Apple 专项例外保留国内加密 DNS；没有配置通用 `direct-nameserver`，直连也遵循统一 DNS policy。
+
+维护时分别检查连接路由和 DNS 授权：关闭单个 DNS 集合只撤销该集合的授权，不清除其他重叠集合或 Apple 专项例外；国外解析失败也不自动转向国内 DNS。上游动态成员更新由客户端完成，配置选项更新才需要重新构建。
 
 ## 配置模式
 

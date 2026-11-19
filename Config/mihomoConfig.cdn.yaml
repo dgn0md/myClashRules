@@ -1,10 +1,10 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：a80e79a452ea441fe3729a5876cdff26698b9ce3c17903c4d680df32e084413d
+# 最新 Raw SHA-256：d9c116156129a4ba4febd950bc3062ab5aa5c8375bb5f685cd17eeaaa613f61f
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
-# 缓存 CDN SHA-256：ea6c0b760c66f135676c108adb946fc9db7a3d6d38e72e7ef910be59fe6b5d6b
+# 缓存 CDN SHA-256：325c5bc7433493c675f04fd55e481b4c9068f34145fbfd8233aea3a70b226b96
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
@@ -44,6 +44,9 @@ x-myClashRules:
     Apple模型下载直连: true # 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
     严格加密DNS: true # 校验脚本生成的加密 DNS；不从机场配置继承 DNS
     拦截外部明文DNS: true # 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
+    国内CDNDNS: true # 国内 CDN 小集合使用国内加密 DNS；不决定连接出口
+    微软下载DNS: true # Microsoft 下载 CDN 独立使用国内加密 DNS
+    Steam下载DNS: true # Steam 国内节点动态集合使用国内 DNS，排除宽泛的服务器/用户内容后缀
     国内服务优先直连: true # 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
     Apple服务默认直连: true # Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
     微软服务默认直连: true # 国内可用服务优先直连，需要时可在组内切换
@@ -67,7 +70,7 @@ x-myClashRules:
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:
-  # DNS：国内加密直连，境外加密经代理；Apple 精确 policy 优先。不要添加 system/UDP 兜底。
+  # DNS：白名单使用国内加密解析，其他业务使用国外 DoH；直连不自动授权国内 DNS。保留 Apple 专项例外与节点/DoH 启动解析。
   enable: true
   ipv6: true
   use-hosts: true
@@ -79,7 +82,6 @@ dns:
   fake-ip-filter:
     - rule-set:private
     - rule-set:fakeip_filter
-    - rule-set:cn
     - rule-set:googlefcm
     - guzzoni.apple.com
     - +.guzzoni.apple.com
@@ -112,13 +114,6 @@ dns:
     - https://cloudflare-dns.com/dns-query#默认代理
     - https://dns.google/dns-query#默认代理
   nameserver-policy:
-    rule-set:private: rcode://success
-    rule-set:douyin:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
-    rule-set:cn:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
     +.issuer.apple.com:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
@@ -236,9 +231,6 @@ dns:
     +.books.apple.com:
       - https://cloudflare-dns.com/dns-query#Apple Product地区
       - https://dns.google/dns-query#Apple Product地区
-    rule-set:apple_tv:
-      - https://cloudflare-dns.com/dns-query#Apple Product地区
-      - https://dns.google/dns-query#Apple Product地区
     gdmf.apple.com:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
@@ -251,25 +243,68 @@ dns:
     assets.cdn-apple.com:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
+    +.steamserver.net:
+      - https://cloudflare-dns.com/dns-query#Steam
+      - https://dns.google/dns-query#Steam
+    +.steamusercontent.com:
+      - https://cloudflare-dns.com/dns-query#Steam
+      - https://dns.google/dns-query#Steam
+    gateway.icloud.com:
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
+    setup.icloud.com:
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
+    cp.cloudflare.com:
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
+    cdn.usefathom.com:
+      - https://cloudflare-dns.com/dns-query#AI
+      - https://dns.google/dns-query#AI
+    +.intercom.io:
+      - https://cloudflare-dns.com/dns-query#AI
+      - https://dns.google/dns-query#AI
+    +.intercomcdn.com:
+      - https://cloudflare-dns.com/dns-query#AI
+      - https://dns.google/dns-query#AI
+    +.mb3admin.com:
+      - https://cloudflare-dns.com/dns-query#Emby
+      - https://dns.google/dns-query#Emby
+    +.nubebelle.com:
+      - https://cloudflare-dns.com/dns-query#Emby
+      - https://dns.google/dns-query#Emby
+    rule-set:private: rcode://success
+    rule-set:apple_tv:
+      - https://cloudflare-dns.com/dns-query#Apple Product地区
+      - https://dns.google/dns-query#Apple Product地区
+    rule-set:dns_domestic_cdn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:dns_microsoft_cdn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
+    rule-set:dns_steam_cn:
+      - https://223.5.5.5/dns-query#DIRECT
+      - https://1.12.12.12/dns-query#DIRECT
     rule-set:category-ads: rcode://name_error
     rule-set:geolocation-cn:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
     rule-set:games_cn:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
     rule-set:synology:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
     rule-set:nvidia_cn:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
     rule-set:apple_cn:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
     rule-set:microsoft_cn:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
     rule-set:googlefcm:
       - https://cloudflare-dns.com/dns-query#FCM
       - https://dns.google/dns-query#FCM
@@ -339,43 +374,6 @@ dns:
     rule-set:geolocation-!cn:
       - https://cloudflare-dns.com/dns-query#默认代理
       - https://dns.google/dns-query#默认代理
-    gateway.icloud.com:
-      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
-      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
-    setup.icloud.com:
-      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
-      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
-    cp.cloudflare.com:
-      - https://cloudflare-dns.com/dns-query#默认代理
-      - https://dns.google/dns-query#默认代理
-    fsend.cn:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
-    international-gfe.download.nvidia.com:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
-    +.ctaiot.com:
-      - https://223.5.5.5/dns-query#DIRECT
-      - https://1.12.12.12/dns-query#DIRECT
-    cdn.usefathom.com:
-      - https://cloudflare-dns.com/dns-query#AI
-      - https://dns.google/dns-query#AI
-    +.intercom.io:
-      - https://cloudflare-dns.com/dns-query#AI
-      - https://dns.google/dns-query#AI
-    +.intercomcdn.com:
-      - https://cloudflare-dns.com/dns-query#AI
-      - https://dns.google/dns-query#AI
-    +.mb3admin.com:
-      - https://cloudflare-dns.com/dns-query#Emby
-      - https://dns.google/dns-query#Emby
-    +.nubebelle.com:
-      - https://cloudflare-dns.com/dns-query#Emby
-      - https://dns.google/dns-query#Emby
-  direct-nameserver:
-    - https://223.5.5.5/dns-query#DIRECT
-    - https://1.12.12.12/dns-query#DIRECT
-  direct-nameserver-follow-policy: true
   listen: 127.0.0.1:1053
   prefer-h3: false
   respect-rules: false
@@ -2525,7 +2523,7 @@ proxy-groups:
     include-all-providers: true
     exclude-filter: (?i)((官网|官方网站|官网地址|网址|网站|订阅地址|面板|panel|公告|宣传|延迟\s*≠\s*速度|无脑选|https?:\/\/\S+|www\.\S+|(^|[^A-Za-z0-9_-])([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?)|🇭🇰|香港|\b(HK|HKG)\b|hong\s*kong|🇯🇵|日本|东京|大阪|京都|\b(JP|JPN)\b|japan|🇺🇸|美国|纽约|洛杉矶|旧金山|芝加哥|休斯顿|迈阿密|西雅图|波士顿|华盛顿|拉斯维加斯|圣何塞|\b(US|USA)\b|america|united\s*states|🇸🇬|新加坡|狮城|\b(SG|SGP)\b|singapore|🇹🇼|台湾|台北|高雄|\b(TW|TWN)\b|taiwan|🇰🇷|韩国|首尔|釜山|\b(KR|KOR)\b|south\s*korea|korea|🇦🇺|澳大利亚|澳洲|悉尼|墨尔本|珀斯|\b(AU|AUS)\b|australia|🇮🇩|印度尼西亚|印尼|雅加达|\b(ID|IDN)\b|indonesia|🇮🇳|印度($|[^尼])|孟买|新德里|\b(IN|IND)\b|india|🇨🇦|加拿大|多伦多|温哥华|蒙特利尔|\b(CA|CAN)\b|canada|🇩🇪|德国|法兰克福|柏林|\b(DE|DEU)\b|germany|🇬🇧|英国|伦敦|曼彻斯特|\b(UK|GB|GBR)\b|united\s*kingdom|britain|england|🇫🇷|法国|巴黎|\b(FR|FRA)\b|france|🇳🇱|荷兰|阿姆斯特丹|\b(NL|NLD)\b|netherlands|holland|🇪🇸|西班牙|马德里|\b(ES|ESP)\b|spain|🇷🇺|俄罗斯|莫斯科|\b(RU|RUS)\b|russia|🇺🇦|乌克兰|基辅|\b(UA|UKR)\b|ukraine|🇹🇷|土耳其|伊斯坦布尔|\b(TR|TUR)\b|turkey|türkiye|🇳🇴|挪威|奥斯陆|\b(NO|NOR)\b|norway|🇨🇭|瑞士|苏黎世|\b(CH|CHE)\b|switzerland|swiss|🇸🇪|瑞典|斯德哥尔摩|\b(SE|SWE)\b|sweden|🇮🇪|爱尔兰|都柏林|\b(IE|IRL)\b|ireland|🇵🇭|菲律宾|马尼拉|\b(PH|PHL)\b|philippines|🇻🇳|越南|河内|胡志明|\b(VN|VNM)\b|vietnam|🇹🇭|泰国|曼谷|\b(TH|THA)\b|thailand|🇲🇾|马来西亚|吉隆坡|\b(MY|MYS)\b|malaysia|群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b)
 rule-providers:
-  # 远程 MRS 每日更新；本地 inline 规则随配置更新。国内域名库仅参与 DNS，不整体强制直连。
+  # 远程 MRS/文本规则每日更新；DNS 白名单独立于路由；本地 inline 规则随配置更新。
   private:
     type: http
     format: mrs
@@ -2613,22 +2611,6 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/fakeip-filter.mrs
     path: ./ruleset/fakeip-filter.mrs
     path-in-bundle: geo/geosite/fakeip-filter.mrs
-  cn:
-    type: http
-    format: mrs
-    interval: 86400
-    behavior: domain
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/cn.mrs
-    path: ./ruleset/cn.mrs
-    path-in-bundle: geo/geosite/cn.mrs
-  douyin:
-    type: http
-    format: mrs
-    interval: 86400
-    behavior: domain
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/douyin.mrs
-    path: ./ruleset/douyin.mrs
-    path-in-bundle: geo/geosite/douyin.mrs
   googlefcm:
     type: http
     format: mrs
@@ -2898,6 +2880,27 @@ rule-providers:
     behavior: domain
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/apple-tvplus.mrs
     path: ./ruleset/apple_tv.mrs
+  dns_domestic_cdn:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt
+    path: ./ruleset/dns_domestic_cdn.list
+  dns_microsoft_cdn:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    url: https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt
+    path: ./ruleset/dns_microsoft_cdn.list
+  dns_steam_cn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs
+    path: ./ruleset/dns_steam_cn.mrs
 rules:
   # 顺序：DNS 接管 → Apple 精确域名例外 → 广告/国内服务 → 服务域名 → 海外域名 → Apple IP → 私网 IP → 其他服务 IP → CN IP → 兜底。
   - DST-PORT,53,内置DNS

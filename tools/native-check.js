@@ -10,6 +10,7 @@ const YAML = require('yaml');
 const { build, load } = require('./build');
 const { fixtures, verifyRouting, verifyICloudContentDnsPolicy, CASES } = require('./runtime-routing');
 const { verifySniffing } = require('./native-sniffing');
+const { verifyDnsWhitelist } = require('./native-dns-whitelist');
 async function freePort() {
   const s = net.createServer();
   s.listen(0, '127.0.0.1');
@@ -223,6 +224,9 @@ async function run() {
   const sniffing = await verifySniffing({ binary, rulesDir, temp });
   fs.writeFileSync(path.join(temp, 'sniffing.json'), JSON.stringify(sniffing, null, 2));
   console.log(`Offline sniffing: ${sniffing.length} pure-IP HTTP/TLS routing decisions verified`);
+  const whitelistDns = await verifyDnsWhitelist({ binary, rulesDir, temp });
+  fs.writeFileSync(path.join(temp, 'dns-whitelist.json'), JSON.stringify(whitelistDns, null, 2));
+  console.log(`Offline DNS whitelist: ${whitelistDns.length} A/AAAA and direct dial decisions verified`);
 }
 run().catch((error) => {
   console.error(error.stack);

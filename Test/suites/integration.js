@@ -147,7 +147,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     h.assert(!out.dns['nameserver-policy']['jp1.example.com']);
     h.assert(!out.dns['nameserver-policy']['unrelated-ns.com']);
     h.assertDeep(out.dns['proxy-server-nameserver-policy'], {});
-    h.assert(out.dns['nameserver-policy']['rule-set:cn']);
+    h.assert(!out.dns['nameserver-policy']['rule-set:cn']);
+    h.assert(out.dns['nameserver-policy']['rule-set:dns_domestic_cdn']);
   });
   h.test('节点 hosts 映射改写为 server，不再复制 hosts', () => {
     const out = api.main(fx.typicalSubscription());

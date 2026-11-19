@@ -4,7 +4,7 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：09ab9387e58935fa12b8477999adc2dffabff8325d6e45fa12d222f9d3c27913
+ * 最新 Raw SHA-256：9317e1262b62b939bb62e161d754ad9bee41e1ab1da679aa5ace1887b8eb722e
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  */
@@ -60,6 +60,9 @@ const ruleOptionsEnable = {
   Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
   严格加密DNS: true, // 校验脚本生成的加密 DNS；不从机场配置继承 DNS
   拦截外部明文DNS: true, // 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
+  国内CDNDNS: true, // 国内 CDN 小集合使用国内加密 DNS；不决定连接出口
+  微软下载DNS: true, // Microsoft 下载 CDN 独立使用国内加密 DNS
+  Steam下载DNS: true, // Steam 国内节点动态集合使用国内 DNS，排除宽泛的服务器/用户内容后缀
   国内服务优先直连: true, // 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
   Apple服务默认直连: true, // Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
   微软服务默认直连: true, // 国内可用服务优先直连，需要时可在组内切换
@@ -1753,7 +1756,6 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'fake-ip-filter': [
       'rule-set:private',
       'rule-set:fakeip_filter',
-      'rule-set:cn',
       ...(minimalModeEnabled ? [] : ruleOptionsEnable['FCM'] ? ['rule-set:googlefcm'] : []),
       ...appleRealIpEndpoints,
     ],
@@ -1763,11 +1765,8 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     nameserver: foreignDNS,
     'nameserver-policy': {
       'rule-set:private': 'system',
-      'rule-set:douyin': ['180.184.1.1#DIRECT', '180.184.2.2#DIRECT'],
-      'rule-set:cn': chinaDNS,
     },
-    'direct-nameserver': chinaDNS,
-    'direct-nameserver-follow-policy': true,
+    // 直连出口与普通查询共用 policy/nameserver，避免再次向通用国内 DNS 解析。
   };
 
   const hosts = {
@@ -2036,9 +2035,37 @@ function finalizeMyClashRules(config) {
       config.dns['nameserver-policy'][domain] = chinaDNS;
     }
   }
+  // DNS 白名单与连接路由分开：只加载启用的集合，仍由客户端每日直接更新。
+  const dnsWhitelist = {
+    国内CDNDNS: ['dns_domestic_cdn', {
+      type: 'http', behavior: 'classical', format: 'text', interval: 86400,
+      url: 'https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt',
+      path: './ruleset/dns_domestic_cdn.list',
+    }],
+    微软下载DNS: ['dns_microsoft_cdn', {
+      type: 'http', behavior: 'classical', format: 'text', interval: 86400,
+      url: 'https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt',
+      path: './ruleset/dns_microsoft_cdn.list',
+    }],
+    Steam下载DNS: ['dns_steam_cn', {
+      ...ruleProviderCommonDomain,
+      url: 'https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs',
+      path: './ruleset/dns_steam_cn.mrs',
+    }],
+  };
+  for (const [option, [name, provider]] of Object.entries(dnsWhitelist)) {
+    if (!options[option]) continue;
+    config['rule-providers'][name] = provider;
+    config.dns['nameserver-policy'][`rule-set:${name}`] = chinaDNS;
+  }
+  // Steam @cn 成品含宽泛的服务器/用户内容域；这些域名始终保持国外解析。
+  const steamDnsGroup = groups.some((group) => group.name === 'Steam') ? 'Steam' : '默认代理';
+  for (const suffix of ['+.steamserver.net', '+.steamusercontent.com'])
+    config.dns['nameserver-policy'][suffix] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${steamDnsGroup}`));
+
   // DNS egress follows the route target group, with Other Apple Service explicitly using Siri's selector.
   const dnsForRoute = (target, dnsEgressGroupName, dnsEgressGroup) => {
-    if (target === '直连') return chinaDNS;
+    if (target === '直连') return foreignDNS;
     if (dnsEgressGroup?.proxies.length &&
         dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
       // Ordinary Apple traffic remains directly usable when there is no eligible Siri region.
@@ -2047,22 +2074,6 @@ function finalizeMyClashRules(config) {
     }
     return foreignDNS.map((dns) => dns.replace('#默认代理', `#${dnsEgressGroupName}`));
   };
-  const domainRuleSetEgress = new Map();
-  for (const rule of config.rules) {
-    const match = /^RULE-SET,([^,]+),([^,]+)(?:,|$)/.exec(rule);
-    if (!match) continue;
-    const [, providerName, target] = match;
-    const provider = config['rule-providers'][providerName];
-    if (!provider || !['domain', 'classical'].includes(provider.behavior)) continue;
-    if (['REJECT', 'REJECT-DROP', 'PASS'].includes(target)) continue;
-    if (!domainRuleSetEgress.has(providerName)) domainRuleSetEgress.set(providerName, target);
-  }
-  for (const [providerName, target] of domainRuleSetEgress) {
-    if (['private', 'cn', 'douyin'].includes(providerName)) continue;
-    const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
-    const dnsEgressGroup = config['proxy-groups'].find((group) => group.name === dnsEgressGroupName);
-    config.dns['nameserver-policy'][`rule-set:${providerName}`] = dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
-  }
   if (!options.PCDN拦截) {
     for (const name of Object.keys(config.hosts))
       if (Array.isArray(config.hosts[name]) && config.hosts[name][0] === '0.0.0.0') delete config.hosts[name];
@@ -2079,7 +2090,24 @@ function finalizeMyClashRules(config) {
       (rule) => !specialRules.includes(rule) && (options.国内服务优先直连 || !prefixRules.slice(1).includes(rule)),
     ),
   ];
-  // Every explicit domain route gets its configured DNS egress group. Domain keyword/regex rules
+  const domainRuleSetEgress = new Map();
+  for (const rule of config.rules) {
+    const match = /^RULE-SET,([^,]+),([^,]+)(?:,|$)/.exec(rule);
+    if (!match) continue;
+    const [, providerName, target] = match;
+    const provider = config['rule-providers'][providerName];
+    if (!provider || !['domain', 'classical'].includes(provider.behavior)) continue;
+    if (['REJECT', 'REJECT-DROP', 'PASS'].includes(target)) continue;
+    if (!domainRuleSetEgress.has(providerName)) domainRuleSetEgress.set(providerName, target);
+  }
+  for (const [providerName, target] of domainRuleSetEgress) {
+    if (providerName === 'private') continue;
+    const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
+    const dnsEgressGroup = config['proxy-groups'].find((group) => group.name === dnsEgressGroupName);
+    config.dns['nameserver-policy'][`rule-set:${providerName}`] =
+      providerName === 'apple_cn' ? chinaDNS : dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
+  }
+  // Explicit proxy domain routes get their DNS egress group; direct routes use the DNS whitelist. Domain keyword/regex rules
   // use a classical rule-set so nameserver-policy can match the same domain predicate.
   const literalDomainEgress = new Map();
   for (const rule of config.rules) {
@@ -2091,21 +2119,24 @@ function finalizeMyClashRules(config) {
     if (!literalDomainEgress.has(policyKey)) literalDomainEgress.set(policyKey, target);
   }
   for (const [policyKey, target] of literalDomainEgress) {
-    if (target === '直连') {
-      config.dns['nameserver-policy'][policyKey] = chinaDNS;
-      continue;
-    }
+    // 直连域名不自动获准交给国内 DNS；已有 Apple 精确例外保留，其余交给白名单/默认解析。
+    if (target === '直连') continue;
     const targetGroup = groups.find((group) => group.name === target);
     if (!targetGroup) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
     const dnsEgressGroup = groups.find((group) => group.name === dnsEgressGroupName);
     config.dns['nameserver-policy'][policyKey] = dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
+  // Mihomo 按 policy 顺序匹配；显式主机/后缀必须先于动态集合，不能只依赖键的具体程度。
+  const dnsPolicyEntries = Object.entries(config.dns['nameserver-policy']);
+  config.dns['nameserver-policy'] = Object.fromEntries([
+    ...dnsPolicyEntries.filter(([key]) => !key.startsWith('rule-set:')),
+    ...dnsPolicyEntries.filter(([key]) => key.startsWith('rule-set:')),
+  ]);
   if (options.严格加密DNS) {
     config.dns['use-system-hosts'] = false;
     // 不向系统 DNS 查询 LAN 名称；局域网名称通过用户 hosts 显式维护。
     config.dns['nameserver-policy']['rule-set:private'] = 'rcode://success';
-    config.dns['nameserver-policy']['rule-set:douyin'] = chinaDNS;
     const encrypted = (value, field) => {
       for (const server of Array.isArray(value) ? value : [value]) {
         if (typeof server !== 'string') throw new Error(`严格加密DNS：${field} 必须使用加密 DNS`);

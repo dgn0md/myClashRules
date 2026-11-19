@@ -62,7 +62,8 @@ async function run() {
       } else if (spec.format === 'text' && spec.behavior === 'classical') {
         const lines = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split(/\r?\n/)
           .map((line) => line.trim()).filter((line) => line && !line.startsWith('#'));
-        if (!lines.length || lines.some((line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line)))
+        if (!lines.length || lines.some((line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line) &&
+          !/^DOMAIN-WILDCARD,[a-z0-9.*?-]+$/i.test(line)))
           throw new Error(`${name}: invalid domain-only classical rules`);
       } else throw new Error(`${name}: unsupported rule format ${spec.format}/${spec.behavior}`);
       fs.writeFileSync(path.join(dir, `${name}${path.extname(spec.path)}`), bytes);
