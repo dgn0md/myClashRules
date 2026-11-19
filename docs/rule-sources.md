@@ -4,11 +4,14 @@
 
 维护与换源先遵守 [国内 DNS 白名单维护原则](dns-whitelist.md)。本页记录具体来源；不能因规则集名称、国内可用性或连接出口为直连，就扩大国内 DNS 的查询范围。
 
+规则模块按 [模块化与动态规则集开发原则](development-principles.md) 设计：优先复用现用上游，核对实际成员后用集合关系控制范围，不逐域名维护同用途清单。
+
 ## 规则与技术依据来源
 
 | 来源 | 本项目用途 | 更新与限制 |
 | --- | --- | --- |
 | [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；源内容变化会改变成员。 |
+| [Bett 厂商集合](https://github.com/appshubcc/bett-rules/tree/meta/geo/geosite) | 路由专用 `domestic_tencent`、`domestic_netease`、`domestic_bytedance`，分别配套 `_noncn` provider，使用同源 `tencent`/`netease`/`bytedance` 与对应 `@!cn` MRS。 | 六个 HTTP provider 每 86400 秒直接更新；运行时 AND/NOT 排除海外子集，不在 CI 合并或发布名单。三个模块统一受 `国内服务优先直连` 开关控制。海外标注不完整不等于剩余域名必然在大陆；不授权国内 DNS。 |
 | [SukkaW Surge](https://github.com/SukkaW/Surge) | [`apple_cn` 固定版本规则](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)：大陆专用 Apple classical 文本规则。 | 固定提交使规则内容可复现；它只表达规则列表，不判断解析 IP 的地理位置。 |
 | [Sukka 国内 CDN](https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt) 与 [Microsoft CDN](https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt) | DNS 专用 `dns_domestic_cdn`、`dns_microsoft_cdn`，使用 classical/text，分别受 `国内CDNDNS`、`微软下载DNS` 控制，默认开启。 | 客户端 HTTP provider 每 86400 秒直接更新；不在 CI 转换、筛选或重新发布。上游成员变化会扩大或缩小授权范围；沿用其 AGPL-3.0 声明。 |
 | [MetaCubeX Steam 国内集合](https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.list) | DNS 专用 `dns_steam_cn` 使用同路径 MRS，受默认开启的 `Steam下载DNS` 控制。 | 仍由客户端每日直接更新。成品含宽泛服务器/用户内容后缀，脚本为 `steamserver.net`、`steamusercontent.com` 明确保留国外 DNS；其余国内下载、更新及中国站条目使用国内 DNS。不是直接解析 v2fly 原始文件，也不声称成品等同于纯 v2fly `@cn`。 |

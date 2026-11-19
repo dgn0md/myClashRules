@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：b2ca3d8690dfdac3546dd1bbe7c19df0d0b19c19ae7a4ab0c75602eb6ee48127
+# 最新 Raw SHA-256：7e4476e4c06758671bcba3419182beabc663cbbbdbb88555fc516f717e857c76
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -2872,6 +2872,54 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geoip/apple.mrs
     path: ./ruleset/apple_ip.mrs
     path-in-bundle: geo/geoip/apple.mrs
+  domestic_tencent:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent.mrs
+    path: ./ruleset/domestic_tencent.mrs
+    path-in-bundle: geo/geosite/tencent.mrs
+  domestic_tencent_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent@!cn.mrs
+    path: ./ruleset/domestic_tencent_noncn.mrs
+    path-in-bundle: geo/geosite/tencent@!cn.mrs
+  domestic_netease:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease.mrs
+    path: ./ruleset/domestic_netease.mrs
+    path-in-bundle: geo/geosite/netease.mrs
+  domestic_netease_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease@!cn.mrs
+    path: ./ruleset/domestic_netease_noncn.mrs
+    path-in-bundle: geo/geosite/netease@!cn.mrs
+  domestic_bytedance:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bytedance.mrs
+    path: ./ruleset/domestic_bytedance.mrs
+    path-in-bundle: geo/geosite/bytedance.mrs
+  domestic_bytedance_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bytedance@!cn.mrs
+    path: ./ruleset/domestic_bytedance_noncn.mrs
+    path-in-bundle: geo/geosite/bytedance@!cn.mrs
   apple_tv:
     type: http
     format: mrs
@@ -2988,6 +3036,9 @@ rules:
   - RULE-SET,paypal,PayPal
   - RULE-SET,patreon,Patreon
   - RULE-SET,ehentai,EHentai
+  - AND,((RULE-SET,domestic_tencent),(NOT,((RULE-SET,domestic_tencent_noncn)))),直连
+  - AND,((RULE-SET,domestic_netease),(NOT,((RULE-SET,domestic_netease_noncn)))),直连
+  - AND,((RULE-SET,domestic_bytedance),(NOT,((RULE-SET,domestic_bytedance_noncn)))),直连
   - RULE-SET,geolocation-!cn,默认代理
   - RULE-SET,apple_ip,Apple Product地区,no-resolve
   - RULE-SET,private_ip,直连,no-resolve

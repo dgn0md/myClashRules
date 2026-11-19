@@ -13,6 +13,12 @@ node Test/run-tests.js
 
 `npm run check` 单独比较默认生成结果与提交的 `Config/mihomoConfig.yaml`。可用官方 Mihomo 内核时，`tools/native-check.js` 和 `tools/native-sniffing.js` 提供额外的原生配置与隔离流量检查。配置测试、原生解析和设备/运营商网络行为是不同的检查范围。
 
+新增模块与测试遵守 [模块化与动态规则集开发原则](../docs/development-principles.md)，复用统一开关，移除无用接口，避免逐业务域名维护。现有 Apple 精确功能回归按其专项约定保留。
+
+## 国内服务路由模块
+
+`tests/config.test.js` 验证腾讯、网易、字节模块的统一开关、专用服务优先级、静态/展开与全量/极简输出，并要求模块不扩大国内 DNS 白名单，总开关保留既有 Apple 专项行为。`tools/native-check.js` 直接从实际 Bett 厂商/海外子集 MRS 快照自动提取候选与排除样本，在全量/极简和统一开关的四种组合下执行回环 CONNECT 验证；集合外样本使用随机 `.invalid` 域名。新增模块测试不维护逐域名清单，运行时样本与解码文件只保存在忽略的临时目录，不用于生成或发布客户端规则。
+
 ## DNS 白名单回归原则
 
 修改 DNS、规则源或相关开关前遵守 [国内 DNS 白名单维护原则](../docs/dns-whitelist.md)。兼容性测试不能恢复“直连就使用国内 DNS”、通用 `cn` 国内解析或通用 `direct-nameserver` 等旧行为来适配断言；应明确区分连接路由、白名单授权和 Apple/启动解析例外。

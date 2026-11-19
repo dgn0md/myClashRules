@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：556fa3fca5952d13162d5712705d468d9835da6d4416f3324458ff8ebd722729
+ * 最新 Raw SHA-256：66a157b24b350ad9c0ac1df3429aa6b8c205c7fcc8e60cde4944098c86288b4a
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：9d43969cbfa79f35587a54e575093f97156857e76e20780557009301a85efc2b
+ * 缓存 CDN SHA-256：7955613c14d9d405c7198e549f17737bb5595e0735bf439bf76f1c87de95864e
  */
 
 // --- 静态配置区域 ---
@@ -329,6 +329,28 @@ const ruleProviderCommonIpcidr = {
   interval: 86400,
   behavior: 'ipcidr',
 };
+
+// 只生成连接规则，不参与 DNS policy；未标注海外的共享域名仍依赖上游分类质量。
+const domesticServiceModules = ['tencent', 'netease', 'bytedance'];
+
+function buildDomesticServiceRoutes(providers) {
+  if (!ruleOptionsEnable.国内服务优先直连) return [];
+  const rules = [];
+  for (const source of domesticServiceModules) {
+    const name = `domestic_${source}`;
+    const overseas = `${name}_noncn`;
+    for (const [provider, file] of [[name, source], [overseas, `${source}@!cn`]]) {
+      providers[provider] = {
+        ...ruleProviderCommonDomain,
+        url: `${ruleSetBaseUrl}geosite/${file}.mrs`,
+        path: `./ruleset/${provider}.mrs`,
+        'path-in-bundle': `geo/geosite/${file}.mrs`,
+      };
+    }
+    rules.push(`AND,((RULE-SET,${name}),(NOT,((RULE-SET,${overseas})))),直连`);
+  }
+  return rules;
+}
 
 // 定义基础 Rule Providers
 const baseRuleProviders = {
@@ -1867,6 +1889,7 @@ function main(config) {
 
   const appleIpRules = functionalIpRules.filter((rule) => rule.startsWith('RULE-SET,apple_ip,'));
   const otherFunctionalIpRules = functionalIpRules.filter((rule) => !rule.startsWith('RULE-SET,apple_ip,'));
+  const domesticServiceRules = buildDomesticServiceRoutes(finalRuleProviders);
   // Keep Apple and service-specific IP exits ahead of the generic CN IP fallback; private IPs remain direct first.
   newConfig['rules'] = [
     // 测速域名优先走代理，避免被国内或其他动态规则覆盖。
@@ -1875,6 +1898,7 @@ function main(config) {
     ...prefixRules,
     ...(ruleOptionsEnable.屏蔽代理QUIC流量 ? blockForeignQuic : []),
     ...functionalRules,
+    ...domesticServiceRules,
     'RULE-SET,geolocation-!cn,默认代理',
     ...appleIpRules,
     'RULE-SET,private_ip,直连,no-resolve',

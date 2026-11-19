@@ -269,6 +269,49 @@ test('GLOBAL and default proxy prefer the requested available groups in both mod
   }
 });
 
+test('domestic vendor modules use dynamic differences without changing DNS authorization', () => {
+  const modules = ['tencent', 'netease', 'bytedance'];
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      const baseline = build({ subscription, settings: { options: {
+        极简国内外分流模式: minimal,
+      } } }).config;
+      for (const options of [{}, { 国内服务优先直连: false }]) {
+        const config = build({ subscription, settings: { options: {
+          极简国内外分流模式: minimal, ...options,
+        } } }).config;
+        for (const field of ['nameserver', 'default-nameserver', 'proxy-server-nameserver', 'fake-ip-filter'])
+          assert.deepEqual(config.dns[field], baseline.dns[field]);
+        for (const provider of ['dns_domestic_cdn', 'dns_microsoft_cdn', 'dns_steam_cn'])
+          assert.deepEqual(config.dns['nameserver-policy'][`rule-set:${provider}`],
+            baseline.dns['nameserver-policy'][`rule-set:${provider}`]);
+        for (const source of modules) {
+          const name = `domestic_${source}`;
+          const rule = `AND,((RULE-SET,${name}),(NOT,((RULE-SET,${name}_noncn)))),直连`;
+          const enabled = options.国内服务优先直连 !== false;
+          assert.equal(config.rules.includes(rule), enabled);
+          for (const [provider, file] of [[name, source], [`${name}_noncn`, `${source}@!cn`]]) {
+            assert.equal(!!config['rule-providers'][provider], enabled);
+            if (!enabled) continue;
+            assert.ok(config['rule-providers'][provider].url.endsWith(`/geosite/${file}.mrs`));
+            assert.equal(config['rule-providers'][provider].interval, 86400);
+            assert.ok(!Object.keys(config.dns['nameserver-policy']).some((key) => key.includes(provider)));
+          }
+          if (enabled) {
+            const index = config.rules.indexOf(rule);
+            assert.ok(index < config.rules.indexOf('RULE-SET,geolocation-!cn,默认代理'));
+            if (!minimal) for (const service of ['tiktok', 'ai', 'ads']) {
+              const serviceIndex = config.rules.findIndex((entry) => entry.startsWith(`RULE-SET,${service},`));
+              if (serviceIndex >= 0) assert.ok(serviceIndex < index);
+            }
+          }
+        }
+        graph(config);
+      }
+    }
+  }
+});
+
 test('static provider applies enabled rate filters to every node-bearing group', () => {
   const rates = load().rateRegionDefinitions;
   const cases = [

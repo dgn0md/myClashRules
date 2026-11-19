@@ -5,6 +5,7 @@ const path = require('node:path');
 const net = require('node:net');
 const { spawn, spawnSync } = require('node:child_process');
 const { once } = require('node:events');
+const { randomBytes } = require('node:crypto');
 const assert = require('node:assert/strict');
 const YAML = require('yaml');
 const { build, load } = require('./build');
@@ -80,6 +81,42 @@ async function run() {
     const file = path.resolve(rulesDir, `${name}${path.extname(spec.path)}`);
     assert.ok(fs.existsSync(file) && fs.statSync(file).size > 16, `missing rule ${name}`);
   }
+  // Decode the actual snapshots here; no separate sampling API or business-domain list.
+  const providers = config['rule-providers'];
+  function readDomainSnapshot(name) {
+    const spec = providers[name];
+    assert.ok(spec?.format === 'mrs' && spec.behavior === 'domain', `invalid sample provider ${name}`);
+    const input = path.resolve(rulesDir, name + path.extname(spec.path));
+    const output = path.join(temp, `${name}-samples.txt`);
+    const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output],
+      { encoding: 'utf8', timeout: 10000 });
+    assert.equal(result.status, 0, `${name}: ${result.stdout}\n${result.stderr}`);
+    const rules = fs.readFileSync(output, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const exact = new Set(rules.filter((rule) => !rule.startsWith('+.')));
+    const suffix = new Set(rules.filter((rule) => rule.startsWith('+.')).map((rule) => rule.slice(2)));
+    return {
+      hosts: [...new Set(rules.map((rule) => rule.replace(/^\+\./, '')))]
+        .filter((host) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9-]+$/i.test(host)).sort(),
+      matches(host) {
+        if (exact.has(host)) return true;
+        const labels = host.split('.');
+        return labels.some((_, index) => suffix.has(labels.slice(index).join('.')));
+      },
+    };
+  }
+  const modules = [];
+  for (const name of Object.keys(providers).filter((name) =>
+    name.startsWith('domestic_') && providers[`${name}_noncn`])) {
+    const full = readDomainSnapshot(name);
+    const overseas = readDomainSnapshot(`${name}_noncn`);
+    const candidates = full.hosts.filter((host) => !overseas.matches(host)).slice(0, 64);
+    const excluded = overseas.hosts.find((host) => full.matches(host));
+    assert.ok(candidates.length && excluded, `${name}: no usable domestic/overseas snapshot samples`);
+    modules.push({ source: name.slice('domestic_'.length), candidates, excluded });
+  }
+  assert.ok(modules.length, 'no domestic routing modules found');
+  const outside = `routing-probe-${randomBytes(8).toString('hex')}.invalid`;
+  const domesticSamples = { modules, outside };
   const local = await fixtures();
   // Offline, isolated smoke test: no TUN, no system routing changes, no external requests.
   const port = await freePort();
@@ -98,6 +135,9 @@ async function run() {
   config['mixed-port'] = proxyPort;
   config['external-controller'] = `127.0.0.1:${port}`;
   for (const [host] of CASES) config.hosts[host] = '127.0.0.1';
+  for (const { candidates, excluded } of domesticSamples.modules)
+    for (const host of [...candidates, excluded]) config.hosts[host] = '127.0.0.1';
+  config.hosts[domesticSamples.outside] = '127.0.0.1';
   if (probe?.type === 'domain') config.hosts[probe.value] = '127.0.0.1';
   delete config['external-ui'];
   delete config['external-ui-url'];
@@ -212,6 +252,58 @@ async function run() {
     console.log(`Apple proxy trial: ${appleTrial.length} actual CONNECT decisions verified`);
     console.log(`Offline DNS: ${dnsPolicies.length} actual A/AAAA policy decisions verified`);
     console.log(`Evidence directory: ${temp}`);
+    const domesticEvidence = [];
+    const domesticModuleCases = [[domesticSamples.outside, null]];
+    // Earlier service rules may take priority over a vendor sample. Find a witness for
+    // each module in the actual snapshot, and require that witness to survive toggling.
+    for (const { source, candidates, excluded } of domesticSamples.modules) {
+      let witness;
+      for (const host of candidates) {
+        const [result] = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
+          track: local.track, api, cases: [[host, null]] });
+        if (result.rule.toUpperCase() === 'AND' && result.payload.includes(`domestic_${source}`)) {
+          witness = host;
+          break;
+        }
+      }
+      assert.ok(witness, `${source}: no snapshot sample reached the domestic module`);
+      domesticModuleCases.push([witness, source], [excluded, null]);
+    }
+    const domesticModes = [
+      {}, { 极简国内外分流模式: true }, { 国内服务优先直连: false },
+      { 极简国内外分流模式: true, 国内服务优先直连: false },
+    ];
+    for (const options of domesticModes) {
+      // Keep the same local sinks, hosts and file snapshots; reload production routing for each mode.
+      const rules = build({ settings: { options } }).config.rules;
+      const response = await fetch(`http://127.0.0.1:${port}/configs?force=true`, {
+        method: 'PUT', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ payload: YAML.stringify({ ...config, rules }) }),
+      });
+      assert.equal(response.status, 204, `cannot reload domestic routing: ${await response.text()}`);
+      let ready = false;
+      for (let attempt = 0; attempt < 50; attempt++) {
+        const loaded = (await api('/providers/rules')).providers;
+        if (loaded && Object.values(loaded).every((entry) => entry.ruleCount > 0)) { ready = true; break; }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      assert.ok(ready, 'domestic routing providers did not load');
+      const decisions = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
+        track: local.track, api, cases: domesticModuleCases.map(([host]) => [host, null]) });
+      for (const result of decisions) {
+        const source = domesticModuleCases.find(([host]) => host === result.host)[1];
+        const enabled = source && options.国内服务优先直连 !== false;
+        const matchedModule = result.rule.toUpperCase() === 'AND' && result.payload.includes('domestic_');
+        assert.equal(!!matchedModule, !!enabled, `${result.host}: ${JSON.stringify({ options, result })}`);
+        if (enabled) {
+          assert.ok(result.payload.includes(`domestic_${source}`), JSON.stringify(result));
+          assert.ok(result.chains.includes('直连'), JSON.stringify(result));
+        }
+        domesticEvidence.push({ options, ...result });
+      }
+    }
+    fs.writeFileSync(path.join(temp, 'domestic-modules.json'), JSON.stringify(domesticEvidence, null, 2));
+    console.log(`Domestic vendor routing: ${domesticEvidence.length} actual CONNECT decisions verified`);
   } finally {
     fs.writeFileSync(path.join(temp, 'runtime.log'), logs);
     if (child.exitCode === null) {
