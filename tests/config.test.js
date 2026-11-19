@@ -289,6 +289,23 @@ test('default script and provider YAML have complete graphs and encrypted DNS', 
     assert.deepEqual(config.tun['dns-hijack'], ['any:53', 'tcp://any:53']);
   }
 });
+test('latency test domain uses the default proxy route and encrypted proxy DNS in both modes', () => {
+  for (const subscription of [undefined, clean()]) {
+    for (const minimal of [false, true]) {
+      for (const domesticFirst of [false, true]) {
+        const config = build({ subscription, settings: { options: {
+          极简国内外分流模式: minimal, 国内服务优先直连: domesticFirst, 屏蔽代理QUIC流量: true,
+        } } }).config;
+        const index = config.rules.indexOf('DOMAIN,cp.cloudflare.com,默认代理');
+        assert.ok(index >= 0);
+        assert.ok(index < config.rules.indexOf('RULE-SET,private,直连'));
+        assert.ok(index < config.rules.findIndex((rule) => rule.startsWith('AND,')));
+        assert.deepEqual(config.dns['nameserver-policy']['cp.cloudflare.com'], config.dns.nameserver);
+        assert.ok(config.dns.nameserver.every((dns) => dns.startsWith('https://') && dns.endsWith('#默认代理')));
+      }
+    }
+  }
+});
 test('sniffing recovers pure-IP domain metadata without overriding destinations in every output mode', () => {
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {

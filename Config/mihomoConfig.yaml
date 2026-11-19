@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：4d503fa3c6a7860ada766b307f4b18e11bce2217a2c88741168c09912c8b284b
+# 最新 Raw SHA-256：c7ef2d3be45b60588bfc57ccb90332a5e3712534740def1d95eaf91bd54b566a
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -344,6 +344,9 @@ dns:
     setup.icloud.com:
       - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence
       - https://dns.google/dns-query#Siri Ai/Apple Intelligence
+    cp.cloudflare.com:
+      - https://cloudflare-dns.com/dns-query#默认代理
+      - https://dns.google/dns-query#默认代理
     fsend.cn:
       - https://223.5.5.5/dns-query#DIRECT
       - https://1.12.12.12/dns-query#DIRECT
@@ -2943,6 +2946,7 @@ rules:
   - DOMAIN,mesu.apple.com,直连
   - DOMAIN,updates.cdn-apple.com,直连
   - DOMAIN,assets.cdn-apple.com,直连
+  - DOMAIN,cp.cloudflare.com,默认代理
   - RULE-SET,category-ads,AdBlock
   - RULE-SET,private,直连
   - RULE-SET,geolocation-cn,直连

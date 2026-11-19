@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：d307327aa48c5a87f4bf3778786560a3a0f2709a003c93ef263745c6cfff1587
+ * 最新 Raw SHA-256：cd480564c0380d976cf2e0aa717560e48de0bf51816c2f6bb03805acc6511c79
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：b8b57559d0becbcde892e133308ef00f5626dec5ed8eeb3cd1a90a01d9b4174f
+ * 缓存 CDN SHA-256：b10bfee3883f4fc9e4da0e3b0d48fedbca0c274867b2d50f10dea060b77ad5ea
  */
 
 // --- 静态配置区域 ---
@@ -1854,6 +1854,8 @@ function main(config) {
   const otherFunctionalIpRules = functionalIpRules.filter((rule) => !rule.startsWith('RULE-SET,apple_ip,'));
   // Keep Apple and service-specific IP exits ahead of the generic CN IP fallback; private IPs remain direct first.
   newConfig['rules'] = [
+    // 测速域名优先走代理，避免被国内或其他动态规则覆盖。
+    'DOMAIN,cp.cloudflare.com,默认代理',
     ...priorityRules,
     ...prefixRules,
     ...(ruleOptionsEnable.屏蔽代理QUIC流量 ? blockForeignQuic : []),

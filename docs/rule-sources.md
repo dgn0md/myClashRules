@@ -28,6 +28,7 @@
 - Apple 产品 IP 使用 `apple_ip` 并路由到 `Apple Product地区`。该规则排在 `cn_ip` 前面。
 - 私网 IP 直连规则和服务 IP 规则位于通用 CN IP 兜底之前。
 - 专用 Apple 域名例外排在 Apple CN 与 QUIC 拒绝规则之前。
+- 测速域名 `cp.cloudflare.com` 使用精确代理规则和对应的 `默认代理` 加密 DNS policy，优先于动态规则。
 - provider 的 IP 与域名集合来自不同数据类别；DNS 侧按域名匹配的 provider 设置策略，不把 IP 地址集合错误地当作 DNS 域名规则。
 
 更新某个 provider 时，同时核对路由引用、DNS policy 引用和规则顺序，并在测试中固定 DNS/出口映射，包括 `Other Apple Service` DNS 跟随 Siri 组的约定。
