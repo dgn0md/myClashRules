@@ -64,7 +64,7 @@ async function fixtures() {
   };
 }
 const APPLE_AI_GROUP = 'Siri Ai/Apple Intelligence';
-const APPLE_PRODUCT_GROUP = 'Apple Product地区';
+const APPLE_PROXY_GROUP = 'AppleProxy';
 const OTHER_APPLE_GROUP = 'Other Apple Service';
 const CASES = [
   ['apple-relay.apple.com', APPLE_AI_GROUP],
@@ -105,21 +105,19 @@ const CASES = [
   ['gspe35-ssl.ls.apple.com', OTHER_APPLE_GROUP, 'apple'],
   ['smp-device-content.apple.com', OTHER_APPLE_GROUP, 'apple'],
   ['gs-loc-cn.apple.com', '直连', 'apple_cn'],
-  ['news-client-search.apple.com', APPLE_PRODUCT_GROUP],
-  ['news-assets.apple.com', APPLE_PRODUCT_GROUP],
-  ['apple.news', APPLE_PRODUCT_GROUP],
-  ['default.fe2.apple-dns.net', APPLE_PRODUCT_GROUP],
-  ['default.fe2.apple-dns.com', APPLE_PRODUCT_GROUP],
+  ['news-client-search.apple.com', APPLE_PROXY_GROUP],
+  ['news-assets.apple.com', APPLE_PROXY_GROUP],
+  ['apple.news', APPLE_PROXY_GROUP],
+  ['default.fe2.apple-dns.net', APPLE_PROXY_GROUP],
+  ['default.fe2.apple-dns.com', APPLE_PROXY_GROUP],
   ['gspe1-ssl.ls.apple.com', APPLE_AI_GROUP],
-  ['tv.apple.com', APPLE_PRODUCT_GROUP],
-  ['play-edge.itunes.apple.com', APPLE_PRODUCT_GROUP],
-  ['fitness.apple.com', APPLE_PRODUCT_GROUP],
-  ['sports.apple.com', APPLE_PRODUCT_GROUP],
-  ['books.apple.com', APPLE_PRODUCT_GROUP],
+  ['fitness.apple.com', APPLE_PROXY_GROUP],
+  ['sports.apple.com', APPLE_PROXY_GROUP],
+  ['books.apple.com', APPLE_PROXY_GROUP],
   ['assets.cdn-apple.com', '直连'],
   ['mesu.apple.com', '直连'],
   ['swcdn.apple.com', OTHER_APPLE_GROUP, 'apple'],
-  ['apps.apple.com', '直连'],
+  ['apps.apple.com', APPLE_PROXY_GROUP],
   ['music.apple.com', OTHER_APPLE_GROUP, 'apple'],
   ['www.microsoft.com', '直连'],
   ['youtube.com', 'YouTube'],

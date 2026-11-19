@@ -5,7 +5,7 @@ const { withOptions } = require('../lib/options');
 /**
  * 纯函数单元测试，两个脚本共用。
  * 覆盖：matchDomainPattern / getMatchedRegions / toMatchableName / normalizeProxyName /
- *      buildCustomizeGroups / fixDialerProxy / applyHostsToProxies / stripDnsSuffix / simplifyDomainPolicy
+ *      buildCustomizeGroups / fixDialerProxy / applyHostsToProxies
  */
 function runUnitTests(h, api) {
   h.section('单元测试 · matchDomainPattern（域名规则匹配）');
@@ -163,56 +163,6 @@ function runUnitTests(h, api) {
     h.assertEqual(out[0].server, 'node.example.com');
   });
 
-  h.section('单元测试 · stripDnsSuffix（DNS # 策略组后缀处理）');
-  h.test('无 # 后缀 → 原样返回', () =>
-    h.assertEqual(api.stripDnsSuffix('https://dns.example.com/dns-query'), 'https://dns.example.com/dns-query'),
-  );
-  h.test('非 direct 开头后缀 → 剥离', () =>
-    h.assertEqual(api.stripDnsSuffix('https://dns.example.com/dns-query#proxy'), 'https://dns.example.com/dns-query'),
-  );
-  h.test('#direct/直连 后缀 → 规范化为 #DIRECT（忽略大小写、含附加参数）', () => {
-    for (const url of [
-      'https://dns.example.com/dns-query#direct',
-      'https://dns.example.com/dns-query#DIRECT',
-      'https://dns.example.com/dns-query#direct&ecs=2.2.2.2',
-      'https://dns.example.com/dns-query#直连',
-    ]) {
-      h.assertEqual(api.stripDnsSuffix(url), 'https://dns.example.com/dns-query#DIRECT');
-    }
-  });
-
-  h.section('单元测试 · simplifyDomainPolicy（节点域名 DNS 策略压缩）');
-  h.test('相同 DNS 的同一后缀子域 → 合并为 +. 后缀规则', () =>
-    h.assertDeep(
-      api.simplifyDomainPolicy({
-        'a.example.com': ['https://dns.example/dns-query'],
-        'b.example.com': ['https://dns.example/dns-query'],
-      }),
-      { '+.example.com': ['https://dns.example/dns-query'] },
-    ),
-  );
-  h.test('DNS 不同或只有一个子域 → 保留精确规则', () =>
-    h.assertDeep(
-      api.simplifyDomainPolicy({
-        'a.example.com': 'https://dns-a.example/dns-query',
-        'b.example.com': 'https://dns-b.example/dns-query',
-        'only.other.com': 'https://dns.example/dns-query',
-      }),
-      {
-        'a.example.com': 'https://dns-a.example/dns-query',
-        'b.example.com': 'https://dns-b.example/dns-query',
-        'only.other.com': 'https://dns.example/dns-query',
-      },
-    ),
-  );
-  h.test('两段域名策略 → 原样保留，不能在压缩时丢失', () =>
-    h.assertDeep(
-      api.simplifyDomainPolicy({
-        'example.com': 'https://dns.example/dns-query',
-      }),
-      { 'example.com': 'https://dns.example/dns-query' },
-    ),
-  );
 }
 
 module.exports = { runUnitTests };

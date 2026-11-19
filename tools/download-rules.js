@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { build } = require('./build');
+const YAML = require('yaml');
 const RETRYABLE_STATUSES = new Set([403, 408, 425, 429, 500, 502, 503, 504]);
 const JSDELIVR_RULES_PREFIX = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/';
 const UPSTREAM_RULES_PREFIX = 'https://raw.githubusercontent.com/appshubcc/bett-rules/meta/geo/';
@@ -12,6 +13,18 @@ function upstreamUrl(url) {
   return url.startsWith(JSDELIVR_RULES_PREFIX)
     ? `${UPSTREAM_RULES_PREFIX}${url.slice(JSDELIVR_RULES_PREFIX.length)}`
     : undefined;
+}
+
+function validateYamlClassicalRules(name, bytes) {
+  const document = YAML.parseDocument(new TextDecoder('utf-8', { fatal: true }).decode(bytes), { uniqueKeys: true });
+  if (document.errors.length) throw new Error(`${name}: ${document.errors[0].message}`);
+  const rules = document.toJS()?.payload;
+  const validRule = /^(?:DOMAIN|DOMAIN-SUFFIX),[a-z0-9.-]+$/i;
+  const validProcess = /^PROCESS-NAME,[^,\s]+$/i;
+  if (!Array.isArray(rules) || !rules.length || rules.some((rule) => typeof rule !== 'string' ||
+    (!validRule.test(rule) && !validProcess.test(rule))))
+    throw new Error(`${name}: invalid YAML classical domain rules`);
+  if (!rules.some((rule) => validRule.test(rule))) throw new Error(`${name}: no domain rules in YAML classical provider`);
 }
 
 async function fetchRule(name, url, { sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
@@ -65,6 +78,8 @@ async function run() {
         if (!lines.length || lines.some((line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line) &&
           !/^DOMAIN-WILDCARD,[a-z0-9.*?-]+$/i.test(line)))
           throw new Error(`${name}: invalid domain-only classical rules`);
+      } else if (spec.format === 'yaml' && spec.behavior === 'classical') {
+        validateYamlClassicalRules(name, bytes);
       } else throw new Error(`${name}: unsupported rule format ${spec.format}/${spec.behavior}`);
       fs.writeFileSync(path.join(dir, `${name}${path.extname(spec.path)}`), bytes);
       manifest.push({
@@ -93,4 +108,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchRule, upstreamUrl };
+module.exports = { fetchRule, upstreamUrl, validateYamlClassicalRules };

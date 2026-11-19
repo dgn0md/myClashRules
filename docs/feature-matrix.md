@@ -10,7 +10,7 @@
 
 | 功能 | 实现范围 |
 | --- | --- |
-| Apple 分流 | Siri / Apple Intelligence、Apple 产品地区服务、其他 Apple 服务分组；连接出口与 DNS policy 按专项规则配置。 |
+| Apple 分流 | Siri / Apple Intelligence、`AppleProxy` 动态集合与产品入口、其他 Apple 服务分组；连接出口与 DNS policy 按专项规则配置。 |
 | 国内服务路由模块 | 腾讯、网易、字节模块统一受默认开启的 `国内服务优先直连` 开关控制；Bett 厂商集合减去同源 `@!cn` 子集，专用服务规则优先；只控制路由。 |
 | DNS 控制 | `国内CDNDNS`、`微软下载DNS`、`Steam下载DNS` 默认开启，独立控制国内解析白名单；直连出口不自动使用国内 DNS。其余业务使用国外 DoH，地区服务使用专属出口；严格模式不明文降级。 |
 | 机场覆写 | 展开模式只处理节点和节点 hosts 映射，其他机场配置不进入输出。 |

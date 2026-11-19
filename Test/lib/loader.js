@@ -16,8 +16,6 @@ const EXPORT_SUFFIX = `
   main,
   matchDomainPattern,
   applyHostsToProxies,
-  stripDnsSuffix,
-  simplifyDomainPolicy,
   getMatchedRegions,
   toMatchableName,
   normalizeProxyName,

@@ -33,11 +33,12 @@ function configure(api, settings) {
     Apple: 'Other Apple Service',
     Apple智能: 'Siri Ai/Apple Intelligence',
     Siri: 'Siri Ai/Apple Intelligence',
-    AppleNews: 'Apple Product地区',
-    AppleTV: 'Apple Product地区',
-    AppleFitness: 'Apple Product地区',
-    AppleSports: 'Apple Product地区',
-    AppleBooks: 'Apple Product地区',
+    'Apple Product地区': 'AppleProxy',
+    AppleNews: 'AppleProxy',
+    AppleTV: 'AppleProxy',
+    AppleFitness: 'AppleProxy',
+    AppleSports: 'AppleProxy',
+    AppleBooks: 'AppleProxy',
     Apple地区检测: 'Siri Ai/Apple Intelligence',
   };
   const removedAppleOptions = new Set(['AppleRelay']);

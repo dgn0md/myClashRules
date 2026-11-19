@@ -85,19 +85,40 @@ async function run() {
   const providers = config['rule-providers'];
   function readDomainSnapshot(name) {
     const spec = providers[name];
-    assert.ok(spec?.format === 'mrs' && spec.behavior === 'domain', `invalid sample provider ${name}`);
     const input = path.resolve(rulesDir, name + path.extname(spec.path));
-    const output = path.join(temp, `${name}-samples.txt`);
-    const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output],
-      { encoding: 'utf8', timeout: 10000 });
-    assert.equal(result.status, 0, `${name}: ${result.stdout}\n${result.stderr}`);
-    const rules = fs.readFileSync(output, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-    const exact = new Set(rules.filter((rule) => !rule.startsWith('+.')));
-    const suffix = new Set(rules.filter((rule) => rule.startsWith('+.')).map((rule) => rule.slice(2)));
+    assert.ok(spec && ['domain', 'classical'].includes(spec.behavior), `invalid sample provider ${name}`);
+    let rules;
+    if (spec.format === 'mrs' && spec.behavior === 'domain') {
+      const output = path.join(temp, `${name}-samples.txt`);
+      const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output],
+        { encoding: 'utf8', timeout: 10000 });
+      assert.equal(result.status, 0, `${name}: ${result.stdout}\n${result.stderr}`);
+      rules = fs.readFileSync(output, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    } else if (spec.format === 'yaml' && spec.behavior === 'classical') {
+      const document = YAML.parseDocument(fs.readFileSync(input, 'utf8'), { uniqueKeys: true });
+      assert.equal(document.errors.length, 0, `${name}: ${document.errors[0]?.message}`);
+      rules = document.toJS()?.payload;
+      assert.ok(Array.isArray(rules), `${name}: missing YAML payload`);
+    } else if (spec.format === 'text' && spec.behavior === 'classical') {
+      rules = fs.readFileSync(input, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    } else assert.fail(`unsupported sample provider ${name}: ${spec.format}/${spec.behavior}`);
+
+    const exact = new Set();
+    const suffix = new Set();
+    for (const rule of rules) {
+      if (/^DOMAIN,/i.test(rule)) exact.add(rule.split(',')[1].toLowerCase());
+      else if (/^DOMAIN-SUFFIX,/i.test(rule)) suffix.add(rule.split(',')[1].toLowerCase());
+      else if (rule.startsWith('+.')) suffix.add(rule.slice(2).toLowerCase());
+      else if (!/^(?:PROCESS-NAME|PROCESS-PATH),/i.test(rule) && spec.format === 'mrs')
+        exact.add(rule.toLowerCase());
+    }
+    assert.ok(exact.size || suffix.size, `${name}: no domain members in snapshot`);
+    const members = [...exact].map((domain) => domain).concat([...suffix]);
     return {
-      hosts: [...new Set(rules.map((rule) => rule.replace(/^\+\./, '')))]
+      hosts: [...new Set(members)]
         .filter((host) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9-]+$/i.test(host)).sort(),
       matches(host) {
+        host = host.toLowerCase();
         if (exact.has(host)) return true;
         const labels = host.split('.');
         return labels.some((_, index) => suffix.has(labels.slice(index).join('.')));
@@ -115,6 +136,11 @@ async function run() {
     modules.push({ source: name.slice('domestic_'.length), candidates, excluded });
   }
   assert.ok(modules.length, 'no domestic routing modules found');
+  const appleTv = readDomainSnapshot('apple_tv');
+  assert.ok(appleTv.hosts.length, 'Apple TV+ provider has no usable snapshot sample');
+  const appleTvSample = appleTv.hosts[0];
+  const appleProxy = readDomainSnapshot('apple_proxy');
+  assert.ok(appleProxy.hosts.length, 'AppleProxy provider has no usable snapshot sample');
   const outside = `routing-probe-${randomBytes(8).toString('hex')}.invalid`;
   const domesticSamples = { modules, outside };
   const local = await fixtures();
@@ -135,6 +161,8 @@ async function run() {
   config['mixed-port'] = proxyPort;
   config['external-controller'] = `127.0.0.1:${port}`;
   for (const [host] of CASES) config.hosts[host] = '127.0.0.1';
+  config.hosts[appleTvSample] = '127.0.0.1';
+  for (const host of appleProxy.hosts) config.hosts[host] = '127.0.0.1';
   for (const { candidates, excluded } of domesticSamples.modules)
     for (const host of [...candidates, excluded]) config.hosts[host] = '127.0.0.1';
   config.hosts[domesticSamples.outside] = '127.0.0.1';
@@ -174,6 +202,19 @@ async function run() {
   });
   const api = async (route) =>
     (await fetch(`http://127.0.0.1:${port}${route}`, { signal: AbortSignal.timeout(2000) })).json();
+  async function reloadRules(rules, label) {
+    const response = await fetch(`http://127.0.0.1:${port}/configs?force=true`, {
+      method: 'PUT', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: YAML.stringify({ ...config, rules }) }),
+    });
+    assert.equal(response.status, 204, `cannot reload ${label}: ${await response.text()}`);
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const loaded = (await api('/providers/rules')).providers;
+      if (loaded && Object.values(loaded).every((entry) => entry.ruleCount > 0)) return;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.fail(`${label} providers did not load`);
+  }
   try {
     let providers;
     for (let i = 0; i < 50; i++) {
@@ -194,11 +235,45 @@ async function run() {
     const taiwanConflictName = proxies['台湾'].all.find((name) => name.includes('台湾 矛盾 1x'));
     assert.ok(taiwanConflictName, 'Taiwan name with contradictory mainland flag was not classified');
     assert.ok(proxies['自动选择ex(大陆&香港)'].all.includes(taiwanConflictName), 'Taiwan node was excluded by its contradictory flag');
-    assert.equal(proxies['Apple Product地区'].now, '美国');
+    assert.equal(proxies.AppleProxy.now, '美国');
     assert.equal(proxies['Siri Ai/Apple Intelligence'].now, '美国');
     assert.equal(proxies['Other Apple Service'].now, '直连');
     assert.equal(proxies.Microsoft.now, '直连');
     const routes = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort, track: local.track, api });
+    const appleTvRoute = await verifyRouting({
+      port: proxyPort,
+      sinkPort: local.sinkPort,
+      track: local.track,
+      api,
+      cases: [[appleTvSample, 'AppleProxy', 'apple_tv']],
+    });
+    let appleProxyRoute;
+    for (const host of appleProxy.hosts) {
+      const [route] = await verifyRouting({
+        port: proxyPort,
+        sinkPort: local.sinkPort,
+        track: local.track,
+        api,
+        cases: [[host, null]],
+      });
+      if (route.payload === 'apple_proxy' && route.chains.includes('AppleProxy')) {
+        appleProxyRoute = [route];
+        break;
+      }
+    }
+    assert.ok(appleProxyRoute, 'no AppleProxy snapshot member reached its dynamic provider');
+    const downloadsProxied = build({ settings: { options: { Apple模型下载直连: false } } }).config;
+    await reloadRules(downloadsProxied.rules, 'Apple download proxy routing');
+    const [downloadRoute] = await verifyRouting({
+      port: proxyPort,
+      sinkPort: local.sinkPort,
+      track: local.track,
+      api,
+      cases: [['assets.cdn-apple.com', null]],
+    });
+    assert.equal(downloadRoute.payload, 'apple_proxy', JSON.stringify(downloadRoute));
+    assert.ok(downloadRoute.chains.includes('AppleProxy'), JSON.stringify(downloadRoute));
+    await reloadRules(config.rules, 'default Apple download routing');
     for (const [group, member] of selections) {
       if (!proxies[group]?.all?.includes(member)) throw new Error(`${group} 不包含 ${member}`);
       const response = await fetch(`http://127.0.0.1:${port}/proxies/${encodeURIComponent(group)}`, {
@@ -214,7 +289,7 @@ async function run() {
         const host = probe.value.toLowerCase();
         for (const [key, resolvers] of Object.entries(productionDnsPolicy)) {
           if (key === host || (key.startsWith('+.') && (host === key.slice(2) || host.endsWith(key.slice(1)))) ||
-              (key.startsWith('rule-set:') && key.slice(9) === result.payload))
+              (key.startsWith('rule-set:') && key.slice(9).split(',').includes(result.payload)))
             dnsCandidates.push({ key, resolvers });
         }
       }
@@ -242,6 +317,8 @@ async function run() {
     });
     const dnsPolicies = await verifyICloudContentDnsPolicy(api);
     fs.writeFileSync(path.join(temp, 'routes.json'), JSON.stringify(routes, null, 2));
+    fs.writeFileSync(path.join(temp, 'apple-tv.json'), JSON.stringify(appleTvRoute, null, 2));
+    fs.writeFileSync(path.join(temp, 'apple-proxy.json'), JSON.stringify(appleProxyRoute, null, 2));
     fs.writeFileSync(path.join(temp, 'apple-trial.json'), JSON.stringify(appleTrial, null, 2));
     fs.writeFileSync(path.join(temp, 'dns-policies.json'), JSON.stringify(dnsPolicies, null, 2));
     fs.writeFileSync(path.join(temp, 'providers.json'), JSON.stringify(providers, null, 2));
@@ -249,6 +326,9 @@ async function run() {
       `Offline runtime: ${Object.keys(providers).length} rule providers loaded; region/rate/home filters and Apple defaults verified`,
     );
     console.log(`Loopback routing: ${routes.length} actual CONNECT decisions verified`);
+    console.log(`Apple TV+ routing: ${appleTvRoute.length} provider-derived CONNECT decision verified`);
+    console.log(`AppleProxy routing: ${appleProxyRoute.length} provider-derived CONNECT decision verified`);
+    console.log(`Apple download toggle: AppleProxy fallback verified when direct mode is disabled`);
     console.log(`Apple proxy trial: ${appleTrial.length} actual CONNECT decisions verified`);
     console.log(`Offline DNS: ${dnsPolicies.length} actual A/AAAA policy decisions verified`);
     console.log(`Evidence directory: ${temp}`);
@@ -276,18 +356,7 @@ async function run() {
     for (const options of domesticModes) {
       // Keep the same local sinks, hosts and file snapshots; reload production routing for each mode.
       const rules = build({ settings: { options } }).config.rules;
-      const response = await fetch(`http://127.0.0.1:${port}/configs?force=true`, {
-        method: 'PUT', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ payload: YAML.stringify({ ...config, rules }) }),
-      });
-      assert.equal(response.status, 204, `cannot reload domestic routing: ${await response.text()}`);
-      let ready = false;
-      for (let attempt = 0; attempt < 50; attempt++) {
-        const loaded = (await api('/providers/rules')).providers;
-        if (loaded && Object.values(loaded).every((entry) => entry.ruleCount > 0)) { ready = true; break; }
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-      assert.ok(ready, 'domestic routing providers did not load');
+      await reloadRules(rules, 'domestic routing');
       const decisions = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
         track: local.track, api, cases: domesticModuleCases.map(([host]) => [host, null]) });
       for (const result of decisions) {

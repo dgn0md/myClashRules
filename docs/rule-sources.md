@@ -10,12 +10,14 @@
 
 | 来源 | 本项目用途 | 更新与限制 |
 | --- | --- | --- |
-| [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；源内容变化会改变成员。 |
+| [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。TV+ 使用 [`apple-tvplus`](https://github.com/v2fly/domain-list-community/blob/master/data/apple-tvplus) 动态集合，代替逐个主机规则。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；源内容变化会改变成员。 |
 | [Bett 厂商集合](https://github.com/appshubcc/bett-rules/tree/meta/geo/geosite) | 路由专用 `domestic_tencent`、`domestic_netease`、`domestic_bytedance`，分别配套 `_noncn` provider，使用同源 `tencent`/`netease`/`bytedance` 与对应 `@!cn` MRS。 | 六个 HTTP provider 每 86400 秒直接更新；运行时 AND/NOT 排除海外子集，不在 CI 合并或发布名单。三个模块统一受 `国内服务优先直连` 开关控制。海外标注不完整不等于剩余域名必然在大陆；不授权国内 DNS。 |
 | [SukkaW Surge](https://github.com/SukkaW/Surge) | [`apple_cn` 固定版本规则](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)：大陆专用 Apple classical 文本规则。 | 固定提交使规则内容可复现；它只表达规则列表，不判断解析 IP 的地理位置。 |
 | [Sukka 国内 CDN](https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt) 与 [Microsoft CDN](https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt) | DNS 专用 `dns_domestic_cdn`、`dns_microsoft_cdn`，使用 classical/text，分别受 `国内CDNDNS`、`微软下载DNS` 控制，默认开启。 | 客户端 HTTP provider 每 86400 秒直接更新；不在 CI 转换、筛选或重新发布。上游成员变化会扩大或缩小授权范围；沿用其 AGPL-3.0 声明。 |
 | [MetaCubeX Steam 国内集合](https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.list) | DNS 专用 `dns_steam_cn` 使用同路径 MRS，受默认开启的 `Steam下载DNS` 控制。 | 仍由客户端每日直接更新。成品含宽泛服务器/用户内容后缀，脚本为 `steamserver.net`、`steamusercontent.com` 明确保留国外 DNS；其余国内下载、更新及中国站条目使用国内 DNS。不是直接解析 v2fly 原始文件，也不声称成品等同于纯 v2fly `@cn`。 |
 | [Apple 企业网络清单](https://support.apple.com/en-us/101555) | 约束 PCC、Apple Intelligence、Siri、Relay 与资源端点的精确范围。 | 精确例外由脚本维护，不将整个 Apple 或 CDN 加入代理。 |
+| [Blackmatrix7 AppleProxy](https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/AppleProxy/AppleProxy.yaml) | `apple_proxy` classical/YAML provider，合并 News、TV、Apple DNS、地区检测、开发者和其他 Apple 入口，全部进入 `AppleProxy` 组。 | 用户已确认采用此组范围。2026-11-19 快照含 39 条 DOMAIN/DOMAIN-SUFFIX 与 1 条 PROCESS-NAME；上游每日更新，但目前数据标记时间为 2025-06-06。独立 Siri/PCC/国际 iCloud 规则排在 provider 之前。DNS policy 只作用于域名成员。 |
+| [Apple Intelligence 上游集合](https://github.com/MetaCubeX/meta-rules-dat/blob/meta/geo/geosite/apple-intelligence.mrs)、[Apple News](https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/AppleNews/AppleNews.yaml) | 审查 Siri/Relay 和 News 专用入口的分类范围。 | 2026-11-19 核对时，Apple Intelligence 集合只有少量精确主机，不能完整表达现有 Relay 后缀；Apple News 集合样本不足以表达完整服务。它们不替代 Siri 精确/后缀规则或 AppleProxy 主集合。 |
 | [OpenAI API 支持国家/地区](https://developers.openai.com/api/docs/supported-countries)、[BIS 俄罗斯/白俄罗斯出口管制](https://www.bis.gov/licensing/country-guidance/russia-belarus)、[OFAC 地域制裁说明](https://ofac.treasury.gov/faqs/updated/2026-10-26) | 为 `AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 的地区选择排除受限制地区组提供参考。 | OpenAI 页面列出支持地且未单列不支持地；BIS/OFAC 规则范围各异，不代表一张统一的 AI 服务禁用清单。按完整地区组名排除，当前节点地区定义中额外生效的是俄罗斯。 |
 | [AppleFlow](https://github.com/Kianuni/AppleFlow) | [PCC 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Apple-PCC.yaml)、[Siri 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Siri-Direct.yaml)。 | 按固定版本整理端点；不复制整份第三方 AI 主机列表作为第二套活动规则。 |
 | [Domain List Community](https://github.com/v2fly/domain-list-community) 与产品规则源 | Apple 产品分类和其他服务的分类参考。 | 服务专用域名不等于产品所有共享后端。 |
@@ -24,7 +26,8 @@
 
 | Provider 类型 | 典型用途 | 路由与 DNS |
 | --- | --- | --- |
-| domain MRS | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。 | 代理服务的 DNS policy 跟随路由目标组；普通直连域名通过 DNS 白名单或默认国外 DNS 解析；`apple` 的连接目标是 `Other Apple Service`，DNS 使用 `Siri Ai/Apple Intelligence` 当前出口；更具体的 `.apple-dns.net` / `.apple-dns.com` 进入 `Apple Product地区` 并使用该组 DNS policy。 |
+| domain MRS | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。 | 代理服务的 DNS policy 跟随路由目标组；普通直连域名通过 DNS 白名单或默认国外 DNS 解析；`apple` 的连接目标是 `Other Apple Service`，DNS 使用 `Siri Ai/Apple Intelligence` 当前出口；`apple_tv` 的连接与 DNS 都进入 `AppleProxy`。 |
+| classical/YAML | AppleProxy 动态服务成员及固定文本域名规则。 | `apple_proxy` 的域名成员与 DNS policy 进入 `AppleProxy`；其中优先级更高的 Siri/PCC/国际 iCloud 规则保持其既定路由与 DNS。`PROCESS-NAME` 成员只影响连接路由，不生成域名 policy。 |
 | ipcidr MRS | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 服务 IP。 | IP 规则直接选择服务组；同服务的 domain provider 使用相同出口。IPCIDR provider 本身没有域名 DNS 查询。 |
 | domain/classical | 固定文本域名列表、精确/后缀路由和 Emby 关键词等匹配。 | 可路由的 domain 与 classical provider 按路由谓词建立 DNS policy；保留集合有专用 policy，关键词规则使用 classical inline set。 |
 
@@ -37,12 +40,16 @@
 - 移除通用 `direct-nameserver` 及其独立缓存/解析路径；未知域名即使连接直连，也按统一 policy 和默认国外 DNS 解析。国内路由集合不再自动获得国内 DNS，移除的路由也不残留 DNS policy。
 - 国内解析例外还包括固定 `apple_cn`、启用模型直连时的四个 Apple CDN 精确域名，以及无合格 Siri 候选时普通 Apple 默认直连的既有解析回退。节点域名及 DNS 服务器启动解析仍使用国内加密 DNS。
 - 缓存和 Fake-IP 减少或延后部分查询，不保证消除真实解析；名单外的国内网站/CDN 可能因国外解析得到不同节点，需要在实际网络测量首次连接和下载表现。
-- Apple 产品 IP 使用 `apple_ip` 并路由到 `Apple Product地区`。该规则排在 `cn_ip` 前面。
+- Apple IP 使用 `apple_ip` 并路由到 `AppleProxy`。该规则排在 `cn_ip` 前面。
+- AppleProxy 使用 Blackmatrix7 每日更新的 classical/YAML provider。`apple-tvplus` MRS 保留 TV+ 专属分类，用于补充 AppleProxy 集合未含的 TV+ 成员；两者共享同一组。
+- Apple TV+ 使用 Bett `apple-tvplus` 动态 MRS；不再为该集合覆盖的 TV+ 主机添加单独路由。验证样本从实际 provider 快照读取。
+- `AI` 只使用 `category-ai-!cn`；共享分析/支持域名没有适合的 AI 服务集合成员边界，不加入 AI 路由。
+- 2026-11-19 的规则快照审查未发现 `fsend.cn`、`ctaiot.com`、`international-gfe.download.nvidia.com` 分别适合使用的 `geolocation-cn` / `nvidia@cn` 子集规则，也未发现 `mb3admin.com`、`nubebelle.com` 位于 `category-emby`。保留这些少量现有例外；不以过宽的国家、厂商或整厂商集合替换。
 - 私网 IP 使用 `RULE-SET,private_ip,直连,no-resolve`。Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用对应代理服务组并加 `no-resolve`；服务组关闭或极简模式下保留这些 IP provider，出口改为 `默认代理`，位于通用 CN IP 兜底之前。
 - Apple、Microsoft、Steam、Netflix、Spotify IP 规则均加 `no-resolve`，保留各自服务组及其可选出口；此参数不改变代理/直连选择。
 - 末端 `RULE-SET,cn_ip,直连` 保留解析能力，不加 `no-resolve`，为未命中前置域名规则的连接提供国内 IP 直连兜底。后续解析不会回头重新匹配已经跳过的服务 IP 规则。
 - `no-resolve` 避免为匹配这些 IP 集合而触发域名解析；仍可匹配连接已有的目标 IP。域名路由和 DNS policy 独立生效。
-- AI 使用 `category-ai-!cn` 域名集合，没有独立 AI IP provider；不以共享云/CDN 整段 IP 代替 AI 服务分类。
+- AI 使用 `category-ai-!cn` 域名集合，没有独立 AI IP provider；不将共享分析/支持域名、共享云/CDN 整段 IP 代入 AI 服务分类。
 - 专用 Apple 域名例外排在 Apple CN 与 QUIC 拒绝规则之前。
 - 测速域名 `cp.cloudflare.com` 使用精确代理规则和对应的 `默认代理` 加密 DNS policy，优先于动态规则。
 - provider 的 IP 与域名集合来自不同数据类别；DNS 侧按域名匹配的 provider 设置策略，不把 IP 地址集合错误地当作 DNS 域名规则。

@@ -28,13 +28,13 @@
 - 发布配置默认不启用外部控制 API，也不自动下载 Web 控制面；本地管理入口由客户端另行配置密钥。
 - 可路由的精确域名、后缀域名及动态 domain/classical 规则集，代理服务的 DNS policy 通常跟随目标组；普通直连域名按独立 DNS 白名单或默认国外解析处理。Apple 例外：
   - `Other Apple Service` 连接默认直连；通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS policy 使用 `Siri Ai/Apple Intelligence` 当前选择。没有合格的 Siri 地区候选且普通 Apple 默认直连时，这些域名改用国内加密直连 DNS，避免直连连接被 NXDOMAIN 阻断。
-  - `apple-dns.net` 和 `apple-dns.com` 路由到 `Apple Product地区`，DNS policy 使用该组。
+  - AppleProxy 动态集合、Apple 产品入口与 `apple_ip` 进入 `AppleProxy`；`apple-dns.net` 和 `apple-dns.com` 的 DNS policy 使用该组。
 - `private` 和拒绝出口可用专用安全 policy。国内 CDN 白名单及上述 Apple 例外之外的业务查询使用国外加密 DNS；节点/DoH 启动解析保留国内加密 DNS。IP-CIDR provider 本身没有域名 DNS。
 - 腾讯、网易、字节国内路由模块使用 Bett 厂商集合减去各自 `@!cn` 子集，统一受默认开启的 `国内服务优先直连` 开关控制；专用服务规则先于模块，模块先于国外域名与 IP 兜底。模块只授权连接直连，不生成国内 DNS policy；海外标注不完整仍可能影响分类。
 - IP 规则顺序保留 `apple_ip`、`private_ip`、服务 IP、`cn_ip` 直连兜底的优先级，避免服务 IP 被通用 CN 集合先匹配。
 - Apple 精确规则须先于广告、Apple CN 和可选 QUIC 拒绝规则。不得用整个 Apple、Cloudflare 或 `17/8` 网段代替精细端点分流。
-- 策略组名称原样保留：`Siri Ai/Apple Intelligence`、`Apple Product地区`、`Other Apple Service`。
-- 保留默认语义：`Other Apple Service` 默认直连；`Apple Product地区` 初始美国且可选直连；Siri 组优先选择美国，没有合格候选时拒绝连接。
+- 策略组名称原样保留：`Siri Ai/Apple Intelligence`、`AppleProxy`、`Other Apple Service`。旧 `Apple Product地区` 开关作为 `AppleProxy` 的兼容别名读取。
+- 保留默认语义：`Other Apple Service` 默认直连；`AppleProxy` 初始美国且可选直连；Siri 组优先选择美国，没有合格候选时拒绝连接。
 
 ## 国内 DNS 白名单原则
 

@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：66a157b24b350ad9c0ac1df3429aa6b8c205c7fcc8e60cde4944098c86288b4a
+ * 最新 Raw SHA-256：af0bc896470a6e06c38733fafb91b1b3644842c237b609abf23afbe0cc83fae9
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：7955613c14d9d405c7198e549f17737bb5595e0735bf439bf76f1c87de95864e
+ * 缓存 CDN SHA-256：5eefd3f7a53d4070437cacc6969dbcd0e45fb31a39603e4e2bdb539f68d0f240
  */
 
 // --- 静态配置区域 ---
@@ -16,7 +16,7 @@
 // 适配 Bettbox 自定义配置参数
 const Compatible_With_Bettbox = { ruleOptionsEnable: true };
 const appleAiGroupName = 'Siri Ai/Apple Intelligence';
-const appleProductGroupName = 'Apple Product地区';
+const appleProxyGroupName = 'AppleProxy';
 const appleOtherGroupName = 'Other Apple Service';
 const autoSelectExMainlandHongKongGroupName = '自动选择ex(大陆&香港)';
 
@@ -57,7 +57,7 @@ const ruleOptionsEnable = {
 
   // Apple 精细分流组：AI/Siri 与产品地区服务各自共用一个出口选择器。
   'Siri Ai/Apple Intelligence': true, // PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国；无允许地区候选时拒绝
-  'Apple Product地区': true, // News、TV、Fitness、Sports、Books 与 Apple IP，默认美国并可选直连
+  AppleProxy: true, // AppleProxy 动态集合、产品入口与 Apple IP，默认美国并可选直连
   Apple海外媒体: false, // iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
   Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
   严格加密DNS: true, // 校验脚本生成的加密 DNS；不从机场配置继承 DNS
@@ -174,6 +174,7 @@ const directProxies = [
     'ip-version': 'ipv6',
   },
 ];
+const directProxyNames = directProxies.map(({ name }) => name);
 
 // 图标 URL 公共前缀
 const iconBaseUrl = 'https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/';
@@ -290,8 +291,8 @@ const serviceRegionNames = new Set(
   regionDefinitions.filter(({ name }) => !excludedServiceRegionNames.has(name)).map(({ name }) => name),
 );
 const regionRestrictedServiceNames = new Set(['Google', 'AI', 'TikTok', 'Meta', appleAiGroupName]);
+// Mihomo `+.` 后缀同时匹配根域主机，避免重复列举精确域名。
 const appleRealIpEndpoints = [
-  'guzzoni.apple.com',
   '+.guzzoni.apple.com',
   '+.siri.apple.com',
   'dejavu.apple.com',
@@ -304,7 +305,6 @@ const appleRealIpEndpoints = [
   'mask-api.icloud.com',
   'mask.icloud.com',
   'mask-h2.icloud.com',
-  'ss-cleanup-proxy-prod.us-east-1m.app.apple.com',
   '+.app.apple.com',
   '+.apple-relay.apple.com',
   '+.apple-relay.cloudflare.com',
@@ -576,12 +576,7 @@ const serviceConfigs = [
       },
     },
     icon: `${iconBaseUrl}OpenAI.svg`,
-    rules: [
-      'RULE-SET,ai,AI',
-      'DOMAIN,cdn.usefathom.com,AI',
-      'DOMAIN-SUFFIX,intercom.io,AI',
-      'DOMAIN-SUFFIX,intercomcdn.com,AI',
-    ],
+    rules: ['RULE-SET,ai,AI'],
   },
   {
     name: 'GitHub',
@@ -935,7 +930,7 @@ const appleEndpointDefinitions = {
     'mask-api.icloud.com',
     'mask.icloud.com',
     'mask-h2.icloud.com',
-    'ss-cleanup-proxy-prod.us-east-1m.app.apple.com',
+    // app.apple.com 后缀规则已覆盖 Apple 清理代理主机。
     '+.app.apple.com',
     '+.apple-relay.apple.com',
     '+.apple-relay.cloudflare.com',
@@ -944,7 +939,7 @@ const appleEndpointDefinitions = {
     'cp4.cloudflare.com',
     // 国际内容域整体覆盖，中国站内容域保留原规则；gateway 单独归入 Other Apple Service。
     '+.icloud-content.com',
-    'guzzoni.apple.com',
+    // +.guzzoni.apple.com 同时覆盖根域主机。
     '+.guzzoni.apple.com',
     '+.siri.apple.com',
     'dejavu.apple.com',
@@ -955,27 +950,23 @@ const appleEndpointDefinitions = {
     // Apple 地区检测端点按用户指定与 Siri/Apple Intelligence 共用此组出口。
     'gspe1-ssl.ls.apple.com',
   ],
-  [appleProductGroupName]: [
-    // Apple DNS service namespace, including default.fe2.apple-dns.net.
-    '+.apple-dns.net',
+  [appleProxyGroupName]: [
+    // Apple DNS service namespace not covered by the AppleProxy provider.
     '+.apple-dns.com',
-    '+.apple.news',
-    'news-client.apple.com',
     'news-client-search.apple.com',
-    'news-assets.apple.com',
-    'news-edge.apple.com',
-    'news-events.apple.com',
-    '+.tv.apple.com',
-    'uts-api.itunes.apple.com',
-    'hls-amt.itunes.apple.com',
-    'hls.itunes.apple.com',
-    'np-edge.itunes.apple.com',
-    'play-edge.itunes.apple.com',
-    'tv.applemusic.com',
+    // TV+ domain membership is supplied by the daily apple-tvplus rule provider below.
     '+.fitness.apple.com',
     '+.sports.apple.com',
     '+.books.apple.com',
   ],
+};
+const appleProxyRuleProvider = {
+  type: 'http',
+  format: 'yaml',
+  interval: 86400,
+  behavior: 'classical',
+  url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/AppleProxy/AppleProxy.yaml',
+  path: './ruleset/apple_proxy.yaml',
 };
 const appleOtherExactEndpoints = ['gateway.icloud.com', 'setup.icloud.com'];
 const appleOverseasMediaEndpoints = [
@@ -992,9 +983,10 @@ for (const name of Object.keys(appleEndpointDefinitions)) {
     direct: true,
     defaultSelected: '美国',
     icon: `${iconBaseUrl}Apple.svg`,
-    ...(name === appleProductGroupName
+    ...(name === appleProxyGroupName
       ? {
           providers: {
+            apple_proxy: appleProxyRuleProvider,
             apple_ip: {
               ...ruleProviderCommonIpcidr,
               url: `${ruleSetBaseUrl}geoip/apple.mrs`,
@@ -1002,7 +994,7 @@ for (const name of Object.keys(appleEndpointDefinitions)) {
               'path-in-bundle': 'geo/geoip/apple.mrs',
             },
           },
-          ipRules: [`RULE-SET,apple_ip,${appleProductGroupName},no-resolve`],
+          ipRules: [`RULE-SET,apple_ip,${appleProxyGroupName},no-resolve`],
         }
       : {}),
   });
@@ -1396,7 +1388,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
     const directGroup = {
       ...selectBaseOption,
       name: '直连',
-      proxies: [...directProxies.map((p) => p.name)],
+      proxies: [...directProxyNames],
       icon: `${iconBaseUrl}China.svg`,
       hidden: true,
     };
@@ -1488,7 +1480,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
   const directGroup = {
     ...selectBaseOption,
     name: '直连',
-    proxies: [...directProxies.map((p) => p.name)],
+    proxies: [...directProxyNames],
     icon: `${iconBaseUrl}China.svg`,
     hidden: hideManualSelectGroupEnabled,
   };
@@ -1672,75 +1664,6 @@ function applyHostsToProxies(proxies, hosts) {
     const server = resolve(proxy.server);
     return server === proxy.server ? proxy : { ...proxy, server };
   });
-}
-
-/**
- * 剥离 DNS 地址的 # 策略组后缀；
- * 参数包含 direct 或 直连 时，强制改为 #DIRECT
- */
-function stripDnsSuffix(dns) {
-  const str = String(dns);
-  const hashIndex = str.indexOf('#');
-  if (hashIndex === -1) return str;
-
-  const prefix = str.slice(0, hashIndex).trim();
-
-  const suffix = str
-    .slice(hashIndex + 1)
-    .toLowerCase()
-    .trim();
-
-  if (suffix.includes('direct') || suffix.includes('直连')) return prefix + '#DIRECT';
-
-  return prefix;
-}
-
-/**
- * 简化节点域名策略：将相同 DNS 的节点域名按后缀归类，至少三段的域名可合并为 +. 后缀形式
- */
-function simplifyDomainPolicy(policy) {
-  const groups = new Map();
-
-  for (const [domain, dns] of Object.entries(policy)) {
-    const dnsKey = JSON.stringify(Array.isArray(dns) ? [...dns].sort() : dns);
-
-    if (domain.startsWith('+.') || domain.startsWith('.') || domain.includes('*')) {
-      groups.set(`keep:${domain}`, [{ domain, dns, dnsKey }]);
-      continue;
-    }
-
-    const parts = domain.split('.');
-
-    if (parts.length < 3) {
-      groups.set(`keep:${domain}`, [{ domain, dns, dnsKey }]);
-      continue;
-    }
-
-    const suffix = parts.slice(-2).join('.');
-
-    if (!groups.has(suffix)) {
-      groups.set(suffix, []);
-    }
-
-    groups.get(suffix).push({ domain, dns, dnsKey });
-  }
-
-  const result = {};
-
-  for (const [suffix, domains] of groups) {
-    const firstDnsKey = domains[0].dnsKey;
-    const sameDns = domains.every(({ dnsKey }) => dnsKey === firstDnsKey);
-
-    if (domains.length >= 2 && sameDns) {
-      result[`+.${suffix}`] = domains[0].dns;
-    } else {
-      for (const { domain, dns } of domains) {
-        result[domain] = dns;
-      }
-    }
-  }
-
-  return result;
 }
 
 /**
@@ -1967,7 +1890,7 @@ function finalizeMyClashRules(config) {
         proxies:
           name === appleAiGroupName
             ? ['REJECT']
-            : name === appleProductGroupName
+            : name === appleProxyGroupName
               ? ['默认代理', ...(usGroup ? [unitedStatesRegion.name] : []), '直连']
               : ['默认代理', '直连'],
       };
@@ -1994,8 +1917,9 @@ function finalizeMyClashRules(config) {
       );
       config.dns['nameserver-policy'][domain] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${name}`));
     }
-    if (name === appleProductGroupName) {
+    if (name === appleProxyGroupName) {
       // TV+ 动态规则与其他产品共享同一地区选择器。
+      config['rule-providers'].apple_proxy = appleProxyRuleProvider;
       if (!config['rule-providers'].apple_ip) {
         config['rule-providers'].apple_ip = {
           ...ruleProviderCommonIpcidr,
@@ -2003,22 +1927,22 @@ function finalizeMyClashRules(config) {
           path: './ruleset/apple_ip.mrs',
           'path-in-bundle': 'geo/geoip/apple.mrs',
         };
-        specialRules.push(`RULE-SET,apple_ip,${appleProductGroupName},no-resolve`);
+        specialRules.push(`RULE-SET,apple_ip,${appleProxyGroupName},no-resolve`);
       }
       config['rule-providers'].apple_tv = {
         ...ruleProviderCommonDomain,
         url: `${ruleSetBaseUrl}geosite/apple-tvplus.mrs`,
         path: './ruleset/apple_tv.mrs',
       };
-      specialRules.push(`RULE-SET,apple_tv,${appleProductGroupName}`);
+      specialRules.push(`RULE-SET,apple_tv,${appleProxyGroupName}`);
       config.dns['nameserver-policy']['rule-set:apple_tv'] = foreignDNS.map((dns) =>
-        dns.replace('#默认代理', `#${appleProductGroupName}`),
+        dns.replace('#默认代理', `#${appleProxyGroupName}`),
       );
       if (options.Apple海外媒体) {
         for (const domain of appleOverseasMediaEndpoints) {
-          specialRules.push(`DOMAIN,${domain},${appleProductGroupName}`);
+          specialRules.push(`DOMAIN,${domain},${appleProxyGroupName}`);
           config.dns['nameserver-policy'][domain] = foreignDNS.map((dns) =>
-            dns.replace('#默认代理', `#${appleProductGroupName}`),
+            dns.replace('#默认代理', `#${appleProxyGroupName}`),
           );
         }
       }
@@ -2070,6 +1994,10 @@ function finalizeMyClashRules(config) {
       specialRules.push(`DOMAIN,${domain},直连`);
       config.dns['nameserver-policy'][domain] = chinaDNS;
     }
+  }
+  if (options[appleProxyGroupName]) {
+    // 宽泛 AppleProxy 成员最后匹配，保留上方 Siri、共享 iCloud 与下载域名的精确边界。
+    specialRules.push(`RULE-SET,apple_proxy,${appleProxyGroupName}`);
   }
   // DNS 白名单与连接路由分开：只加载启用的集合，仍由客户端每日直接更新。
   const dnsWhitelist = {
@@ -2165,10 +2093,24 @@ function finalizeMyClashRules(config) {
   }
   // Mihomo 按 policy 顺序匹配；显式主机/后缀必须先于动态集合，不能只依赖键的具体程度。
   const dnsPolicyEntries = Object.entries(config.dns['nameserver-policy']);
-  config.dns['nameserver-policy'] = Object.fromEntries([
+  const orderedDnsPolicyEntries = [
     ...dnsPolicyEntries.filter(([key]) => !key.startsWith('rule-set:')),
     ...dnsPolicyEntries.filter(([key]) => key.startsWith('rule-set:')),
-  ]);
+  ];
+  const compactDnsPolicyEntries = [];
+  for (const [key, resolvers] of orderedDnsPolicyEntries) {
+    const previous = compactDnsPolicyEntries[compactDnsPolicyEntries.length - 1];
+    if (
+      key.startsWith('rule-set:') &&
+      previous?.[0].startsWith('rule-set:') &&
+      JSON.stringify(previous[1]) === JSON.stringify(resolvers)
+    ) {
+      previous[0] += `,${key.slice('rule-set:'.length)}`;
+    } else {
+      compactDnsPolicyEntries.push([key, resolvers]);
+    }
+  }
+  config.dns['nameserver-policy'] = Object.fromEntries(compactDnsPolicyEntries);
   if (options.严格加密DNS) {
     config.dns['use-system-hosts'] = false;
     // 不向系统 DNS 查询 LAN 名称；局域网名称通过用户 hosts 显式维护。
@@ -2194,11 +2136,17 @@ function finalizeMyClashRules(config) {
   }
   // 规则依赖按实际引用保留；DNS 使用的规则集也必须保留（不能只扫描 rules）。
   const references = JSON.stringify([config.rules, config.dns]);
+  const dnsRuleSetReferences = new Set(
+    Object.keys(config.dns['nameserver-policy'] || {})
+      .filter((key) => key.startsWith('rule-set:'))
+      .flatMap((key) => key.slice('rule-set:'.length).split(',')),
+  );
   for (const key of Object.keys(config['rule-providers'])) {
     if (
       !references.includes(`RULE-SET,${key},`) &&
       !references.includes(`RULE-SET,${key})`) &&
-      !references.includes(`rule-set:${key}\"`)
+      !references.includes(`rule-set:${key}\"`) &&
+      !dnsRuleSetReferences.has(key)
     )
       delete config['rule-providers'][key];
   }
