@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：cd480564c0380d976cf2e0aa717560e48de0bf51816c2f6bb03805acc6511c79
+ * 最新 Raw SHA-256：09ab9387e58935fa12b8477999adc2dffabff8325d6e45fa12d222f9d3c27913
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：b10bfee3883f4fc9e4da0e3b0d48fedbca0c274867b2d50f10dea060b77ad5ea
+ * 缓存 CDN SHA-256：7a47a43d1f340dca160bf5ee3a9b88c1505f269b50a6df1d8172ab843b3b9c9d
  */
 
 // --- 静态配置区域 ---
@@ -535,7 +535,8 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Google.svg`,
     rules: ['RULE-SET,google,Google'],
-    ipRules: ['RULE-SET,google_ip,Google'],
+    proxyIpRequired: true,
+    ipRules: ['RULE-SET,google_ip,Google,no-resolve'],
   },
   {
     name: 'AI',
@@ -591,7 +592,7 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Microsoft.svg`,
     rules: ['RULE-SET,microsoft,Microsoft'],
-    ipRules: ['RULE-SET,microsoft_ip,Microsoft'],
+    ipRules: ['RULE-SET,microsoft_ip,Microsoft,no-resolve'],
   },
   {
     name: appleOtherGroupName,
@@ -627,7 +628,8 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Telegram.svg`,
     rules: ['RULE-SET,telegram,Telegram'],
-    ipRules: ['RULE-SET,telegram_ip,Telegram'],
+    proxyIpRequired: true,
+    ipRules: ['RULE-SET,telegram_ip,Telegram,no-resolve'],
   },
   {
     name: 'Steam',
@@ -649,7 +651,7 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Steam.svg`,
     rules: ['RULE-SET,steam,Steam'],
-    ipRules: ['RULE-SET,steam_ip,Steam'],
+    ipRules: ['RULE-SET,steam_ip,Steam,no-resolve'],
   },
   {
     name: 'TikTok',
@@ -671,7 +673,8 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}TikTok.svg`,
     rules: ['RULE-SET,tiktok,TikTok'],
-    ipRules: ['RULE-SET,tiktok_ip,TikTok'],
+    proxyIpRequired: true,
+    ipRules: ['RULE-SET,tiktok_ip,TikTok,no-resolve'],
   },
   {
     name: 'Twitter',
@@ -692,7 +695,8 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Twitter.svg`,
     rules: ['RULE-SET,twitter,Twitter'],
-    ipRules: ['RULE-SET,twitter_ip,Twitter'],
+    proxyIpRequired: true,
+    ipRules: ['RULE-SET,twitter_ip,Twitter,no-resolve'],
   },
   {
     name: 'Meta',
@@ -714,7 +718,8 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Meta.svg`,
     rules: ['RULE-SET,meta,Meta'],
-    ipRules: ['RULE-SET,facebook_ip,Meta'],
+    proxyIpRequired: true,
+    ipRules: ['RULE-SET,facebook_ip,Meta,no-resolve'],
   },
   {
     name: 'Line',
@@ -749,7 +754,7 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Netflix.svg`,
     rules: ['RULE-SET,netflix,Netflix'],
-    ipRules: ['RULE-SET,netflix_ip,Netflix'],
+    ipRules: ['RULE-SET,netflix_ip,Netflix,no-resolve'],
   },
   {
     name: 'Emby',
@@ -812,7 +817,7 @@ const serviceConfigs = [
     },
     icon: `${iconBaseUrl}Spotify.svg`,
     rules: ['RULE-SET,spotify,Spotify'],
-    ipRules: ['RULE-SET,spotify_ip,Spotify'],
+    ipRules: ['RULE-SET,spotify_ip,Spotify,no-resolve'],
   },
   {
     name: 'Crypto',
@@ -972,7 +977,7 @@ for (const name of Object.keys(appleEndpointDefinitions)) {
               'path-in-bundle': 'geo/geoip/apple.mrs',
             },
           },
-          ipRules: [`RULE-SET,apple_ip,${appleProductGroupName}`],
+          ipRules: [`RULE-SET,apple_ip,${appleProductGroupName},no-resolve`],
         }
       : {}),
   });
@@ -1331,10 +1336,19 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
         }
       : null;
 
+  // 必须代理的服务 IP 不随服务组开关消失；组关闭时使用默认代理。
+  const fallbackProxyIpRules = [];
+  for (const svc of serviceConfigs) {
+    if (!svc.proxyIpRequired || (!minimalModeEnabled && ruleOptionsEnable[svc.name])) continue;
+    for (const rule of svc.ipRules) {
+      const [, provider] = rule.split(',');
+      finalRuleProviders[provider] = svc.providers[provider];
+      fallbackProxyIpRules.push(`RULE-SET,${provider},默认代理,no-resolve`);
+    }
+  }
+
   if (minimalModeEnabled) {
     const autoSelectExMainlandHongKongEnabled = ruleOptionsEnable[autoSelectExMainlandHongKongGroupName];
-
-    const finalRuleProviders = { ...baseRuleProviders };
 
     const defaultGroup = {
       ...selectBaseOption,
@@ -1382,13 +1396,15 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
         ...(autoSelectExMainlandHongKongEnabled ? [autoSelectExMainlandHongKongGroup] : []),
       ],
       functionalRules: [],
-      functionalIpRules: [],
+      functionalIpRules: fallbackProxyIpRules,
       priorityRules: [],
       finalRuleProviders,
       chainGroup,
       directGroup,
     };
   }
+
+  functionalIpRules.push(...fallbackProxyIpRules);
 
   functionalGroups.push({
     ...selectBaseOption,
@@ -1862,7 +1878,7 @@ function main(config) {
     ...functionalRules,
     'RULE-SET,geolocation-!cn,默认代理',
     ...appleIpRules,
-    'RULE-SET,private_ip,直连',
+    'RULE-SET,private_ip,直连,no-resolve',
     ...otherFunctionalIpRules,
     'RULE-SET,cn_ip,直连',
     `MATCH,${ruleOptionsEnable.极简国内外分流模式 ? '默认代理' : '漏网之鱼'}`,
@@ -1954,7 +1970,7 @@ function finalizeMyClashRules(config) {
           path: './ruleset/apple_ip.mrs',
           'path-in-bundle': 'geo/geoip/apple.mrs',
         };
-        specialRules.push(`RULE-SET,apple_ip,${appleProductGroupName}`);
+        specialRules.push(`RULE-SET,apple_ip,${appleProductGroupName},no-resolve`);
       }
       config['rule-providers'].apple_tv = {
         ...ruleProviderCommonDomain,

@@ -342,8 +342,8 @@ test('Apple AI/Siri and product endpoints precede Apple CN, advertising and QUIC
   assert.ok(products.proxies.includes('直连'));
   for (const name of [otherAppleGroup, 'Microsoft'])
     assert.equal(config['proxy-groups'].find((g) => g.name === name).proxies[0], '直连');
-  assert.ok(config.rules.includes(`RULE-SET,apple_ip,${appleProductGroup}`));
-  assert.ok(rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup}`) < rules.indexOf('RULE-SET,cn_ip,直连'));
+  assert.ok(config.rules.includes(`RULE-SET,apple_ip,${appleProductGroup},no-resolve`));
+  assert.ok(rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup},no-resolve`) < rules.indexOf('RULE-SET,cn_ip,直连'));
   assert.ok(config.dns['nameserver-policy']['+.apple-relay.apple.com'][0].endsWith(`#${siriAiGroup}`));
   assert.ok(config.dns['nameserver-policy']['+.smoot.apple.com'][0].endsWith(`#${siriAiGroup}`));
   assert.ok(rules.includes('DOMAIN,assets.cdn-apple.com,直连'));
@@ -354,7 +354,7 @@ test('Apple IP routes to Apple Product地区 before cn_ip in every output mode',
     for (const minimal of [false, true]) {
       const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
       assert.ok(config['rule-providers'].apple_ip);
-      const appleIp = config.rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup}`);
+      const appleIp = config.rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup},no-resolve`);
       assert.ok(appleIp >= 0);
       assert.ok(appleIp < config.rules.indexOf('RULE-SET,cn_ip,直连'));
       const products = config['proxy-groups'].find((g) => g.name === appleProductGroup);
@@ -391,6 +391,38 @@ test('Apple DNS domain suffixes route to Apple Product地区 with matching DNS',
     }
   }
 });
+const proxyIpProviders = new Set(['google_ip', 'telegram_ip', 'tiktok_ip', 'twitter_ip', 'facebook_ip']);
+
+test('required proxy IP routes survive disabled service groups and minimal mode without resolving domains', () => {
+  const services = { google_ip: 'Google', telegram_ip: 'Telegram', tiktok_ip: 'TikTok', twitter_ip: 'Twitter', facebook_ip: 'Meta' };
+  const modes = [{}, { 极简国内外分流模式: true }, ...Object.values(services).map((service) => ({ [service]: false }))];
+  for (const subscription of [undefined, clean()]) {
+    for (const options of modes) {
+      const config = build({ subscription, settings: { options } }).config;
+      graph(config);
+      assert.ok(config.rules.includes('RULE-SET,private_ip,直连,no-resolve'));
+      const groups = new Map(config['proxy-groups'].map((group) => [group.name, group]));
+      const nodes = new Map(config.proxies.map((node) => [node.name, node]));
+      const assertProxyOnly = (name, visited = new Set()) => {
+        if (visited.has(name)) return;
+        visited.add(name);
+        assert.ok(!['直连', 'DIRECT', 'PASS', 'COMPATIBLE'].includes(name), `direct escape via ${name}`);
+        assert.notEqual(nodes.get(name)?.type, 'direct');
+        for (const member of groups.get(name)?.proxies || []) assertProxyOnly(member, visited);
+      };
+      for (const [provider, service] of Object.entries(services)) {
+        const target = options.极简国内外分流模式 || options[service] === false ? '默认代理' : service;
+        const rule = `RULE-SET,${provider},${target},no-resolve`;
+        assert.equal(config.rules.filter((entry) => entry.startsWith(`RULE-SET,${provider},`)).length, 1);
+        assert.ok(config.rules.includes(rule), rule);
+        assert.ok(config.rules.indexOf(rule) < config.rules.indexOf('RULE-SET,cn_ip,直连'));
+        assert.equal(config['rule-providers'][provider].behavior, 'ipcidr');
+        assertProxyOnly(target);
+      }
+    }
+  }
+});
+
 test('dynamic IP rules keep service egress aligned with their domain DNS policy', () => {
   const expectedTargets = {
     apple_ip: appleProductGroup,
@@ -426,21 +458,23 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         const match = /^RULE-SET,([^,]+),([^,]+)/.exec(rule);
         if (!match || config['rule-providers'][match[1]]?.behavior !== 'ipcidr') continue;
         const [, provider, target] = match;
-        assert.equal(target, expectedTargets[provider], `unexpected target for ${provider}`);
+        assert.equal(target, minimal && proxyIpProviders.has(provider) ? '默认代理' : expectedTargets[provider], `unexpected target for ${provider}`);
+        if (provider === 'cn_ip') assert.equal(rule, 'RULE-SET,cn_ip,直连');
+        else assert.equal(rule.split(',').at(-1), 'no-resolve', `${provider} must not trigger DNS resolution`);
         // IP-CIDR providers have no DNS names; their domain companion carries the DNS policy.
         assert.equal(config.dns['nameserver-policy'][`rule-set:${provider}`], undefined);
         routes.set(provider, target);
       }
-      const privateIpIndex = config.rules.indexOf('RULE-SET,private_ip,直连');
+      const privateIpIndex = config.rules.indexOf('RULE-SET,private_ip,直连,no-resolve');
       const cnIpIndex = config.rules.indexOf('RULE-SET,cn_ip,直连');
       for (const provider of routes.keys()) {
-        const index = config.rules.indexOf(`RULE-SET,${provider},${routes.get(provider)}`);
+        const index = config.rules.findIndex((rule) => rule.startsWith(`RULE-SET,${provider},${routes.get(provider)}`));
         if (provider === 'apple_ip') assert.ok(index < privateIpIndex && index < cnIpIndex);
         else if (!['cn_ip', 'private_ip'].includes(provider)) assert.ok(index > privateIpIndex && index < cnIpIndex);
       }
       for (const [ipProvider, domainProvider] of Object.entries(domainPartners)) {
         const target = routes.get(ipProvider);
-        if (!target) continue;
+        if (!target || (minimal && proxyIpProviders.has(ipProvider))) continue;
         assert.ok(config.rules.includes(`RULE-SET,${domainProvider},${target}`), `${domainProvider} must share ${ipProvider} egress`);
         const dns = config.dns['nameserver-policy'][`rule-set:${domainProvider}`];
         assert.ok(dns, `missing DNS policy for ${domainProvider}`);
@@ -454,7 +488,7 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         assert.deepEqual(config.dns['nameserver-policy']['rule-set:cn'], config.dns['direct-nameserver']);
       if (routes.has('private_ip')) assert.equal(config.dns['nameserver-policy']['rule-set:private'], 'rcode://success');
       if (routes.has('apple_ip')) {
-        assert.ok(config.rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup}`) < config.rules.indexOf('RULE-SET,cn_ip,直连'));
+        assert.ok(config.rules.indexOf(`RULE-SET,apple_ip,${appleProductGroup},no-resolve`) < config.rules.indexOf('RULE-SET,cn_ip,直连'));
         if (config['rule-providers'].apple) {
           assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
           assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
@@ -640,7 +674,7 @@ test('minimal mode keeps independently enabled Apple and DNS protections', () =>
   graph(config);
   encryptedDns(config);
   assert.ok(config.rules.includes(`DOMAIN,guzzoni.apple.com,${siriAiGroup}`));
-  assert.ok(config.rules.includes(`RULE-SET,apple_ip,${appleProductGroup}`));
+  assert.ok(config.rules.includes(`RULE-SET,apple_ip,${appleProductGroup},no-resolve`));
   assert.ok(!config['proxy-groups'].some((g) => g.name === 'YouTube'));
   assert.equal(config.rules.at(-1), 'MATCH,默认代理');
 });
@@ -737,7 +771,7 @@ test('Apple product endpoints share one regional group and overseas media stays 
   assert.ok(defaults.dns['nameserver-policy']['gspe1-ssl.ls.apple.com'][0].endsWith(`#${siriAiGroup}`));
   assert.ok(defaults['rule-providers'].apple_tv.url.endsWith('/apple-tvplus.mrs'));
   assert.ok(defaults.rules.indexOf(`RULE-SET,apple_tv,${appleProductGroup}`) < defaults.rules.indexOf('RULE-SET,apple_cn,直连'));
-  assert.ok(defaults.rules.includes(`RULE-SET,apple_ip,${appleProductGroup}`));
+  assert.ok(defaults.rules.includes(`RULE-SET,apple_ip,${appleProductGroup},no-resolve`));
   assert.ok(defaults.rules.includes(`DOMAIN,mask.icloud.com,${siriAiGroup}`));
   for (const oldName of ['AppleNews', 'AppleTV', 'AppleFitness', 'AppleSports', 'AppleBooks', 'AppleRelay', 'Apple地区检测'])
     assert.ok(!defaults['proxy-groups'].some((group) => group.name === oldName));

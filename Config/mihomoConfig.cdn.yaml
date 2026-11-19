@@ -1,10 +1,10 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：c7ef2d3be45b60588bfc57ccb90332a5e3712534740def1d95eaf91bd54b566a
+# 最新 Raw SHA-256：a80e79a452ea441fe3729a5876cdff26698b9ce3c17903c4d680df32e084413d
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
-# 缓存 CDN SHA-256：f510fc7f4e4c9315d5d140a51a5440398bb933d1f1c59a67bc0569929e74462d
+# 缓存 CDN SHA-256：ea6c0b760c66f135676c108adb946fc9db7a3d6d38e72e7ef910be59fe6b5d6b
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
@@ -2987,17 +2987,17 @@ rules:
   - RULE-SET,patreon,Patreon
   - RULE-SET,ehentai,EHentai
   - RULE-SET,geolocation-!cn,默认代理
-  - RULE-SET,apple_ip,Apple Product地区
-  - RULE-SET,private_ip,直连
-  - RULE-SET,google_ip,Google
-  - RULE-SET,microsoft_ip,Microsoft
-  - RULE-SET,telegram_ip,Telegram
-  - RULE-SET,steam_ip,Steam
-  - RULE-SET,tiktok_ip,TikTok
-  - RULE-SET,twitter_ip,Twitter
-  - RULE-SET,facebook_ip,Meta
-  - RULE-SET,netflix_ip,Netflix
-  - RULE-SET,spotify_ip,Spotify
+  - RULE-SET,apple_ip,Apple Product地区,no-resolve
+  - RULE-SET,private_ip,直连,no-resolve
+  - RULE-SET,google_ip,Google,no-resolve
+  - RULE-SET,microsoft_ip,Microsoft,no-resolve
+  - RULE-SET,telegram_ip,Telegram,no-resolve
+  - RULE-SET,steam_ip,Steam,no-resolve
+  - RULE-SET,tiktok_ip,TikTok,no-resolve
+  - RULE-SET,twitter_ip,Twitter,no-resolve
+  - RULE-SET,facebook_ip,Meta,no-resolve
+  - RULE-SET,netflix_ip,Netflix,no-resolve
+  - RULE-SET,spotify_ip,Spotify,no-resolve
   - RULE-SET,cn_ip,直连
   - MATCH,漏网之鱼
 sniffer:

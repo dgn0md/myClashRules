@@ -15,6 +15,7 @@
 ## 常规能力
 
 提供 26 个地区节点组、倍率和家宽节点分类、AI / Google / YouTube / Microsoft 等常见服务分流，以及手动选择、测速、负载均衡和链式代理等配置选项。
+私网 IP 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用代理出口及 `no-resolve`，关闭服务组或启用极简模式时改用 `默认代理`。Apple、Microsoft、Steam、Netflix、Spotify IP 也使用 `no-resolve` 并保留原有出口组；`cn_ip` 不加该参数，保留末端解析直连兜底。AI 当前使用域名集合，没有独立 IP 集合。
 测速域名 `cp.cloudflare.com` 的路由及加密 DNS policy 指向 `默认代理`；测速请求本身由内核通过被测节点发起。
 
 ## 发布入口

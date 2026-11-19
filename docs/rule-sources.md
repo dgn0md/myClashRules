@@ -26,7 +26,11 @@
 - 只保留被路由规则或 DNS policy 实际引用的 provider，避免删除仅供 DNS 使用的集合。
 - `cn` 域名集合用于国内 DNS 策略与 Fake-IP 过滤；`cn_ip` 是末端直连兜底。二者用途不同。
 - Apple 产品 IP 使用 `apple_ip` 并路由到 `Apple Product地区`。该规则排在 `cn_ip` 前面。
-- 私网 IP 直连规则和服务 IP 规则位于通用 CN IP 兜底之前。
+- 私网 IP 使用 `RULE-SET,private_ip,直连,no-resolve`。Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用对应代理服务组并加 `no-resolve`；服务组关闭或极简模式下保留这些 IP provider，出口改为 `默认代理`，位于通用 CN IP 兜底之前。
+- Apple、Microsoft、Steam、Netflix、Spotify IP 规则均加 `no-resolve`，保留各自服务组及其可选出口；此参数不改变代理/直连选择。
+- 末端 `RULE-SET,cn_ip,直连` 保留解析能力，不加 `no-resolve`，为未命中前置域名规则的连接提供国内 IP 直连兜底。后续解析不会回头重新匹配已经跳过的服务 IP 规则。
+- `no-resolve` 避免为匹配这些 IP 集合而触发域名解析；仍可匹配连接已有的目标 IP。域名路由和 DNS policy 独立生效。
+- AI 使用 `category-ai-!cn` 域名集合，没有独立 AI IP provider；不以共享云/CDN 整段 IP 代替 AI 服务分类。
 - 专用 Apple 域名例外排在 Apple CN 与 QUIC 拒绝规则之前。
 - 测速域名 `cp.cloudflare.com` 使用精确代理规则和对应的 `默认代理` 加密 DNS policy，优先于动态规则。
 - provider 的 IP 与域名集合来自不同数据类别；DNS 侧按域名匹配的 provider 设置策略，不把 IP 地址集合错误地当作 DNS 域名规则。

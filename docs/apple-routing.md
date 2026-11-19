@@ -19,7 +19,7 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 1. DNS 53 接管规则先处理进入 TUN 的 DNS 流量。
 2. Apple 精确域名和产品例外先于广告、Apple CN 规则及可选 QUIC 拒绝。
 3. 服务域名规则按启用状态进入对应服务组。
-4. `apple_ip` 进入 `Apple Product地区`；`private_ip` 直连；其他服务 IP 集合按对应服务组分流。
+4. `apple_ip` 使用 `no-resolve` 进入 `Apple Product地区`；`private_ip` 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用对应代理组及 `no-resolve`，组关闭时回退到 `默认代理`；其他服务 IP 集合按对应服务组分流。
 5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
 每条精确域名或后缀域名规则都有对应的 `nameserver-policy`。DNS policy 跟随对应的出口策略组。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 通过更具体的后缀规则进入 `Apple Product地区`，DNS policy 也跟随该组。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
