@@ -1,0 +1,88 @@
+name: Sync script and generate config
+
+on:
+  schedule:
+    - cron: '17 18 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - Script/mihomoScript.js
+      - Script/mihomoScript.cdn.js
+      - Config/mihomoConfig.yaml
+      - Config/mihomoConfig.cdn.yaml
+      - tools/build.js
+      - tools/build-cdn-script.js
+      - tools/build-cdn-config.js
+      - tools/config-sha.js
+      - tools/script-sha.js
+      - tools/download-rules.js
+      - package.json
+      - package-lock.json
+      - .github/workflows/sync-config.yml
+      - .github/workflows/refresh-mainland-cdn.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sync-config-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.19.0'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Update the script SHA identifier
+        run: node tools/script-sha.js --update
+
+      - name: Generate the CDN script copy
+        run: node tools/build-cdn-script.js
+
+      - name: Generate static YAML and CDN copy from the script
+        run: npm run build
+
+      - name: Verify generated config is reproducible
+        run: npm run check
+
+      - name: Run behavior tests before publication
+        run: npm test
+
+      - name: Download and verify pinned Mihomo
+        run: |
+          curl -fsSL --retry 3 https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-linux-amd64-compatible-v1.19.34.gz -o /tmp/mihomo.gz
+          echo '2763f5b414527f7baf6dc57e3f82f3ab561eedf34bfd7c2f2cde1f7e592efe06  /tmp/mihomo.gz' | sha256sum -c -
+          gzip -d /tmp/mihomo.gz
+          chmod +x /tmp/mihomo
+
+      - name: Validate public rules and native routing before publication
+        run: |
+          node tools/download-rules.js .local/rules
+          node tools/native-check.js /tmp/mihomo .local/rules
+
+      - name: Commit generated config when it changes
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- Config/mihomoConfig.yaml Config/mihomoConfig.cdn.yaml Script/mihomoScript.js Script/mihomoScript.cdn.js; then
+            echo 'Generated config is already up to date.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- Config/mihomoConfig.yaml Config/mihomoConfig.cdn.yaml Script/mihomoScript.js Script/mihomoScript.cdn.js
+          git commit -m 'chore: refresh script and config SHA, CDN copies'
+          git push

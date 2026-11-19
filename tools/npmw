@@ -1,0 +1,50 @@
+#!/bin/sh
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+if [ -L "$ROOT/.local" ] || [ -L "$ROOT/node_modules" ]; then
+  echo "拒绝使用工作区外部链接；.local/ 与 node_modules/ 必须是仓库内目录。" >&2
+  exit 1
+fi
+NODE_BIN=$("$ROOT/tools/nodew" --print-bin)
+NPM_VERSION=$(cat "$ROOT/.npm-version")
+NPM_CLI="$ROOT/.local/toolchain/npm/node_modules/npm/bin/npm-cli.js"
+if [ ! -f "$NPM_CLI" ]; then
+  echo "项目本地 npm 尚未安装。请运行 ./tools/bootstrap-local-environment.sh" >&2
+  exit 1
+fi
+mkdir -p "$ROOT/.local/toolchain/npm/etc" "$ROOT/.local/home" "$ROOT/.local/tmp" "$ROOT/.local/npm-cache"
+if [ ! -f "$ROOT/.local/toolchain/npm/etc/npmrc" ]; then
+  : > "$ROOT/.local/toolchain/npm/etc/npmrc"
+fi
+export HOME="$ROOT/.local/home"
+export TMPDIR="$ROOT/.local/tmp"
+export PATH="$NODE_BIN:$ROOT/node_modules/.bin:$PATH"
+unset NPM_CONFIG_USERCONFIG NPM_CONFIG_GLOBALCONFIG NPM_CONFIG_CACHE NPM_CONFIG_GLOBAL NPM_CONFIG_PREFIX NPM_CONFIG_REGISTRY
+unset npm_config_userconfig npm_config_globalconfig npm_config_cache npm_config_global npm_config_prefix npm_config_registry
+export npm_config_userconfig="$ROOT/.npmrc"
+export npm_config_globalconfig="$ROOT/.local/toolchain/npm/etc/npmrc"
+export npm_config_cache="$ROOT/.local/npm-cache"
+export npm_config_global=false
+export npm_config_registry=https://registry.npmjs.org/
+export NODE_USE_ENV_PROXY=1
+export MYCLASH_LOCAL_RUNTIME=1
+unset NODE_PATH NODE_OPTIONS
+if [ "$(command -v node)" != "$NODE_BIN/node" ]; then
+  echo "PATH 中没有优先使用项目本地 Node；拒绝继续。" >&2
+  exit 1
+fi
+LOCAL_NPM_VERSION=$("$NODE_BIN/node" "$NPM_CLI" --version)
+if [ "$LOCAL_NPM_VERSION" != "$NPM_VERSION" ]; then
+  echo "项目 npm 版本不匹配：需要 $NPM_VERSION，当前 $LOCAL_NPM_VERSION。请重新运行 ./tools/bootstrap-local-environment.sh" >&2
+  exit 1
+fi
+for arg in "$@"; do
+  case "$arg" in
+    -g*|--global*|--prefix*|--location*)
+      echo "拒绝全局安装或工作区外安装；依赖必须保存在本项目 node_modules/ 或 .local/ 中。" >&2
+      exit 2
+      ;;
+  esac
+done
+exec "$NODE_BIN/node" "$NPM_CLI" "$@"

@@ -1,0 +1,157 @@
+name: Verify jsDelivr CDN artifacts
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/refresh-mainland-cdn.yml
+      - Script/mihomoScript.cdn.js
+      - Config/mihomoConfig.cdn.yaml
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Sync script and generate config
+    branches:
+      - main
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-mainland-cdn
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Compare CDN artifacts with their source commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != 'refs/heads/main' ]]; then
+            echo "::error::Run this workflow on main so the CDN and source revision refer to the same branch."
+            exit 1
+          fi
+
+          tmp_dir="$(mktemp -d)"
+          trap 'rm -rf "$tmp_dir"' EXIT
+
+          main_commit_info="$(curl --fail --silent --show-error --location \
+            --connect-timeout 10 --max-time 30 \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/main")"
+          main_commit_sha="$(jq -r '.sha // empty' <<< "$main_commit_info")"
+          if [[ -z "$main_commit_sha" ]]; then
+            echo "::error::Could not determine the current main commit."
+            exit 1
+          fi
+
+          verify_cdn_artifact() {
+            local artifact_path="$1"
+            shift
+            local safe_name="${artifact_path//\//_}"
+            local expected="${tmp_dir}/expected-${safe_name}"
+            local response="${tmp_dir}/response-${safe_name}"
+            local source_url="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${main_commit_sha}/${artifact_path}"
+            local cdn_url="https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/${artifact_path}"
+
+            curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 30 \
+              "$source_url" --output "$expected"
+            test -s "$expected"
+            for marker in "$@"; do
+              grep -qF "$marker" "$expected"
+            done
+            local expected_sha
+            expected_sha="$(sha256sum "$expected" | cut -d ' ' -f 1)"
+
+            curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 30 \
+              --header 'Cache-Control: no-cache' \
+              "$cdn_url" --output "$response"
+            test -s "$response"
+            if cmp -s "$expected" "$response"; then
+              echo "CDN content matches ${artifact_path} at ${main_commit_sha} (sha256: ${expected_sha})."
+              rm -f "$expected" "$response"
+              return 0
+            fi
+
+            local actual_sha encoded_path commits_url commit_info commit_sha commit_date commit_count candidate_index candidate_sha candidate_date candidate_epoch candidate_age candidate_file commit_epoch now_epoch age_seconds
+            actual_sha="$(sha256sum "$response" | cut -d ' ' -f 1)"
+            encoded_path="$(jq -rn --arg value "$artifact_path" '$value | @uri')"
+            commits_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/commits?path=${encoded_path}&sha=${main_commit_sha}&per_page=100"
+            commit_info="$(curl --fail --silent --show-error --location \
+              --connect-timeout 10 --max-time 30 \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header 'Accept: application/vnd.github+json' \
+              "$commits_url")"
+            commit_sha="$(jq -r '.[0].sha // empty' <<< "$commit_info")"
+            commit_date="$(jq -r '.[0].commit.committer.date // empty' <<< "$commit_info")"
+            commit_count="$(jq 'length' <<< "$commit_info")"
+            if [[ -z "$commit_sha" || -z "$commit_date" ]]; then
+              echo "::error::Could not determine the latest commit for ${artifact_path}."
+              return 1
+            fi
+
+            commit_epoch="$(date -u --date="$commit_date" +%s)"
+            now_epoch="$(date -u +%s)"
+            age_seconds=$((now_epoch - commit_epoch))
+            if (( age_seconds < 0 )); then
+              age_seconds=0
+            fi
+            if (( age_seconds < 45000 )); then
+              for ((candidate_index = 1; candidate_index < commit_count; candidate_index++)); do
+                candidate_sha="$(jq -r ".[$candidate_index].sha // empty" <<< "$commit_info")"
+                candidate_date="$(jq -r ".[$candidate_index].commit.committer.date // empty" <<< "$commit_info")"
+                if [[ -z "$candidate_sha" || -z "$candidate_date" ]]; then
+                  continue
+                fi
+                candidate_epoch="$(date -u --date="$candidate_date" +%s)"
+                candidate_age=$((now_epoch - candidate_epoch))
+                if (( candidate_age < 0 )); then
+                  candidate_age=0
+                fi
+                if (( candidate_age >= 45000 )); then
+                  continue
+                fi
+                candidate_file="${tmp_dir}/known-${safe_name}-${candidate_index}"
+                curl --fail --silent --show-error --location \
+                  --connect-timeout 10 --max-time 30 \
+                  "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${candidate_sha}/${artifact_path}" \
+                  --output "$candidate_file"
+                if cmp -s "$candidate_file" "$response"; then
+                  echo "::warning::CDN branch alias is serving a recent known version of ${artifact_path} (CDN sha256: ${actual_sha}; cached file commit: ${candidate_sha}; age: ${candidate_age}s). Scheduled runs will check again."
+                  rm -f "$expected" "$response" "$candidate_file"
+                  return 0
+                fi
+                rm -f "$candidate_file"
+              done
+              echo "::error::CDN content for ${artifact_path} is not a recent known repository version (CDN sha256: ${actual_sha}; latest file commit: ${commit_sha}; age: ${age_seconds}s)."
+              return 1
+            fi
+
+            echo "::error::CDN content for ${artifact_path} is stale after the branch-alias cache window (CDN sha256: ${actual_sha}; latest file commit: ${commit_sha}; age: ${age_seconds}s; source sha256: ${expected_sha})."
+            return 1
+          }
+
+          verify_cdn_artifact \
+            'Script/mihomoScript.cdn.js' \
+            'function main(config)' \
+            '最新 Raw SHA-256：' \
+            '缓存 CDN SHA-256：'
+          verify_cdn_artifact \
+            'Config/mihomoConfig.cdn.yaml' \
+            '# 最新 Raw SHA-256：' \
+            '# 缓存 CDN SHA-256：' \
+            "# CDN 配置：https://cdn.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/Config/mihomoConfig.cdn.yaml"

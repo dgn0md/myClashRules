@@ -1,101 +1,34 @@
-# 验证记录与部署验收
+# 验证说明
 
-日期：2026-11-13（Asia/Singapore）。这些记录只覆盖这里列出的检查范围，不等于大陆运营商、真实机场或 Apple 产品开通实测。
+本页说明当前源文件与自动验收入口。行为以 `Script/mihomoScript.js` 为准，静态 YAML 由同一脚本构建；规则成员通过客户端 HTTP provider 每日更新。
 
-## 可复现的代码检查
-
-- `npm test`：93 项继承回归/ES2026/QuickJS 检查、19 组新增检查通过。新增开关矩阵逐个反转全部布尔选项，并检查静态 provider 与展开订阅两种输出的引用、循环、DNS 与生成行为。
-- `npm run check`：发布的默认 YAML 与当前脚本生成结果完全一致。
-- `git diff --check`：无空白错误。
-- 依赖安装审计：0 个已报告漏洞；YAML 使用修复深度嵌套问题的 2.9.1。
-
-继承测试有明确的兼容模式设置；严格默认与新增 Apple 功能由新测试独立覆盖。QuickJS 实际运行当前默认 `main()`，不是只检查语法。
-
-## 真实 Mihomo 内核
-
-使用官方 **Mihomo v1.19.34 darwin arm64**：
-
-```text
-https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-darwin-arm64-v1.19.34.gz
-SHA-256 (gzip): 1a7a20eca63fbbaec90137717465bfde488d0db2a3a79b8fadebf9b2545b6e4c
-```
+## 本地验收
 
 ```sh
-node tools/download-rules.js .local/rules
-node tools/native-check.js /path/to/mihomo .local/rules
+./tools/npmw test
+./tools/npmw run check
+./tools/npmw run native:check
 ```
 
-- 原生 `-t` 检查：默认、所有单选项反转、双倍率过滤、展开订阅、自定义链式共 **63** 种配置（含域名嗅探开关）。
-- **46** 个实际使用的公开规则文件（45 个 MRS、1 个固定版本 SukkaW Apple CN 文本规则）均下载成功，并在启动的内核中解析到非零条目；下载时检查格式，运行检查进一步验证了加载。公开来源、大小与摘要见 [规则清单](validation/rules.json)。
-- 回环运行检查：地区/倍率/家宽 provider 过滤、普通 Apple/微软默认直连与 Apple News/智能默认美国。
-- **58** 个 HTTP CONNECT 请求在内核真实规则下执行，按源端口查询 `/connections` 确认实际命中组；见 [路由结果](validation/routes.json)。包括 PCC、Siri、News、TV、Fitness/Sports/Books 专用入口、模型 CDN、普通 Apple/微软、国内域名、YouTube/GitHub/Steam。
-- 将 `Apple` 组在隔离内核里切到美国组后，再执行 **5** 个 CONNECT 请求：[四个此前直连的 Apple 域名](validation/apple-trial.json) 均命中 `apple → Apple → 美国`，而 `gs-loc-cn.apple.com` 命中 `apple_cn → 直连`。此测试只验证规则选择，不代表真实节点或 Siri 服务可用。
+- `test` 运行节点处理、兼容性、配置图、Apple 路由/DNS、动态规则 provider、白名单开关和生成器回归。
+- `check` 比较默认 YAML、CDN YAML、Raw/CDN 摘要与当前脚本生成结果。
+- `native:check` 使用项目锁定的 Mihomo 版本和公开规则快照，检查各选项组合的原生配置，并在隔离回环环境验证实际规则路由、DNS policy 与节点分类。
+- 首次原生检查会下载 Mihomo 和当前公开规则；需要手动刷新快照时运行 `./tools/npmw run native:refresh-rules`。
+- 本机诊断可运行 `./tools/npmw run diagnose -- --probe-domain gateway.icloud.com` 或 `./tools/npmw run diagnose -- --probe-ip 17.0.0.1`；可以附加 `--select 'Other Apple Service=美国'` 检查一次手动选择。
 
-运行环境只使用临时目录和回环监听器，TUN、系统路由、NTP 与 DNS 监听被关闭。SOCKS 模拟节点将任何请求终止到本地测试服务器，不访问目标服务。此测试证明路由选择和规则文件加载，不证明 Apple 对账号/设备授权，不证明 TUN 的系统覆盖。
+原生检查从 `apple_proxy` 的实际 YAML/classical 快照与 `apple_tv` 的 MRS 快照抽取 Apple 样本，不维护单独的业务域名测试清单。国内服务集合样本同样从当前上游快照提取。日志与解码样本用于隔离检查，不是发布规则，也不作为手工路由名单。
 
-GitHub CI 使用同版本 Linux 二进制并核验官方发行摘要；新建 workflow 尚需在远程推送后才能获得 GitHub Actions 的实际结果，不能将本机通过写成远程 CI 已绿。
+## Apple 与 DNS 覆盖范围
 
-## 纯 IP 入站的域名嗅探回归
+- 配置回归断言 `apple_ip` 在 `cn_ip` 前进入 `AppleProxy`，AppleProxy/TV+ 动态集合使用同一产品组，`gspe1-ssl.ls.apple.com` 进入 `Siri Ai/Apple Intelligence`，`gateway.icloud.com` / `setup.icloud.com` 精确进入 `Other Apple Service` 且 DNS 跟随 Siri 选择。
+- Apple News、Fitness、Sports、Books、PCC、Siri 和模型下载的有限端点按功能范围回归；上游 Apple 集合未覆盖这些组的边界时，不用宽泛集合代替。
+- 实际 rule provider 保持加载，用回环 CONNECT 检查命中的规则与策略链；DNS 检查将上游替换为本地计数器，不产生公共业务 DNS 查询。
+- 国内 DNS 白名单回归覆盖 provider 开关、重叠集合、Steam 排除项、名单外查询、A/AAAA 与直连拨号；它验证生成策略在隔离环境的选择，不测量真实线路延迟。
 
-默认开启 `域名嗅探`，配置 HTTP/TLS/QUIC 识别和 `parse-pure-ip: true`，并用 `override-destination: false` 保留原始目标地址。脚本与生成 YAML 使用同一开关，关闭后不依赖嗅探恢复域名。
+## CI 与用户网络
 
-`tools/native-sniffing.js` 已在 Mihomo v1.19.34 中验证 **9** 个真实回环请求：
+GitHub Actions 在生成发布产物前运行单元测试、生成一致性和可用的 Mihomo 原生检查。本地通过只证明当前工具链、公开快照和合成节点下的配置行为；不能证明真实订阅出口、Apple 账号资格、设备 TUN 覆盖、运营商 DNS 路径或服务可用性。远程 CI 结果以 GitHub Actions 页面为准。
 
-- 关闭嗅探：以纯 IP 入站、携带 `github.com` TLS SNI，命中 `microsoft_ip` / `Microsoft`，复现此前域名缺失时的归类机制。
-- 开启嗅探：同一请求恢复 `github.com`，命中 `github` / `GitHub`；另外覆盖 HTTP Host 与 IPv6 目标地址。
-- Siri 的 `api-siri-prod.apple.com` 和 Apple AI 的 `apple-relay.apple.com` 按恢复的 TLS 域名命中各自专用组；普通 Microsoft 域名仍命中 Microsoft 组。
-- 当时的对照样例中，目标 `17.0.0.1` 命中 `apple_ip → Apple`，目标 `17.81.2.1` 先命中 `cn_ip → 直连`；仅验证这两个样例的规则优先级，不推断整个 17/8 的实际地理位置。当前 test 分支已按下方 2026-11-16 实验移除 `apple_ip` provider 和路由规则，这条历史结果不代表当前配置。
+实际部署时应在自己的设备上核对 TUN/网关是否覆盖目标流量，检查 Siri / News / TV 的账号可用性，以及 `Siri Ai/Apple Intelligence`、`AppleProxy`、`Other Apple Service` 的连接与 DNS 选择。DoH 会向接收查询的服务商披露域名；缓存和 Fake-IP 也不能证明没有 DNS 查询。不要把隔离回环检查描述成“零 DNS 泄漏”或真实 Apple 服务测试。
 
-测试使用真实 TLS ClientHello，不完成远端握手，也不跳过证书校验。所有测试组（包括原本直连的组）均替换为回环 SOCKS 模拟出口，避免缺陷复现时向外网 IP 发包；生产规则顺序和域名嗅探配置保持原样，并断言目标 IP 没有被改写。证据仅写入临时目录的 `sniffing.json`。QUIC 配置已通过原生解析，但本次未生成 QUIC 流量验证；没有可见域名的握手仍可能落入 IP 规则。这些结果不等同于用户设备、运营商或 Siri 服务实测。
-
-## 国际 iCloud 内容域回归
-
-`tools/native-check.js` 验证国际 `icloud-content.com` 根域及各层子域命中 `Apple智能`，覆盖地区根域、edge、非标准编号和其他内容主机。中国站 `icloud-content.com.cn`、`xactu3.icloud-content.com.cn`、`gateway.icloud.com.cn` 以及伪造的后缀延长域名不命中该例外。测试包含合成主机，不声称它们真实存在。
-
-DNS 检查保留生成配置的 policy 键，仅在隔离测试中把上游替换为内核内置的本地 RCODE 响应，区分匹配/未匹配，验证 A 与 AAAA；不询问系统 DNS，不产生外网 DNS 请求。生产配置仍使用 DoH。该检查验证路由和 DNS 后缀范围一致，不是 Siri 或运营商网络实测。
-
-## DoH 端点检查
-
-```sh
-node tools/check-doh.js
-```
-
-当前执行网络对 `https://223.5.5.5/dns-query` 与 `https://1.12.12.12/dns-query` 的请求均得到有效 DNS 响应，TLS 证书验证通过。工具直接访问 HTTPS IP、没有 UDP DNS 或明文回退。本检查只证明检查时当前网络的端点可用性，不能代表全部大陆电信/联通/移动线路，也没有验证用户实际代理出口到境外 DoH 的连通性。
-
-## 用户网络验收
-
-1. 导入自己的订阅，使用脚本或展开模式生成；关闭客户端额外 DNS 覆写，开启 TUN。先检查严格模式没有私有 DNS 冲突，再启动。
-2. 清理系统/浏览器 DNS 与客户端 Fake-IP 缓存，分别用 IPv4 与 IPv6 测试国内域名、境外域名、节点域名和 Apple 专用域名。代理模式应为 `rule`。
-3. 在真实外网接口抓取 **UDP/TCP 53**：正常公网解析不应出现上游明文查询；不要把回环/本机 TUN 上已被接管的请求误判成外泄。macOS 可先用 `route get default` 查看接口，再在该接口抓包：
-
-   ```sh
-   sudo tcpdump -ni en0 'port 53 and (udp or tcp)'
-   ```
-
-   将 `en0` 换成真实外网接口；多网卡/IPv6 场景需覆盖所有出口。检查 TUN/代理关闭时的对照样本，避免因 DNS 缓存而得到假阴性。
-
-4. 在代理连接日志核对 `Apple智能` / `Siri` / `AppleNews` / `AppleTV`、普通 Apple 直连与两个 DNS 出口。AI/News/TV 的出口与账号受支持地区应一致；缺少美国节点时手动改选。
-5. 临时阻断两个 DoH 地址，再次查询未缓存域名。预期失败，外网接口仍不出现 UDP/TCP 53；恢复网络后重试。不要为了“能打开”添加明文 DNS。
-6. 在 Windows 多网卡、其他 VPN、移动蜂窝/Wi-Fi 切换、睡眠唤醒后重复。任何未进入 TUN/网关的设备或接口都不能由本配置单独保证接管。
-7. 检查 Siri、News、TV 的真实账号可用性与共享接口影响。若关闭 `Apple地区检测` 后 News 不可用，应结合地图/eSIM/Watch 的需求选择，而不是无条件扩大代理范围。
-
-## 尚未取得的环境证据
-
-没有你的真实订阅、出口节点、Apple 设备与大陆运营商抓包，因此不报告服务解锁成功率、全设备零旁路或代理字节节省百分比。实现层面的开关、DNS 上游、路由顺序、生成一致性与真实内核选择已经单独验收。
-
-## 2026-11-16 Siri / Apple AI / 地区出口改动
-
-- `npm run build` 已重新生成全量 `Config/mihomoConfig.yaml`；`npm test` 通过：旧版脚本回归 89 项、ES2026 检查 2 项、QuickJS 检查 2 项、Node 配置回归 26 项，共 119 项。
-- `npm run check` 与 `git diff --check` 通过。配置回归覆盖 PCC/Siri 主机顺序、Fake-IP 实 IP 例外、严格加密 DNS、地区候选缺失时拒绝回退、各 domain rule-set 的 DNS egress 标签、QUIC 开关及节点 `udp` 声明透传。
-- AppleFlow 审计固定在 commit `eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f`：13 条 PCC 项已按精确主机或指定后缀生成规则；`Siri-Direct` 的 5 条来源主机按用户要求改走 Siri 美国选择器，没有生成中文 Siri 直连规则。逐条结果与 blob SHA 见 [审计 JSON](validation/appleflow-coverage.json)。
-
-- `category-ai-!cn.mrs` 从 Bett Rules `meta` 下载并记录了 commit、Git blob SHA 与 SHA-256；25 条 AppleFlow 第三方 AI 域名逐项状态均为 **unverified**。本环境没有 Mihomo 可执行文件，无法把 MRS 加载后核对每项是否实际命中；没有将“可能包含”当成覆盖通过，也没有静态复制这 25 个域名。
-- 美国组是按节点名称生成的候选列表，不构成地理证明。AI、Siri、PCC、地区检测和可选 Apple Relay 只引用同一个美国选择器；没有美国名称候选时规则目标为 `REJECT`。未取得订阅或任何真实出口 IP，未做两个地理来源交叉验证。
-- 当前环境 `command -v mihomo` 与 `command -v mihomo-alpha` 均无可执行文件，因此本轮**未**对改动后的 YAML 运行 Mihomo 原生校验。上文 2026-11-13 的原生结果属于当时配置，不可替代本轮检查。
-- 节点 `udp: true/false/未声明` 仅验证脚本保留输入值；未测目标 UDP 443、LiveKit/WebRTC、真实出口 IPv4/IPv6、Siri/PCC 设备行为或运营商链路。未提交订阅、节点、出口地址、MRS 缓存或运行日志。
-
-### Apple IP 移除对照实验
-
-- 本轮从 `Apple` service 配置中完整移除了 `apple_ip` provider 和 `RULE-SET,apple_ip,Apple`，生成 YAML 也不再携带该 provider。Apple/Siri 已知域名的精确规则保持不变。
-- 按当前规则顺序，没有域名的流量仍先经过 `cn_ip → 直连`；不匹配 `cn_ip`、其他服务 IP 集合或私网规则的流量会落入 `MATCH,漏网之鱼`，该组默认选 `默认代理`。因此命中大陆 IP 集合的地址仍可能直连。
-- `npm test` / `npm run check` 覆盖配置生成和 provider 引用；尚未用 Mihomo 原生内核或 iPhone 验证本轮规则效果。需要在 iPhone 导入 test 分支最新 YAML 后，观察 Siri 连接日志与出口，再决定是否保留此实验。
+维护前先阅读 [国内 DNS 白名单维护原则](dns-whitelist.md)、[Apple 路由范围与边界](apple-routing.md) 和 [动态规则来源](rule-sources.md)。

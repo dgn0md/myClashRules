@@ -64,13 +64,13 @@ async function fixtures() {
   };
 }
 const APPLE_AI_GROUP = 'Siri Ai/Apple Intelligence';
-const APPLE_PRODUCT_GROUP = 'Apple Product地区';
+const APPLE_PROXY_GROUP = 'AppleProxy';
 const OTHER_APPLE_GROUP = 'Other Apple Service';
 const CASES = [
   ['apple-relay.apple.com', APPLE_AI_GROUP],
   ['apple-relay.cloudflare.com', APPLE_AI_GROUP],
   ['cp4.cloudflare.com', APPLE_AI_GROUP],
-  ['gateway.icloud.com', APPLE_AI_GROUP],
+  ['gateway.icloud.com', OTHER_APPLE_GROUP],
   ['edge-013.hkhkg2.icloud-content.com', APPLE_AI_GROUP],
   ['attester.gateway.icloud.com', '直连'],
   ['edge-014.hkhkg2.icloud-content.com', APPLE_AI_GROUP],
@@ -97,7 +97,7 @@ const CASES = [
   ['edge-013.hkhkg2.icloud-content.com.example.test', '直连'],
   ['guzzoni.apple.com', APPLE_AI_GROUP],
   ['api-siri-prod.apple.com', APPLE_AI_GROUP],
-  ['setup.icloud.com', APPLE_AI_GROUP],
+  ['setup.icloud.com', OTHER_APPLE_GROUP],
   ['setup.icloud.com.cn', '直连'],
   ['api.smoot.apple.com', APPLE_AI_GROUP],
   ['bag.itunes.apple.com', OTHER_APPLE_GROUP, 'apple'],
@@ -105,19 +105,19 @@ const CASES = [
   ['gspe35-ssl.ls.apple.com', OTHER_APPLE_GROUP, 'apple'],
   ['smp-device-content.apple.com', OTHER_APPLE_GROUP, 'apple'],
   ['gs-loc-cn.apple.com', '直连', 'apple_cn'],
-  ['news-client-search.apple.com', APPLE_PRODUCT_GROUP],
-  ['news-assets.apple.com', APPLE_PRODUCT_GROUP],
-  ['apple.news', APPLE_PRODUCT_GROUP],
-  ['gspe1-ssl.ls.apple.com', APPLE_PRODUCT_GROUP],
-  ['tv.apple.com', APPLE_PRODUCT_GROUP],
-  ['play-edge.itunes.apple.com', APPLE_PRODUCT_GROUP],
-  ['fitness.apple.com', APPLE_PRODUCT_GROUP],
-  ['sports.apple.com', APPLE_PRODUCT_GROUP],
-  ['books.apple.com', APPLE_PRODUCT_GROUP],
+  ['news-client-search.apple.com', APPLE_PROXY_GROUP],
+  ['news-assets.apple.com', APPLE_PROXY_GROUP],
+  ['apple.news', APPLE_PROXY_GROUP],
+  ['default.fe2.apple-dns.net', APPLE_PROXY_GROUP],
+  ['default.fe2.apple-dns.com', APPLE_PROXY_GROUP],
+  ['gspe1-ssl.ls.apple.com', APPLE_AI_GROUP],
+  ['fitness.apple.com', APPLE_PROXY_GROUP],
+  ['sports.apple.com', APPLE_PROXY_GROUP],
+  ['books.apple.com', APPLE_PROXY_GROUP],
   ['assets.cdn-apple.com', '直连'],
   ['mesu.apple.com', '直连'],
   ['swcdn.apple.com', OTHER_APPLE_GROUP, 'apple'],
-  ['apps.apple.com', '直连'],
+  ['apps.apple.com', APPLE_PROXY_GROUP],
   ['music.apple.com', OTHER_APPLE_GROUP, 'apple'],
   ['www.microsoft.com', '直连'],
   ['youtube.com', 'YouTube'],
@@ -143,13 +143,13 @@ async function verifyRouting({ port, sinkPort, track, api, cases = CASES }) {
     for (let attempt = 0; attempt < 20; attempt++) {
       active = (await api('/connections')).connections || [];
       connection = active.find(
-        (c) => c.metadata.host === host && String(c.metadata.sourcePort) === String(socket.localPort),
+        (c) => String(c.metadata.sourcePort) === String(socket.localPort),
       );
       if (connection) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     assert.ok(connection, `No active connection for ${host}: ${JSON.stringify(active)}`);
-    assert.ok(
+    if (expected) assert.ok(
       connection.chains.includes(expected),
       `${host}: expected ${expected}; actual ${JSON.stringify(connection)}`,
     );

@@ -1,10 +1,54 @@
-# 项目维护约定
+# 仓库项目维护约定
 
-- 基于 AIsouler/MyClash `4861619be366c7bacabfed6d581bb8c450de1ca1` 全量版；原作者建议保存在 `docs/upstream/AGENT.md`。图标沿用原始 URL，不修改 SVG，遵守其中的兼容性与命名约定，禁止补回 CDN 域名直连规则。
-- 对外只维护 `Script/mihomoScript.js` 和 `Config/mihomoConfig.yaml` 两个全量产物，不增加精简版。
-- 脚本是规则和选项的单一来源，YAML 通过 `npm run build` 生成。静态 YAML 的扩展开关需要重新生成才生效，不能声称内核会执行扩展字段。
-- 保留上游地区/倍率/零宽字符/去重/dialer-proxy/私有 DNS 与 hosts 的算法及测试。行为变更必须有明确回归证据。
-- 严格加密 DNS 禁止 system、DHCP、明文 UDP/TCP DNS 和跳过证书校验。私有明文解析无法兼容时失败，不静默回退。
-- Apple AI/Siri 精确规则必须先于广告、Apple 国内规则与 QUIC 屏蔽。不得用整个 Apple、Cloudflare 或 17/8 代理代替精细分流。
-- 修改后运行 `npm test`、`npm run check` 和可获得的 Mihomo 原生配置校验。不得把配置检查当成用户运营商网络抓包实测。
-- 不提交机场订阅链接、密码、实际节点、缓存或运行日志。
+适用于仓库所有贡献者，统一描述项目功能边界、产物生成流程和验收要求。国内 DNS 查询范围与更新边界同时遵守 [国内 DNS 白名单维护原则](docs/dns-whitelist.md)，后续相关修改须以此为前提。
+
+## 项目范围与产物
+
+- 项目基于 AIsouler/MyClash `4861619be366c7bacabfed6d581bb8c450de1ca1` 全量版；上游图标约定见 `docs/upstream/AGENT.md`；其中历史规则源与测试数量不替代本仓库当前的 DNS 原则和验收要求。
+- 只维护全量脚本源文件 `Script/mihomoScript.js` 与源配置文件 `Config/mihomoConfig.yaml`，不增加精简版。`Script/mihomoScript.cdn.js` 与 `Config/mihomoConfig.cdn.yaml` 均由 GitHub Actions 生成；`极简国内外分流模式` 是脚本选项。
+- `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，GitHub Actions 更新脚本与 YAML 的 Raw SHA-256，生成带独立 CDN SHA-256 的 CDN 副本，并提交 YAML 产物，无需本地构建。
+- YAML 的 `x-myClashRules` 扩展字段只供构建工具读取，Mihomo 内核不会执行。
+
+## 模块化与动态规则集原则
+
+后续开发同时遵守 [模块化与动态规则集开发原则](docs/development-principles.md)。
+
+- 按功能和动态集合组织模块，优先核查并复用现用上游，不为漏匹配的业务域名或测试端点逐个增加模块或补丁。
+- 同用途复用统一开关；国内服务路由使用 `国内服务优先直连`，不增加厂商独立开关。现有 DNS 白名单开关保持各自边界。
+- 优先用上游集合与子集关系表达范围，实际审查覆盖、海外成员及共享服务；不因规则名或厂商归属直接扩大直连或国内 DNS。
+- 客户端每日直接更新 provider；本仓库不另行维护、筛选合并或发布重复成员清单。测试快照不进入生产产物。
+- 删除无用的专用接口、导出、占位包装、独立文件及引用；必要内部复用以实际职责为依据，不为未来假设保留接口。
+- 保留有明确功能依据的 Apple/协议等精确例外；新增例外需记录集合无法表达的原因、范围、优先级和回归依据，不以测试页结果作为补域名理由。
+
+## 必须保留的行为
+
+- 保留上游地区、倍率、家宽分类，以及节点清理/补旗、零宽字符处理、去重、`dialer-proxy` 和节点 hosts 映射算法及其回归测试。
+- 覆写或展开机场配置时，只处理节点信息。机场 DNS、`fake-ip-filter`、DNS policy、hosts 表、路由、策略组和其他非节点设置不得进入输出；这些设置由脚本生成。机场 DNS 只可用于节点解析安全检查和 hosts 改写条件判断；机场 hosts 只可用于改写节点 server。
+- 严格加密 DNS 默认拒绝 system/DHCP、明文 UDP/TCP、跳过证书校验和不受支持的私有明文解析；不得静默回退。严格检查针对脚本生成的 DNS 配置，文档须区分机场输入与生成结果。
+- 发布配置默认不启用外部控制 API，也不自动下载 Web 控制面；本地管理入口由客户端另行配置密钥。
+- 可路由的精确域名、后缀域名及动态 domain/classical 规则集，代理服务的 DNS policy 通常跟随目标组；普通直连域名按独立 DNS 白名单或默认国外解析处理。Apple 例外：
+  - `Other Apple Service` 连接默认直连；通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS policy 使用 `Siri Ai/Apple Intelligence` 当前选择。没有合格的 Siri 地区候选且普通 Apple 默认直连时，这些域名改用国内加密直连 DNS，避免直连连接被 NXDOMAIN 阻断。
+  - AppleProxy 动态集合、Apple 产品入口与 `apple_ip` 进入 `AppleProxy`；`apple-dns.net` 和 `apple-dns.com` 的 DNS policy 使用该组。
+- `private` 和拒绝出口可用专用安全 policy。国内 CDN 白名单及上述 Apple 例外之外的业务查询使用国外加密 DNS；节点/DoH 启动解析保留国内加密 DNS。IP-CIDR provider 本身没有域名 DNS。
+- 腾讯、网易、字节国内路由模块使用 Bett 厂商集合减去各自 `@!cn` 子集，统一受默认开启的 `国内服务优先直连` 开关控制；专用服务规则先于模块，模块先于国外域名与 IP 兜底。模块只授权连接直连，不生成国内 DNS policy；海外标注不完整仍可能影响分类。
+- IP 规则顺序保留 `apple_ip`、`private_ip`、服务 IP、`cn_ip` 直连兜底的优先级，避免服务 IP 被通用 CN 集合先匹配。
+- Apple 精确规则须先于广告、Apple CN 和可选 QUIC 拒绝规则。不得用整个 Apple、Cloudflare 或 `17/8` 网段代替精细端点分流。
+- 策略组名称原样保留：`Siri Ai/Apple Intelligence`、`AppleProxy`、`Other Apple Service`。旧 `Apple Product地区` 开关作为 `AppleProxy` 的兼容别名读取。
+- 保留默认语义：`Other Apple Service` 默认直连；`AppleProxy` 初始美国且可选直连；Siri 组优先选择美国，没有合格候选时拒绝连接。
+
+## 国内 DNS 白名单原则
+
+- 连接路由与国内 DNS 授权独立；普通直连、`cn_ip` 命中和通用 `cn`/`geolocation-cn`/`douyin` 集合不自动授权国内解析。不配置通用 `direct-nameserver`，不因未命中或解析失败而回退国内 DNS。
+- `国内CDNDNS`、`微软下载DNS`、`Steam下载DNS` 默认开启并可独立关闭，不受服务组、极简模式或国内路由开关隐式控制。名单重叠与专项例外分别判断，不能把关闭单个集合描述为禁止域名的一切国内解析。
+- 客户端 HTTP provider 每 86400 秒直接更新上游；不改为 CI 筛选、合并或发布仓库白名单。配置构建与运行时规则更新分别维护。
+- 显式主机/后缀 DNS policy 先于动态集合，白名单子集先于通用服务集合；保留 Steam 服务器/用户内容域的国外解析和 Apple 专项例外。新源须审查实际成员，不能直接采用通用 CDN、整厂商或公共云大集合。
+- 修改白名单/解析器/优先级时同步 [统一原则](docs/dns-whitelist.md)、功能文档和配置/原生回归；保留 DNS 专用 provider 的引用，禁止以通用国内 DNS 兜底修复可用性。缓存、Fake-IP、DoH 与 `no-resolve` 均不能作为“零泄漏”证明。
+
+## 文档、数据与验收
+
+- 更新功能、默认值、组名或 DNS/路由行为时，检查 README、`docs/dns-whitelist.md`、`docs/feature-matrix.md`、`docs/apple-routing.md`、`docs/rule-sources.md`、`docs/validation.md` 和 `Test/README.md`。
+- 区分静态 provider 与带 `--subscription` 的本地展开模式；不得声称静态 provider 能读取订阅中的私有 DNS、hosts 或动态节点名称。
+- 不在功能文档混入个人观察、设备日志、真实出口地址或验证记录；不得新增或提交机场链接、密码、节点清单、缓存和运行日志。
+- 图标沿用原 SVG URL，不修改 SVG；遵守 `docs/upstream/AGENT.md`，不补回 CDN 域名直连规则。
+- 国内服务路由模块及其新增原生回归按动态集合组织，不维护单独业务域名清单；测试样本从下载快照自动提取，解码与运行证据只留在忽略目录，不参与客户端规则生成。
+- GitHub Actions 的 `Verify full overrides` 在 runner 上生成 YAML 后运行项目测试、生成一致性检查和可获得的 Mihomo 原生配置校验；`Sync script and generate config` 必须通过相同的行为和原生校验后才能提交产物。维护者可在本地用项目锁定工具链重生不含隐私数据的发布产物以完成回归，不要求最终用户本地生成 YAML。单元测试或配置解析不能描述成用户网络抓包或 Apple 服务可用性实测；行为变化须有回归断言。

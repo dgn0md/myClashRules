@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const YAML = require('yaml');
+const { updateConfigSha256 } = require('./config-sha');
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'Script/mihomoScript.js');
 function load() {
@@ -12,7 +13,7 @@ function load() {
   const source = fs.readFileSync(SCRIPT, 'utf8');
   vm.runInContext(
     source +
-      '\nglobalThis.api = {main, ruleOptionsEnable, customizeProxies, regionDefinitions, rateRegionDefinitions, homeRegionDefinitions, excludeFilter};',
+      '\nglobalThis.api = {main, ruleOptionsEnable, customizeProxies, regionDefinitions, rateRegionDefinitions, homeRegionDefinitions, announcementFilter, excludeFilter};',
     sandbox,
     { timeout: 5000 },
   );
@@ -25,22 +26,32 @@ function readYaml(file) {
 }
 function configure(api, settings) {
   const options = settings.options || {};
+  const legacyOptionAliases = {
+    自动选择: '自动选择ex(大陆&香港)',
+  };
   const legacyAppleOptions = {
     Apple: 'Other Apple Service',
     Apple智能: 'Siri Ai/Apple Intelligence',
     Siri: 'Siri Ai/Apple Intelligence',
-    AppleNews: 'Apple Product地区',
-    AppleTV: 'Apple Product地区',
-    AppleFitness: 'Apple Product地区',
-    AppleSports: 'Apple Product地区',
-    AppleBooks: 'Apple Product地区',
-    Apple地区检测: 'Apple Product地区',
+    'Apple Product地区': 'AppleProxy',
+    AppleNews: 'AppleProxy',
+    AppleTV: 'AppleProxy',
+    AppleFitness: 'AppleProxy',
+    AppleSports: 'AppleProxy',
+    AppleBooks: 'AppleProxy',
+    Apple地区检测: 'Siri Ai/Apple Intelligence',
   };
   const removedAppleOptions = new Set(['AppleRelay']);
   const migratedAppleOptions = new Map();
+  const migratedOptions = new Map();
   for (const [key, value] of Object.entries(options)) {
     if (typeof value !== 'boolean') throw new Error(`${key} 必须填写 true 或 false`);
     if (removedAppleOptions.has(key)) continue;
+    const aliasTarget = legacyOptionAliases[key];
+    if (aliasTarget) {
+      if (!Object.prototype.hasOwnProperty.call(options, aliasTarget)) migratedOptions.set(aliasTarget, value);
+      continue;
+    }
     const target = legacyAppleOptions[key];
     if (target) {
       if (!Object.prototype.hasOwnProperty.call(options, target)) {
@@ -51,6 +62,7 @@ function configure(api, settings) {
     if (!Object.prototype.hasOwnProperty.call(api.ruleOptionsEnable, key)) throw new Error(`未知配置项：${key}`);
     api.ruleOptionsEnable[key] = value;
   }
+  for (const [key, value] of migratedOptions) api.ruleOptionsEnable[key] = value;
   for (const [key, value] of migratedAppleOptions) api.ruleOptionsEnable[key] = value;
   if (settings.customProxies) {
     if (!Array.isArray(settings.customProxies)) throw new Error('customProxies 必须为节点数组');
@@ -62,7 +74,7 @@ function template(api, settings) {
   // Seeds are never serialized or dialed. Expanded-subscription mode instead uses actual node names.
   const names = api.regionDefinitions
     .flatMap((r) => [`${r.name} 1x`, `${r.name} 0.5x 家宽`, `${r.name} 3x`])
-    .concat(['德国 家宽']);
+    .concat(['德国 家宽', 'Unclassified fixture']);
   const seeds = names.map((name, i) => ({
     name,
     type: 'ss',
@@ -75,9 +87,12 @@ function template(api, settings) {
   const seedNames = new Set(out.proxies.filter((p) => p.password === 'template').map((p) => p.name));
   out.proxies = out.proxies.filter((p) => !seedNames.has(p.name));
   const definitions = [...api.regionDefinitions, ...api.rateRegionDefinitions, ...api.homeRegionDefinitions];
-  const info = api.ruleOptionsEnable.过滤非地区节点 ? [api.excludeFilter.source] : [];
-  if (api.ruleOptionsEnable.过滤低倍率节点) info.push(api.rateRegionDefinitions[0].regex.source);
-  if (api.ruleOptionsEnable.过滤高倍率节点) info.push(api.rateRegionDefinitions[1].regex.source);
+  const filterNonRegion = api.ruleOptionsEnable.过滤非地区节点;
+  const announcements = filterNonRegion ? [api.announcementFilter.source] : [];
+  const softInfo = filterNonRegion ? [api.excludeFilter.source] : [];
+  const excludedRates = [];
+  if (api.ruleOptionsEnable.过滤低倍率节点) excludedRates.push(api.rateRegionDefinitions[0].regex.source);
+  if (api.ruleOptionsEnable.过滤高倍率节点) excludedRates.push(api.rateRegionDefinitions[1].regex.source);
   for (const group of out['proxy-groups']) {
     const members = group.proxies || [];
     if (!members.some((p) => seedNames.has(p))) continue;
@@ -87,12 +102,25 @@ function template(api, settings) {
     const baseName = group.name.replace(/-自动选择$/, '');
     const def = definitions.find((r) => r.name === baseName);
     if (def) group.filter = `(?i)${def.regex.source}`;
-    const excludes = [...info];
-    if (baseName === '其他节点') excludes.push(...api.regionDefinitions.map((r) => r.regex.source));
-    if (excludes.length) group['exclude-filter'] = `(?i)(?:${excludes.join('|')})`;
+    const configuredExclude = group['exclude-filter']?.replace(/^\(\?i\)/, '');
+    const excludes = [...(configuredExclude ? [configuredExclude] : []), ...announcements, ...excludedRates];
+    if (baseName === '其他节点') {
+      excludes.push(...api.regionDefinitions.map((r) => r.regex.source));
+      excludes.push(...softInfo);
+    } else if (baseName === '低倍率节点' || baseName === '高倍率节点' || baseName === '家宽节点') {
+      excludes.push(...softInfo);
+    }
+    if (excludes.length) group['exclude-filter'] = `(?i)(${excludes.join('|')})`;
     if (!group.proxies.length) delete group.proxies;
   }
   const provider = settings.subscription || {};
+  // Provider names are filtered by Mihomo at runtime. Remove a contradictory mainland
+  // flag before its filters run when the name explicitly identifies Taiwan.
+  const taiwanName = '(台湾|台北|高雄|\\b(TW|TWN)\\b|taiwan)';
+  const taiwanFlagCorrection = [
+    { pattern: `(?i)🇨🇳(.*${taiwanName})`, target: '$1' },
+    { pattern: `(?i)(${taiwanName}.*)🇨🇳`, target: '$1' },
+  ];
   out['proxy-providers'] = {
     订阅: {
       type: 'http',
@@ -103,33 +131,39 @@ function template(api, settings) {
       'exclude-type': 'DIRECT|REJECT|REMATCH',
       'health-check': {
         enable: true,
-        url: 'https://www.apple.com/library/test/success.html',
+        url: 'https://cp.cloudflare.com/generate_204',
         interval: 600,
         lazy: true,
       },
-      ...(api.ruleOptionsEnable.代理IPV4优先 !== api.ruleOptionsEnable.代理IPV6优先
-        ? {
-            override: { 'ip-version': api.ruleOptionsEnable.代理IPV4优先 ? 'ipv4-prefer' : 'ipv6-prefer' },
-          }
-        : {}),
+      override: {
+        'proxy-name': taiwanFlagCorrection,
+        ...(api.ruleOptionsEnable.代理IPV4优先 !== api.ruleOptionsEnable.代理IPV6优先
+          ? { 'ip-version': api.ruleOptionsEnable.代理IPV4优先 ? 'ipv4-prefer' : 'ipv6-prefer' }
+          : {}),
+      },
     },
   };
   // Provider mode cannot inspect private DNS/hosts in a remote subscription. Use expanded mode for such providers.
   return out;
 }
 function render(config, api, settings) {
-  const optionsBlock = /const ruleOptionsEnable = \{([\s\S]*?)\n\};/.exec(fs.readFileSync(SCRIPT, 'utf8'))[1];
+  const scriptSource = fs.readFileSync(SCRIPT, 'utf8');
+  const optionsBlock = /const ruleOptionsEnable = \{([\s\S]*?)\n\};/.exec(scriptSource)[1];
   const descriptions = {};
   for (const line of optionsBlock.split('\n')) {
     const m = /^\s*(?:'([^']+)'|"([^"]+)"|(\S+)): (?:true|false),\s*\/\/ (.*)$/.exec(line);
     if (m) descriptions[m[1] || m[2] || m[3]] = m[4];
   }
   const header = [
-    '# myClashRules 全量配置；派生自 AIsouler/MyClash（MIT），生成器：tools/build.js。',
+    '# myClashRules Mihomo 全量静态配置',
+    '# 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。',
+    '# 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。',
+    `# 最新 Raw SHA-256：${'0'.repeat(64)}`,
+    '# Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml',
+    '# CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml',
     '# 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。',
-    '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。只改 true/false 后运行：',
-    '# node tools/build.js --settings Config/mihomoConfig.yaml --output .local/myConfig.yaml',
-    '# 私有 DNS/hosts 机场请使用 --subscription .local/subscription.yaml，以执行完整节点处理。',
+    '# 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。',
+    '# 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。',
     '# 严格模式无明文上游 DNS；需 TUN/网关接管才覆盖系统流量。不可达时不降级。',
     '# 请勿将真实订阅链接/节点提交到 Git。true 是正确拼写，ture 会被拒绝。',
   ].join('\n');
@@ -141,12 +175,12 @@ function render(config, api, settings) {
   const options = doc.getIn(['x-myClashRules', 'options'], true);
   for (const pair of options.items) pair.value.comment = ' ' + (descriptions[pair.key.value] || '');
   const comments = {
-    dns: 'DNS：国内加密直连，境外加密经代理；Apple 精确 policy 优先。不要添加 system/UDP 兜底。',
+    dns: 'DNS：白名单使用国内加密解析，其他业务使用国外 DoH；直连不自动授权国内 DNS。保留 Apple 专项例外与节点/DoH 启动解析。',
     tun: 'TUN 接管 TCP/UDP 53；strict-route 在支持的平台防多网卡旁路。关闭 TUN 需上级 DNS 接管。',
     'proxy-providers': '填入 Clash/Mihomo 订阅 URL；静态 provider 模式不能读取机场的顶层 DNS/hosts。',
     proxies: '自定义节点与五种直连出口；链式落地须在 x-myClashRules.customProxies 配置并重新生成。',
     'proxy-groups': '全量服务/地区/倍率/家宽组。静态地区无节点时回退 REJECT；脚本只生成有节点的组。',
-    'rule-providers': '远程 MRS 每日更新；本地 inline 规则随配置更新。国内域名库仅参与 DNS，不整体强制直连。',
+    'rule-providers': '远程 MRS/文本规则每日更新；DNS 白名单独立于路由；本地 inline 规则随配置更新。',
     rules:
       '顺序：DNS 接管 → Apple 精确域名例外 → 广告/国内服务 → 服务域名 → 海外域名 → Apple IP → 私网 IP → 其他服务 IP → CN IP → 兜底。',
   };
@@ -154,7 +188,7 @@ function render(config, api, settings) {
     const value = doc.get(key, true);
     if (value) value.commentBefore = ' ' + comment;
   }
-  return header + '\n\n' + doc.toString({ lineWidth: 120 });
+  return updateConfigSha256(header + '\n\n' + doc.toString({ lineWidth: 120 })).text;
 }
 function build({ settings = {}, subscription } = {}) {
   const api = load();
@@ -179,10 +213,16 @@ function cli(args) {
   const settings = input['x-myClashRules'] || input;
   if (input['proxy-providers']?.订阅?.url) settings.subscription = { url: input['proxy-providers'].订阅.url };
   const result = build({ settings, subscription: flags.subscription ? readYaml(flags.subscription) : undefined });
-  const output = path.resolve(flags.output || path.join(ROOT, 'Config/mihomoConfig.yaml'));
+  const output = path.resolve(flags.output || path.join(ROOT, flags.subscription ? '.local/expanded.yaml' : 'Config/mihomoConfig.yaml'));
+  const relativeOutput = path.relative(ROOT, output);
+  const insideRepository = relativeOutput !== '' && !relativeOutput.startsWith('..' + path.sep) && !path.isAbsolute(relativeOutput);
+  const privateInput = Boolean(flags.subscription || settings.customProxies?.length ||
+    (settings.subscription?.url && settings.subscription.url !== 'https://example.invalid/replace-with-your-subscription'));
+  if (privateInput && insideRepository && relativeOutput !== '.local' && !relativeOutput.startsWith('.local' + path.sep))
+    throw new Error('订阅、真实节点或私有 URL 只能输出到仓库内 .local/，或显式指定仓库外路径');
   if (flags.check) {
     if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== result.text)
-      throw new Error('生成配置已漂移，请执行 npm run build');
+      throw new Error('生成配置与脚本不一致；请等待或手动运行 GitHub Actions：Sync script and generate config');
     console.log('Generated YAML is up to date.');
   } else {
     fs.mkdirSync(path.dirname(output), { recursive: true });

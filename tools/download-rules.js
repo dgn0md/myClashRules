@@ -4,6 +4,58 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { build } = require('./build');
+const YAML = require('yaml');
+const RETRYABLE_STATUSES = new Set([403, 408, 425, 429, 500, 502, 503, 504]);
+const JSDELIVR_RULES_PREFIX = 'https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/';
+const UPSTREAM_RULES_PREFIX = 'https://raw.githubusercontent.com/appshubcc/bett-rules/meta/geo/';
+
+function upstreamUrl(url) {
+  return url.startsWith(JSDELIVR_RULES_PREFIX)
+    ? `${UPSTREAM_RULES_PREFIX}${url.slice(JSDELIVR_RULES_PREFIX.length)}`
+    : undefined;
+}
+
+function validateYamlClassicalRules(name, bytes) {
+  const document = YAML.parseDocument(new TextDecoder('utf-8', { fatal: true }).decode(bytes), { uniqueKeys: true });
+  if (document.errors.length) throw new Error(`${name}: ${document.errors[0].message}`);
+  const rules = document.toJS()?.payload;
+  const validRule = /^(?:DOMAIN|DOMAIN-SUFFIX),[a-z0-9.-]+$/i;
+  const validProcess = /^PROCESS-NAME,[^,\s]+$/i;
+  if (!Array.isArray(rules) || !rules.length || rules.some((rule) => typeof rule !== 'string' ||
+    (!validRule.test(rule) && !validProcess.test(rule))))
+    throw new Error(`${name}: invalid YAML classical domain rules`);
+  if (!rules.some((rule) => validRule.test(rule))) throw new Error(`${name}: no domain rules in YAML classical provider`);
+}
+
+async function fetchRule(name, url, { sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
+  const fallback = upstreamUrl(url);
+  const sources = fallback ? [url, fallback] : [url];
+  let lastError;
+  for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
+    const source = sources[sourceIndex];
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let response;
+      try {
+        response = await fetch(source, { signal: AbortSignal.timeout(60000) });
+      } catch (error) {
+        lastError = new Error(`${name}: ${source}: ${error.message}`);
+      }
+      if (response?.ok) {
+        if (source !== url) console.warn(`${name}: CDN unavailable; fetched from upstream GitHub`);
+        return { response, source };
+      }
+      if (response) {
+        if (!RETRYABLE_STATUSES.has(response.status))
+          throw new Error(`${name}: HTTP ${response.status} from ${source}`);
+        lastError = new Error(`${name}: HTTP ${response.status} from ${source}`);
+      }
+      if (attempt < 2) await sleep(1000 * 2 ** attempt);
+    }
+    if (sourceIndex + 1 < sources.length) console.warn(`${lastError.message}; retrying from upstream GitHub`);
+  }
+  throw lastError || new Error(`${name}: rule download failed`);
+}
+
 async function run() {
   const dir = path.resolve(process.argv[2] || '.local/rules');
   fs.mkdirSync(dir, { recursive: true });
@@ -13,9 +65,9 @@ async function run() {
   async function worker() {
     while (cursor < entries.length) {
       const [name, spec] = entries[cursor++];
-      const response = await fetch(spec.url, { signal: AbortSignal.timeout(60000) });
-      if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
+      const { response, source } = await fetchRule(name, spec.url);
       const bytes = Buffer.from(await response.arrayBuffer());
+      const digest = createHash('sha256').update(bytes).digest('hex');
       if (spec.format === 'mrs') {
         // MRS is Zstandard-compressed; semantic validation is done by native-check.js with Mihomo.
         if (bytes.length < 16 || bytes.subarray(0, 4).toString('hex') !== '28b52ffd')
@@ -23,17 +75,21 @@ async function run() {
       } else if (spec.format === 'text' && spec.behavior === 'classical') {
         const lines = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split(/\r?\n/)
           .map((line) => line.trim()).filter((line) => line && !line.startsWith('#'));
-        if (!lines.length || lines.some((line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line)))
+        if (!lines.length || lines.some((line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line) &&
+          !/^DOMAIN-WILDCARD,[a-z0-9.*?-]+$/i.test(line)))
           throw new Error(`${name}: invalid domain-only classical rules`);
+      } else if (spec.format === 'yaml' && spec.behavior === 'classical') {
+        validateYamlClassicalRules(name, bytes);
       } else throw new Error(`${name}: unsupported rule format ${spec.format}/${spec.behavior}`);
       fs.writeFileSync(path.join(dir, `${name}${path.extname(spec.path)}`), bytes);
       manifest.push({
         name,
         url: spec.url,
+        ...(source !== spec.url ? { downloadedFrom: source } : {}),
         ...(spec.format !== 'mrs' ? { format: spec.format } : {}),
         behavior: spec.behavior,
         bytes: bytes.length,
-        sha256: createHash('sha256').update(bytes).digest('hex'),
+        sha256: digest,
       });
     }
   }
@@ -45,7 +101,11 @@ async function run() {
   );
   console.log(`Verified ${manifest.length} public rule downloads in ${dir}`);
 }
-run().catch((error) => {
-  console.error(error.message);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  run().catch((error) => {
+    console.error(error.message);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { fetchRule, upstreamUrl, validateYamlClassicalRules };
