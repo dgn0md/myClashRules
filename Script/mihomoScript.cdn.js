@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：a80bcbeed7748b8c3012c9c8928f9ac9c390c0c4020d365841dce478c9b3cb4f
+ * 最新 Raw SHA-256：af0bc896470a6e06c38733fafb91b1b3644842c237b609abf23afbe0cc83fae9
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：299554a72be0a24b99191e04f6a51b498040754e85f05c3cef01bf13dabe4d10
+ * 缓存 CDN SHA-256：5eefd3f7a53d4070437cacc6969dbcd0e45fb31a39603e4e2bdb539f68d0f240
  */
 
 // --- 静态配置区域 ---
@@ -174,6 +174,7 @@ const directProxies = [
     'ip-version': 'ipv6',
   },
 ];
+const directProxyNames = directProxies.map(({ name }) => name);
 
 // 图标 URL 公共前缀
 const iconBaseUrl = 'https://fastly.jsdelivr.net/gh/AIsouler/MyClash@main/Icons/svg/';
@@ -290,8 +291,8 @@ const serviceRegionNames = new Set(
   regionDefinitions.filter(({ name }) => !excludedServiceRegionNames.has(name)).map(({ name }) => name),
 );
 const regionRestrictedServiceNames = new Set(['Google', 'AI', 'TikTok', 'Meta', appleAiGroupName]);
+// Mihomo `+.` 后缀同时匹配根域主机，避免重复列举精确域名。
 const appleRealIpEndpoints = [
-  'guzzoni.apple.com',
   '+.guzzoni.apple.com',
   '+.siri.apple.com',
   'dejavu.apple.com',
@@ -304,7 +305,6 @@ const appleRealIpEndpoints = [
   'mask-api.icloud.com',
   'mask.icloud.com',
   'mask-h2.icloud.com',
-  'ss-cleanup-proxy-prod.us-east-1m.app.apple.com',
   '+.app.apple.com',
   '+.apple-relay.apple.com',
   '+.apple-relay.cloudflare.com',
@@ -930,7 +930,7 @@ const appleEndpointDefinitions = {
     'mask-api.icloud.com',
     'mask.icloud.com',
     'mask-h2.icloud.com',
-    'ss-cleanup-proxy-prod.us-east-1m.app.apple.com',
+    // app.apple.com 后缀规则已覆盖 Apple 清理代理主机。
     '+.app.apple.com',
     '+.apple-relay.apple.com',
     '+.apple-relay.cloudflare.com',
@@ -939,7 +939,7 @@ const appleEndpointDefinitions = {
     'cp4.cloudflare.com',
     // 国际内容域整体覆盖，中国站内容域保留原规则；gateway 单独归入 Other Apple Service。
     '+.icloud-content.com',
-    'guzzoni.apple.com',
+    // +.guzzoni.apple.com 同时覆盖根域主机。
     '+.guzzoni.apple.com',
     '+.siri.apple.com',
     'dejavu.apple.com',
@@ -1388,7 +1388,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
     const directGroup = {
       ...selectBaseOption,
       name: '直连',
-      proxies: [...directProxies.map((p) => p.name)],
+      proxies: [...directProxyNames],
       icon: `${iconBaseUrl}China.svg`,
       hidden: true,
     };
@@ -1480,7 +1480,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
   const directGroup = {
     ...selectBaseOption,
     name: '直连',
-    proxies: [...directProxies.map((p) => p.name)],
+    proxies: [...directProxyNames],
     icon: `${iconBaseUrl}China.svg`,
     hidden: hideManualSelectGroupEnabled,
   };
@@ -1664,75 +1664,6 @@ function applyHostsToProxies(proxies, hosts) {
     const server = resolve(proxy.server);
     return server === proxy.server ? proxy : { ...proxy, server };
   });
-}
-
-/**
- * 剥离 DNS 地址的 # 策略组后缀；
- * 参数包含 direct 或 直连 时，强制改为 #DIRECT
- */
-function stripDnsSuffix(dns) {
-  const str = String(dns);
-  const hashIndex = str.indexOf('#');
-  if (hashIndex === -1) return str;
-
-  const prefix = str.slice(0, hashIndex).trim();
-
-  const suffix = str
-    .slice(hashIndex + 1)
-    .toLowerCase()
-    .trim();
-
-  if (suffix.includes('direct') || suffix.includes('直连')) return prefix + '#DIRECT';
-
-  return prefix;
-}
-
-/**
- * 简化节点域名策略：将相同 DNS 的节点域名按后缀归类，至少三段的域名可合并为 +. 后缀形式
- */
-function simplifyDomainPolicy(policy) {
-  const groups = new Map();
-
-  for (const [domain, dns] of Object.entries(policy)) {
-    const dnsKey = JSON.stringify(Array.isArray(dns) ? [...dns].sort() : dns);
-
-    if (domain.startsWith('+.') || domain.startsWith('.') || domain.includes('*')) {
-      groups.set(`keep:${domain}`, [{ domain, dns, dnsKey }]);
-      continue;
-    }
-
-    const parts = domain.split('.');
-
-    if (parts.length < 3) {
-      groups.set(`keep:${domain}`, [{ domain, dns, dnsKey }]);
-      continue;
-    }
-
-    const suffix = parts.slice(-2).join('.');
-
-    if (!groups.has(suffix)) {
-      groups.set(suffix, []);
-    }
-
-    groups.get(suffix).push({ domain, dns, dnsKey });
-  }
-
-  const result = {};
-
-  for (const [suffix, domains] of groups) {
-    const firstDnsKey = domains[0].dnsKey;
-    const sameDns = domains.every(({ dnsKey }) => dnsKey === firstDnsKey);
-
-    if (domains.length >= 2 && sameDns) {
-      result[`+.${suffix}`] = domains[0].dns;
-    } else {
-      for (const { domain, dns } of domains) {
-        result[domain] = dns;
-      }
-    }
-  }
-
-  return result;
 }
 
 /**
@@ -2162,10 +2093,24 @@ function finalizeMyClashRules(config) {
   }
   // Mihomo 按 policy 顺序匹配；显式主机/后缀必须先于动态集合，不能只依赖键的具体程度。
   const dnsPolicyEntries = Object.entries(config.dns['nameserver-policy']);
-  config.dns['nameserver-policy'] = Object.fromEntries([
+  const orderedDnsPolicyEntries = [
     ...dnsPolicyEntries.filter(([key]) => !key.startsWith('rule-set:')),
     ...dnsPolicyEntries.filter(([key]) => key.startsWith('rule-set:')),
-  ]);
+  ];
+  const compactDnsPolicyEntries = [];
+  for (const [key, resolvers] of orderedDnsPolicyEntries) {
+    const previous = compactDnsPolicyEntries[compactDnsPolicyEntries.length - 1];
+    if (
+      key.startsWith('rule-set:') &&
+      previous?.[0].startsWith('rule-set:') &&
+      JSON.stringify(previous[1]) === JSON.stringify(resolvers)
+    ) {
+      previous[0] += `,${key.slice('rule-set:'.length)}`;
+    } else {
+      compactDnsPolicyEntries.push([key, resolvers]);
+    }
+  }
+  config.dns['nameserver-policy'] = Object.fromEntries(compactDnsPolicyEntries);
   if (options.严格加密DNS) {
     config.dns['use-system-hosts'] = false;
     // 不向系统 DNS 查询 LAN 名称；局域网名称通过用户 hosts 显式维护。
@@ -2191,11 +2136,17 @@ function finalizeMyClashRules(config) {
   }
   // 规则依赖按实际引用保留；DNS 使用的规则集也必须保留（不能只扫描 rules）。
   const references = JSON.stringify([config.rules, config.dns]);
+  const dnsRuleSetReferences = new Set(
+    Object.keys(config.dns['nameserver-policy'] || {})
+      .filter((key) => key.startsWith('rule-set:'))
+      .flatMap((key) => key.slice('rule-set:'.length).split(',')),
+  );
   for (const key of Object.keys(config['rule-providers'])) {
     if (
       !references.includes(`RULE-SET,${key},`) &&
       !references.includes(`RULE-SET,${key})`) &&
-      !references.includes(`rule-set:${key}\"`)
+      !references.includes(`rule-set:${key}\"`) &&
+      !dnsRuleSetReferences.has(key)
     )
       delete config['rule-providers'][key];
   }

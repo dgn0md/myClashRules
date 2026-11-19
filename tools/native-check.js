@@ -289,7 +289,7 @@ async function run() {
         const host = probe.value.toLowerCase();
         for (const [key, resolvers] of Object.entries(productionDnsPolicy)) {
           if (key === host || (key.startsWith('+.') && (host === key.slice(2) || host.endsWith(key.slice(1)))) ||
-              (key.startsWith('rule-set:') && key.slice(9) === result.payload))
+              (key.startsWith('rule-set:') && key.slice(9).split(',').includes(result.payload)))
             dnsCandidates.push({ key, resolvers });
         }
       }

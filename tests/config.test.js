@@ -17,6 +17,16 @@ const proxy = (name) => ({ name, type: 'ss', server: '192.0.2.1', port: 443, cip
 const clean = () => ({
   proxies: [proxy('美国 测试')],
 });
+function policyKeyForRuleSet(config, provider) {
+  const prefix = 'rule-set:';
+  return Object.keys(config.dns['nameserver-policy']).find(
+    (key) => key.startsWith(prefix) && key.slice(prefix.length).split(',').includes(provider),
+  );
+}
+function policyForRuleSet(config, provider) {
+  const key = policyKeyForRuleSet(config, provider);
+  return key ? config.dns['nameserver-policy'][key] : undefined;
+}
 function graph(config) {
   const groups = new Map(config['proxy-groups'].map((g) => [g.name, g]));
   const nodes = new Set(config.proxies.map((p) => p.name));
@@ -44,11 +54,27 @@ function graph(config) {
     assert.ok(exists(target), `unknown rule target ${rule}`);
   }
   const refs = JSON.stringify([config.rules, config.dns]);
-  for (const match of refs.matchAll(/(?:RULE-SET,|rule-set:)([A-Za-z0-9_!@.-]+)/g))
+  for (const match of refs.matchAll(/RULE-SET,([A-Za-z0-9_!@.-]+)/g))
     assert.ok(config['rule-providers'][match[1]], `missing provider ${match[1]}`);
+  const dnsRuleSetProviders = new Set([
+    ...Object.keys(config.dns['nameserver-policy'] || {})
+      .filter((key) => key.startsWith('rule-set:'))
+      .flatMap((key) => key.slice('rule-set:'.length).split(',')),
+    ...(config.dns['fake-ip-filter'] || [])
+      .filter((key) => key.startsWith('rule-set:'))
+      .flatMap((key) => key.slice('rule-set:'.length).split(',')),
+  ]);
+  for (const provider of dnsRuleSetProviders)
+    assert.ok(config['rule-providers'][provider], `missing policy provider ${provider}`);
   for (const [key, provider] of Object.entries(config['rule-providers'])) {
     if (provider.type !== 'inline') assert.equal(provider.interval, 86400);
-    assert.ok(refs.includes(`RULE-SET,${key},`) || refs.includes(`RULE-SET,${key})`) || refs.includes(`rule-set:${key}\"`), `unused provider ${key}`);
+    assert.ok(
+      refs.includes(`RULE-SET,${key},`) ||
+        refs.includes(`RULE-SET,${key})`) ||
+        refs.includes(`rule-set:${key}\"`) ||
+        dnsRuleSetProviders.has(key),
+      `unused provider ${key}`,
+    );
   }
   for (const p of config.proxies) if (p['dialer-proxy']) assert.ok(exists(p['dialer-proxy']));
 }
@@ -283,8 +309,7 @@ test('domestic vendor modules use dynamic differences without changing DNS autho
         for (const field of ['nameserver', 'default-nameserver', 'proxy-server-nameserver', 'fake-ip-filter'])
           assert.deepEqual(config.dns[field], baseline.dns[field]);
         for (const provider of ['dns_domestic_cdn', 'dns_microsoft_cdn', 'dns_steam_cn'])
-          assert.deepEqual(config.dns['nameserver-policy'][`rule-set:${provider}`],
-            baseline.dns['nameserver-policy'][`rule-set:${provider}`]);
+          assert.deepEqual(policyForRuleSet(config, provider), policyForRuleSet(baseline, provider));
         for (const source of modules) {
           const name = `domestic_${source}`;
           const rule = `AND,((RULE-SET,${name}),(NOT,((RULE-SET,${name}_noncn)))),直连`;
@@ -558,7 +583,7 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         if (provider === 'cn_ip') assert.equal(rule, 'RULE-SET,cn_ip,直连');
         else assert.equal(rule.split(',').at(-1), 'no-resolve', `${provider} must not trigger DNS resolution`);
         // IP-CIDR providers have no DNS names; their domain companion carries the DNS policy.
-        assert.equal(config.dns['nameserver-policy'][`rule-set:${provider}`], undefined);
+        assert.equal(policyForRuleSet(config, provider), undefined);
         routes.set(provider, target);
       }
       const privateIpIndex = config.rules.indexOf('RULE-SET,private_ip,直连,no-resolve');
@@ -572,7 +597,7 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         const target = routes.get(ipProvider);
         if (!target || (minimal && proxyIpProviders.has(ipProvider))) continue;
         assert.ok(config.rules.includes(`RULE-SET,${domainProvider},${target}`), `${domainProvider} must share ${ipProvider} egress`);
-        const dns = config.dns['nameserver-policy'][`rule-set:${domainProvider}`];
+        const dns = policyForRuleSet(config, domainProvider);
         assert.ok(dns, `missing DNS policy for ${domainProvider}`);
         for (const resolver of Array.isArray(dns) ? dns : [dns])
           assert.ok(
@@ -769,7 +794,7 @@ test('minimal mode keeps independently enabled Apple and DNS protections', () =>
   const config = build({ settings: { options: { 极简国内外分流模式: true } } }).config;
   graph(config);
   encryptedDns(config);
-  assert.ok(config.rules.includes(`DOMAIN,guzzoni.apple.com,${siriAiGroup}`));
+  assert.ok(config.rules.includes(`DOMAIN-SUFFIX,guzzoni.apple.com,${siriAiGroup}`));
   assert.ok(config.rules.includes(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`));
   assert.ok(!config['proxy-groups'].some((g) => g.name === 'YouTube'));
   assert.equal(config.rules.at(-1), 'MATCH,默认代理');
@@ -1013,7 +1038,6 @@ test('AppleFlow PCC and Siri endpoints use the eligible selector with US default
     ['DOMAIN', 'mask-api.icloud.com', siriAiGroup],
     ['DOMAIN', 'mask.icloud.com', siriAiGroup],
     ['DOMAIN', 'mask-h2.icloud.com', siriAiGroup],
-    ['DOMAIN', 'ss-cleanup-proxy-prod.us-east-1m.app.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'app.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'apple-relay.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'apple-relay.cloudflare.com', siriAiGroup],
@@ -1023,7 +1047,6 @@ test('AppleFlow PCC and Siri endpoints use the eligible selector with US default
   ];
   const siri = [
     ['DOMAIN', 'gspe1-ssl.ls.apple.com', siriAiGroup],
-    ['DOMAIN', 'guzzoni.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'guzzoni.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'siri.apple.com', siriAiGroup],
     ['DOMAIN', 'dejavu.apple.com', siriAiGroup],
@@ -1106,7 +1129,7 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
       ['meta', 'Meta'],
     ]) {
       if (minimal) continue;
-      assert.ok(config.dns['nameserver-policy'][`rule-set:${provider}`].every((dns) => dns.endsWith(`#${target}`)));
+      assert.ok(policyForRuleSet(config, provider).every((dns) => dns.endsWith(`#${target}`)));
     }
     for (const host of ['api-siri-prod.apple.com', 'gspe1-ssl.ls.apple.com']) {
       assert.ok(config.dns['nameserver-policy'][host].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
@@ -1125,19 +1148,19 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
         assert.equal(config.dns['direct-nameserver'], undefined);
         assert.equal(config.dns['direct-nameserver-follow-policy'], undefined);
         for (const provider of ['cn', 'douyin', 'geolocation-cn', 'games_cn', 'microsoft_cn', 'apple_cn'])
-          assert.equal(config.dns['nameserver-policy'][`rule-set:${provider}`], undefined, `${provider} must not retain a stale policy`);
+          assert.equal(policyForRuleSet(config, provider), undefined, `${provider} must not retain a stale policy`);
         assert.ok(!config.dns['fake-ip-filter'].includes('rule-set:cn'));
         for (const [option, name] of Object.entries(whitelist)) {
           const provider = config['rule-providers'][name];
           assert.equal(Boolean(provider), options[option]);
           if (!provider) {
-            assert.equal(config.dns['nameserver-policy'][`rule-set:${name}`], undefined);
+            assert.equal(policyForRuleSet(config, name), undefined);
             continue;
           }
           assert.equal(provider.type, 'http');
           assert.equal(provider.interval, 86400);
           assert.ok(!config.rules.some((rule) => rule.startsWith(`RULE-SET,${name},`)), 'DNS whitelist must not force a route');
-          assert.deepEqual(config.dns['nameserver-policy'][`rule-set:${name}`], config.dns['default-nameserver']);
+          assert.deepEqual(policyForRuleSet(config, name), config.dns['default-nameserver']);
         }
         for (const suffix of ['+.steamserver.net', '+.steamusercontent.com'])
           assert.deepEqual(config.dns['nameserver-policy'][suffix], config.dns.nameserver);
@@ -1146,15 +1169,16 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
   }
   const config = build().config;
   const keys = Object.keys(config.dns['nameserver-policy']);
-  assert.ok(keys.indexOf('+.steamusercontent.com') < keys.indexOf('rule-set:dns_steam_cn'));
-  assert.ok(keys.indexOf('guzzoni.apple.com') < keys.indexOf('rule-set:dns_domestic_cdn'));
-  assert.ok(keys.indexOf('rule-set:dns_microsoft_cdn') < keys.indexOf('rule-set:microsoft'));
-  assert.ok(keys.indexOf('rule-set:dns_steam_cn') < keys.indexOf('rule-set:steam'));
+  const domesticWhitelistKey = 'rule-set:dns_domestic_cdn,dns_microsoft_cdn,dns_steam_cn';
+  assert.ok(keys.indexOf('+.steamusercontent.com') < keys.indexOf(domesticWhitelistKey));
+  assert.ok(keys.indexOf('+.guzzoni.apple.com') < keys.indexOf(domesticWhitelistKey));
+  assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'microsoft')));
+  assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'steam')));
   const domesticKeys = Object.entries(config.dns['nameserver-policy'])
     .filter(([, value]) => JSON.stringify(value) === JSON.stringify(config.dns['default-nameserver']))
     .map(([key]) => key).sort();
   assert.deepEqual(domesticKeys, [
-    'rule-set:dns_domestic_cdn', 'rule-set:dns_microsoft_cdn', 'rule-set:dns_steam_cn', 'rule-set:apple_cn',
+    domesticWhitelistKey, 'rule-set:apple_cn',
     'gdmf.apple.com', 'mesu.apple.com', 'updates.cdn-apple.com', 'assets.cdn-apple.com',
   ].sort());
 });
@@ -1174,7 +1198,7 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
   }
   assert.ok(expectedPolicies.size > 0);
   for (const [providerName, target] of expectedPolicies) {
-    const dns = config.dns['nameserver-policy'][`rule-set:${providerName}`];
+    const dns = policyForRuleSet(config, providerName);
     assert.ok(dns, `missing DNS egress for rule-set:${providerName} → ${target}`);
     const dnsTarget = target === otherAppleGroup ? siriAiGroup : target;
     const dnsTargetGroup = config['proxy-groups'].find((group) => group.name === dnsTarget);
@@ -1191,7 +1215,7 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
   assert.ok(config.dns['nameserver-policy']['rule-set:youtube'].every((dns) => dns.endsWith('#YouTube')));
   assert.ok(config.rules.includes('RULE-SET,emby_keyword,Emby'));
   assert.deepEqual(config['rule-providers'].emby_keyword.payload, ['DOMAIN-KEYWORD,emby']);
-  assert.ok(config.dns['nameserver-policy']['rule-set:emby_keyword'].every((dns) => dns.endsWith('#Emby')));
+  assert.ok(policyForRuleSet(config, 'emby_keyword').every((dns) => dns.endsWith('#Emby')));
 });
 
 test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers and narrow iCloud suffix', () => {
@@ -1199,7 +1223,6 @@ test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers a
   const filters = config.dns['fake-ip-filter'];
   for (const domain of [
     'gspe1-ssl.ls.apple.com',
-    'guzzoni.apple.com',
     '+.guzzoni.apple.com',
     '+.siri.apple.com',
     '+.smoot.apple.com',
@@ -1213,7 +1236,7 @@ test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers a
   ]) assert.ok(filters.includes(domain), `missing Fake-IP filter ${domain}`);
   assert.ok(!filters.includes('+.icloud-content.com'));
   const policy = config.dns['nameserver-policy'];
-  for (const key of ['gspe1-ssl.ls.apple.com', 'guzzoni.apple.com', '+.guzzoni.apple.com', '+.siri.apple.com']) {
+  for (const key of ['gspe1-ssl.ls.apple.com', '+.guzzoni.apple.com', '+.siri.apple.com']) {
     assert.ok(policy[key]);
     for (const resolver of policy[key]) assert.match(resolver, /^https:\/\//);
   }
