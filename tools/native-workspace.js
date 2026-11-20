@@ -82,8 +82,12 @@ async function ensureBinary() {
       compressed = undefined;
     }
   }
-  if (compressed && fs.existsSync(MIHOMO_BIN) &&
-      sha256(fs.readFileSync(MIHOMO_BIN)) === sha256(gunzipSync(compressed)) && checkBinary()) {
+  if (
+    compressed &&
+    fs.existsSync(MIHOMO_BIN) &&
+    sha256(fs.readFileSync(MIHOMO_BIN)) === sha256(gunzipSync(compressed)) &&
+    checkBinary()
+  ) {
     console.log('复用摘要已校验的本地 Mihomo v' + MIHOMO_LOCK.version);
     return;
   }
@@ -121,13 +125,17 @@ function rulesAreComplete() {
   }
   const recorded = new Map((manifest.providers || []).map((entry) => [entry.name, entry]));
   const files = expectedRuleFiles();
-  return files.length > 0 && files.every((entry) => {
-    if (!fs.existsSync(entry.file)) return false;
-    const data = fs.readFileSync(entry.file);
-    const item = recorded.get(entry.name);
-    return data.length > 16 && item?.url === entry.url && item?.bytes === data.length &&
-      item?.sha256 === sha256(data);
-  });
+  return (
+    files.length > 0 &&
+    files.every((entry) => {
+      if (!fs.existsSync(entry.file)) return false;
+      const data = fs.readFileSync(entry.file);
+      const item = recorded.get(entry.name);
+      return (
+        data.length > 16 && item?.url === entry.url && item?.bytes === data.length && item?.sha256 === sha256(data)
+      );
+    })
+  );
 }
 
 function runNodeScript(script, args) {

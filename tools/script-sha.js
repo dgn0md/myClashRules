@@ -4,9 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const SCRIPT = path.resolve(__dirname, '../Script/mihomoScript.js');
-const HASH_FIELDS = [
-  /^([ \t]*\* 最新 Raw SHA-256：)[0-9a-f]{64}$/gm,
-];
+const HASH_FIELDS = [/^([ \t]*\* 最新 Raw SHA-256：)[0-9a-f]{64}$/gm];
 
 function replaceHashFields(source, value) {
   let output = source;
@@ -22,7 +20,9 @@ function replaceHashFields(source, value) {
 }
 
 function computeScriptSha256(source) {
-  return createHash('sha256').update(replaceHashFields(source, '0'.repeat(64)), 'utf8').digest('hex');
+  return createHash('sha256')
+    .update(replaceHashFields(source, '0'.repeat(64)), 'utf8')
+    .digest('hex');
 }
 
 function updateScriptSha256(source) {

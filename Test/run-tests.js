@@ -49,11 +49,11 @@ async function main() {
 
       const api = loadScript(script.file);
       // 节点兼容回归验证节点识别与整理行为；严格默认与 Apple 新行为由 tests/ 独立覆盖。
-      api.ruleOptionsEnable.严格加密DNS = false;
-      api.ruleOptionsEnable['Siri Ai/Apple Intelligence'] = false;
+      api.ruleOptionsEnable.严格DNS校验 = false;
+      api.ruleOptionsEnable.Apple智能分流 = false;
       api.ruleOptionsEnable['AppleProxy'] = false;
-      api.ruleOptionsEnable.拦截外部明文DNS = false;
-      api.ruleOptionsEnable.Apple海外媒体 = false;
+      api.ruleOptionsEnable.接管DNS53 = false;
+      api.ruleOptionsEnable.Apple媒体代理 = false;
       const h = new Harness(script.label);
 
       runUnitTests(h, api);

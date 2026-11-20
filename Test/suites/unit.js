@@ -21,6 +21,21 @@ function runUnitTests(h, api) {
   h.test('*.通配跨层级不匹配', () => h.assert(!api.matchDomainPattern('*.example.com', new Set(['a.b.example.com']))));
   h.test('中间通配符匹配', () => h.assert(api.matchDomainPattern('a.*.com', new Set(['a.b.com', 'a.example.com']))));
 
+  h.section('单元测试 · rule-set 引用收集');
+  h.test('递归收集嵌套规则、Fake-IP 过滤器与两类 DNS policy', () => {
+    const references = api.collectRuleSetReferences({
+      rules: [['RULE-SET,nested_route,默认代理,no-resolve']],
+      dns: {
+        'fake-ip-filter': ['rule-set:fake_ip_filter'],
+        'nameserver-policy': { 'rule-set:dns_policy,dns_policy_2': ['rcode://success'] },
+        'proxy-server-nameserver-policy': { 'rule-set:proxy_dns_policy': ['rcode://success'] },
+      },
+    });
+    for (const name of ['nested_route', 'fake_ip_filter', 'dns_policy', 'dns_policy_2', 'proxy_dns_policy'])
+      h.assert(references.has(name), `${name} 应被保留`);
+    h.assert(!references.has('unreferenced'));
+  });
+
   h.section('单元测试 · getMatchedRegions（地区匹配）');
   const matched = (name) => api.getMatchedRegions(name).map((r) => r.name);
   h.test('🇭🇰 香港 01 → 香港', () => h.assert(matched('🇭🇰 香港 01').includes('香港')));
@@ -162,7 +177,6 @@ function runUnitTests(h, api) {
     const out = apply([mkProxy('node.example.com')], { 'cdn.unrelated.com': '1.1.1.1', '+.other.com': '2.2.2.2' });
     h.assertEqual(out[0].server, 'node.example.com');
   });
-
 }
 
 module.exports = { runUnitTests };

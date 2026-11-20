@@ -21,10 +21,14 @@ function validateYamlClassicalRules(name, bytes) {
   const rules = document.toJS()?.payload;
   const validRule = /^(?:DOMAIN|DOMAIN-SUFFIX),[a-z0-9.-]+$/i;
   const validProcess = /^PROCESS-NAME,[^,\s]+$/i;
-  if (!Array.isArray(rules) || !rules.length || rules.some((rule) => typeof rule !== 'string' ||
-    (!validRule.test(rule) && !validProcess.test(rule))))
+  if (
+    !Array.isArray(rules) ||
+    !rules.length ||
+    rules.some((rule) => typeof rule !== 'string' || (!validRule.test(rule) && !validProcess.test(rule)))
+  )
     throw new Error(`${name}: invalid YAML classical domain rules`);
-  if (!rules.some((rule) => validRule.test(rule))) throw new Error(`${name}: no domain rules in YAML classical provider`);
+  if (!rules.some((rule) => validRule.test(rule)))
+    throw new Error(`${name}: no domain rules in YAML classical provider`);
 }
 
 async function fetchRule(name, url, { sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) } = {}) {
@@ -73,10 +77,17 @@ async function run() {
         if (bytes.length < 16 || bytes.subarray(0, 4).toString('hex') !== '28b52ffd')
           throw new Error(`${name}: invalid compressed MRS header`);
       } else if (spec.format === 'text' && spec.behavior === 'classical') {
-        const lines = new TextDecoder('utf-8', { fatal: true }).decode(bytes).split(/\r?\n/)
-          .map((line) => line.trim()).filter((line) => line && !line.startsWith('#'));
-        if (!lines.length || lines.some((line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line) &&
-          !/^DOMAIN-WILDCARD,[a-z0-9.*?-]+$/i.test(line)))
+        const lines = new TextDecoder('utf-8', { fatal: true })
+          .decode(bytes)
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line && !line.startsWith('#'));
+        if (
+          !lines.length ||
+          lines.some(
+            (line) => !/^DOMAIN(?:-SUFFIX)?,[a-z0-9.-]+$/i.test(line) && !/^DOMAIN-WILDCARD,[a-z0-9.*?-]+$/i.test(line),
+          )
+        )
           throw new Error(`${name}: invalid domain-only classical rules`);
       } else if (spec.format === 'yaml' && spec.behavior === 'classical') {
         validateYamlClassicalRules(name, bytes);

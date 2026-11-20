@@ -47,7 +47,9 @@ test('upstream fallback is limited to the configured rule repository', () => {
 });
 
 test('YAML classical provider validation accepts domain routes and process rules', () => {
-  const rules = Buffer.from('payload:\n  - DOMAIN,one.example\n  - DOMAIN-SUFFIX,two.example\n  - PROCESS-NAME,ExampleApp\n');
+  const rules = Buffer.from(
+    'payload:\n  - DOMAIN,one.example\n  - DOMAIN-SUFFIX,two.example\n  - PROCESS-NAME,ExampleApp\n',
+  );
   assert.doesNotThrow(() => validateYamlClassicalRules('apple_proxy', rules));
 });
 
