@@ -6,10 +6,49 @@ const net = require('node:net');
 const dgram = require('node:dgram');
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const YAML = require('yaml');
 const { build } = require('./build');
 const { fixtures, freePort } = require('./runtime-routing');
+
+function readGeolocationCnSnapshot(binary, rulesDir, temp) {
+  const config = build().config;
+  const spec = config['rule-providers']['geolocation-cn'];
+  assert.equal(spec?.format, 'mrs', 'geolocation-cn must remain an MRS domain provider');
+  const input = path.resolve(rulesDir, `geolocation-cn${path.extname(spec.path)}`);
+  const output = path.join(temp, 'geolocation-cn-dns-samples.txt');
+  const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output], {
+    encoding: 'utf8',
+    timeout: 10000,
+  });
+  assert.equal(result.status, 0, `geolocation-cn: ${result.stdout}\n${result.stderr}`);
+  const rules = fs
+    .readFileSync(output, 'utf8')
+    .split(/\r?\n/)
+    .map((line) => line.trim().toLowerCase())
+    .filter(Boolean);
+  const exact = new Set();
+  const suffix = new Set();
+  for (const rule of rules) {
+    if (/^domain,/i.test(rule)) exact.add(rule.split(',')[1]);
+    else if (/^domain-suffix,/i.test(rule)) suffix.add(rule.split(',')[1]);
+    else if (rule.startsWith('+.')) suffix.add(rule.slice(2));
+    else exact.add(rule);
+  }
+  const domainPattern = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9-]{2,}$/i;
+  const candidates = [...[...suffix].map((domain, index) => `dns-policy-probe-${index}.${domain}`), ...exact].filter(
+    (host) => domainPattern.test(host),
+  );
+  assert.ok(candidates.length, 'geolocation-cn snapshot has no usable DNS sample');
+  return { candidates, exact, suffix };
+}
+
+function matchesDomain(snapshot, host) {
+  host = host.toLowerCase();
+  if (snapshot.exact.has(host)) return true;
+  const labels = host.split('.');
+  return labels.some((_, index) => snapshot.suffix.has(labels.slice(index).join('.')));
+}
 
 async function dnsStub() {
   const queries = [];
@@ -61,6 +100,7 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
   const domestic = await dnsStub();
   const foreign = await dnsStub();
   const local = await fixtures();
+  const geolocationCn = readGeolocationCnSnapshot(binary, rulesDir, temp);
   const evidence = [];
   const node = { name: '美国 DNS 测试', type: 'socks5', server: '127.0.0.1', port: local.socksPort };
   const modes = [
@@ -148,9 +188,24 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
           await new Promise((resolve) => setTimeout(resolve, 100));
         }
         assert.ok(ready, logs);
+        let geolocationCnSample;
+        for (const host of geolocationCn.candidates.slice(0, 256)) {
+          domestic.queries.length = foreign.queries.length = 0;
+          const response = await api(`/dns/query?name=${host}&type=A`);
+          assert.equal(response.Status, 0, `${name}: ${host} A: ${JSON.stringify(response)}`);
+          if (
+            domestic.queries.some((query) => query.host === host) &&
+            !foreign.queries.some((query) => query.host === host)
+          ) {
+            geolocationCnSample = host;
+            break;
+          }
+        }
+        assert.ok(geolocationCnSample, `${name}: no geolocation-cn member used domestic DNS`);
+        evidence.push({ mode: name, host: geolocationCnSample, type: 'A-snapshot-sample', upstream: 'domestic' });
         const cases = [
-          ['i0.hdslb.com', options.国内CDN解析 !== false],
-          ['qhimgs7.com', options.国内CDN解析 !== false],
+          ['i0.hdslb.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'i0.hdslb.com')],
+          ['qhimgs7.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'qhimgs7.com')],
           ['res.cdn.office.net', options.微软下载解析 !== false],
           ['dl.steam.clngaa.com', options.Steam下载解析 !== false],
           ['alibaba.cdn.steampipe.steamcontent.com', options.Steam下载解析 !== false],
@@ -158,11 +213,11 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
           ['api.steamserver.net', false],
           ['store.steampowered.com', false],
           ['steamcommunity.com', false],
-          ['www.baidu.com', false],
-          ['www.qq.com', false],
-          ['www.bilibili.com', false],
-          ['download.dns-whitelist-probe.net', false],
-          ['fsend.cn', false],
+          ['www.baidu.com', matchesDomain(geolocationCn, 'www.baidu.com')],
+          ['www.qq.com', matchesDomain(geolocationCn, 'www.qq.com')],
+          ['www.bilibili.com', matchesDomain(geolocationCn, 'www.bilibili.com')],
+          ['download.dns-whitelist-probe.net', matchesDomain(geolocationCn, 'download.dns-whitelist-probe.net')],
+          ['fsend.cn', matchesDomain(geolocationCn, 'fsend.cn')],
           ['chatgpt.com', false],
           ['guzzoni.apple.com', false],
           ['mesu.apple.com', true],
@@ -187,8 +242,14 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
           }
         }
         for (const [host, allowed] of [
-          ['unknown-direct.dns-whitelist-probe.net', false],
-          ['cdn-direct.hdslb.com', options.国内CDN解析 !== false],
+          [
+            'unknown-direct.dns-whitelist-probe.net',
+            matchesDomain(geolocationCn, 'unknown-direct.dns-whitelist-probe.net'),
+          ],
+          [
+            'cdn-direct.hdslb.com',
+            options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'cdn-direct.hdslb.com'),
+          ],
         ]) {
           domestic.queries.length = foreign.queries.length = 0;
           const socket = local.track(net.connect(proxyPort, '127.0.0.1'));

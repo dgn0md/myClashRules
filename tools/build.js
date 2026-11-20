@@ -189,7 +189,7 @@ function render(config, api, settings) {
   const options = doc.getIn(['x-myClashRules', 'options'], true);
   for (const pair of options.items) pair.value.comment = ' ' + (descriptions[pair.key.value] || '');
   const comments = {
-    dns: 'DNS：白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH，默认国外解析使用 Cloudflare/Google DoT；直连不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。',
+    dns: 'DNS：geolocation-cn、白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH，默认国外解析使用 Cloudflare/Google DoT；其他直连规则不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。',
     tun: 'TUN 接管 TCP/UDP 53；strict-route 在支持的平台防多网卡旁路。关闭 TUN 需上级 DNS 接管。',
     'proxy-providers': '填入 Clash/Mihomo 订阅 URL；静态 provider 模式不能读取机场的顶层 DNS/hosts。',
     proxies: '自定义节点与五种直连出口；链式落地须在 x-myClashRules.customProxies 配置并重新生成。',

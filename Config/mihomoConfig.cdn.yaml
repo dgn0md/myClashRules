@@ -1,10 +1,10 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：3087770727d752ccef489dd1ee21f254f496624eab397c8eb95a8048c7d302cf
+# 最新 Raw SHA-256：9f43a9d52a6960a67bbf43be9494a4b9a8838c4a87f1ba728ec7098ff3aba206
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
-# 缓存 CDN SHA-256：aef1141e7d0edb611a5f54f1e65fd7a91c062d052018035ff3c7dbb2cab188b1
+# 缓存 CDN SHA-256：7b4e41b48cfe60d5ebaa52df3913a16d320b925e77e04f4744e5a8191771db40
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
@@ -70,7 +70,7 @@ x-myClashRules:
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:
-  # DNS：白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH，默认国外解析使用 Cloudflare/Google DoT；直连不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。
+  # DNS：geolocation-cn、白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH，默认国外解析使用 Cloudflare/Google DoT；其他直连规则不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。
   enable: true
   ipv6: true
   use-hosts: true
@@ -300,7 +300,10 @@ dns:
     rule-set:ehentai:
       - tls://one.one.one.one#EHentai
       - tls://dns.google#EHentai
-    rule-set:geolocation-cn,geolocation-!cn:
+    rule-set:geolocation-cn:
+      - quic://dns.alidns.com:853#DIRECT
+      - https://doh.pub/dns-query#DIRECT
+    rule-set:geolocation-!cn:
       - tls://one.one.one.one#默认代理
       - tls://dns.google#默认代理
   listen: 127.0.0.1:1053

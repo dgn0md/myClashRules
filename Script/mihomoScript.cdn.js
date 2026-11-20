@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：131b5a3c81dd1b9a5b762a452a402bac40a8f5348d410032ead7e2396f4b6ce7
+ * 最新 Raw SHA-256：5a7a8148d445ed2c38866e84d5d13a3003fc8fd61ad5e47ca34a4b8859b4a7cd
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：67544abdd4e8c8ec987d4a31406bdcf728c48be7a0ad1ab446e8e45faef01026
+ * 缓存 CDN SHA-256：64a5278a35e79312d43455ae75d99f422694f6d1b5c880e28e4af4052df4c60c
  */
 
 // --- 静态配置区域 ---
@@ -2165,8 +2165,9 @@ function applyDnsPolicies(config, options, specialRules) {
     if (providerName === 'private' || providerName.startsWith('domestic_')) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
     const dnsEgressGroup = config['proxy-groups'].find((group) => group.name === dnsEgressGroupName);
-    config.dns['nameserver-policy'][`rule-set:${providerName}`] =
-      providerName === 'apple_cn' ? chinaDNS : dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
+    config.dns['nameserver-policy'][`rule-set:${providerName}`] = ['apple_cn', 'geolocation-cn'].includes(providerName)
+      ? chinaDNS
+      : dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
   // Explicit proxy domain routes get their DNS egress group; direct routes use the DNS whitelist. Domain keyword/regex rules
   // use a classical rule-set so nameserver-policy can match the same domain predicate.
@@ -2188,6 +2189,9 @@ function applyDnsPolicies(config, options, specialRules) {
     const dnsEgressGroup = groups.find((group) => group.name === dnsEgressGroupName);
     config.dns['nameserver-policy'][policyKey] = dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
+  // geolocation-cn is the existing mainland domain DNS match set. Keep its policy even
+  // when the domestic-route switch removes its routing rule; specific policies must win.
+  if (config['rule-providers']['geolocation-cn']) config.dns['nameserver-policy']['rule-set:geolocation-cn'] = chinaDNS;
   // Mihomo 按 policy 顺序匹配；显式主机/后缀必须先于动态集合，不能只依赖键的具体程度。
   const dnsPolicyEntries = Object.entries(config.dns['nameserver-policy']);
   const orderedDnsPolicyEntries = [

@@ -10,8 +10,8 @@
 
 | 来源 | 本项目用途 | 更新与限制 |
 | --- | --- | --- |
-| [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。TV+ 使用 [`apple-tvplus`](https://github.com/v2fly/domain-list-community/blob/master/data/apple-tvplus) 动态集合，代替逐个主机规则。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；源内容变化会改变成员。 |
-| [Bett 厂商集合](https://github.com/appshubcc/bett-rules/tree/meta/geo/geosite) | 12 组国内服务路由使用 `alibaba`、`baidu`、`bilibili`、`bytedance`、`chinamobile`、`chinatelecom`、`chinaunicom`、`huaweicloud`、`jd`、`netease`、`tencent`、`xiaomi`。 | 23 个 HTTP provider 每 86400 秒直接更新；除百度外均用同源 `@!cn` provider 在运行时 AND/NOT 排除已标注海外成员。统一受 `国内服务优先直连` 控制。海外标注不完整不等于剩余域名必然在大陆；不授权国内 DNS。 |
+| [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、`geolocation-cn` 国内域名、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。TV+ 使用 [`apple-tvplus`](https://github.com/v2fly/domain-list-community/blob/master/data/apple-tvplus) 动态集合，代替逐个主机规则。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；`geolocation-cn` 成员用于现有国内 DNS policy，源内容变化会改变其授权范围。 |
+| [Bett 厂商集合](https://github.com/appshubcc/bett-rules/tree/meta/geo/geosite) | 12 组国内服务路由使用 `alibaba`、`baidu`、`bilibili`、`bytedance`、`chinamobile`、`chinatelecom`、`chinaunicom`、`huaweicloud`、`jd`、`netease`、`tencent`、`xiaomi`。 | 23 个 HTTP provider 每 86400 秒直接更新；除百度外均用同源 `@!cn` provider 在运行时 AND/NOT 排除已标注海外成员。统一受 `国内服务优先直连` 控制。海外标注不完整不等于剩余域名必然在大陆；厂商集合本身不授权 DNS，成员若重叠 `geolocation-cn` 则使用该集合的国内 DNS policy。 |
 | [SukkaW Surge](https://github.com/SukkaW/Surge) | [`apple_cn` 固定版本规则](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)：大陆专用 Apple classical 文本规则。 | 固定提交使规则内容可复现；它只表达规则列表，不判断解析 IP 的地理位置。 |
 | [Sukka 国内 CDN](https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt) 与 [Microsoft CDN](https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt) | DNS 专用 `dns_domestic_cdn`、`dns_microsoft_cdn`，使用 classical/text，分别受 `国内CDN解析`、`微软下载解析` 控制，默认开启。 | 客户端 HTTP provider 每 86400 秒直接更新；不在 CI 转换、筛选或重新发布。上游成员变化会扩大或缩小授权范围；沿用其 AGPL-3.0 声明。 |
 | [MetaCubeX Steam 国内集合](https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.list) | DNS 专用 `dns_steam_cn` 使用同路径 MRS，受默认开启的 `Steam下载解析` 控制。 | 仍由客户端每日直接更新。成品含宽泛服务器/用户内容后缀，脚本为 `steamserver.net`、`steamusercontent.com` 明确保留国外 DNS；其余国内下载、更新及中国站条目使用国内 DNS。不是直接解析 v2fly 原始文件，也不声称成品等同于纯 v2fly `@cn`。 |
@@ -51,10 +51,10 @@
 ## 依赖与优先级
 
 - 只保留被路由规则或 DNS policy 实际引用的 provider，避免删除仅供 DNS 使用的集合。
-- 通用 `cn` 域名集合不再用于国内 DNS 策略或 Fake-IP 过滤，仅在可选 QUIC 豁免规则引用时保留；`cn_ip` 继续末端直连兜底。
+- 通用 `cn` 域名集合不用于国内 DNS 策略或 Fake-IP 过滤，仅在可选 QUIC 豁免规则引用时保留；现有 `geolocation-cn` 域名 provider 单独使用国内 DNS policy；`cn_ip` 继续末端直连兜底。
 - DNS 白名单只参与 `nameserver-policy`，不增加连接直连规则。三个开关独立于普通服务组、极简模式和国内路由开关，关闭后不加载相应 provider；重叠集合及专项例外仍分别生效。
 - 白名单 policy 排在通用服务集合之前，让 CDN 子集不被 Microsoft/Steam 全量集合覆盖；Steam 的服务器/用户内容后缀使用显式国外解析 policy。显式主机/后缀 policy 排在所有 rule-set policy 之前，使 Apple/Siri 与 Steam 排除项在内核中实际优先。
-- 移除通用 `direct-nameserver` 及其独立缓存/解析路径；未知域名即使连接直连，也按统一 policy 和默认国外 DNS 解析。国内路由集合不再自动获得国内 DNS，移除的路由也不残留 DNS policy。
+- 移除通用 `direct-nameserver` 及其独立缓存/解析路径；未知域名即使连接直连，也按统一 policy 和默认国外 DNS 解析。国内服务路由集合本身不自动获得国内 DNS；命中 `geolocation-cn` 的域名使用其独立 policy，其他移除的路由不残留 DNS policy。
 - 国内解析例外还包括固定 `apple_cn`、启用模型直连时的四个 Apple CDN 精确域名，以及无合格 Siri 候选时普通 Apple 默认直连的既有解析回退。节点域名及 DNS 服务器启动解析仍使用国内加密 DNS。
 - 缓存和 Fake-IP 减少或延后部分查询，不保证消除真实解析；名单外的国内网站/CDN 可能因国外解析得到不同节点，需要在实际网络测量首次连接和下载表现。
 - Apple IP 使用 `apple_ip` 并路由到 `AppleProxy`。该规则排在 `cn_ip` 前面。

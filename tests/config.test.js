@@ -357,7 +357,7 @@ test('GLOBAL and default proxy prefer the requested available groups in both mod
   }
 });
 
-test('domestic vendor modules use dynamic sets without changing DNS authorization', () => {
+test('domestic vendor modules use dynamic sets without adding vendor-specific DNS policy', () => {
   const modules = [
     ['alibaba', true],
     ['baidu', false],
@@ -1351,7 +1351,7 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
   }
 });
 
-test('domestic DNS uses independent dynamic whitelist switches and no generic direct resolver', () => {
+test('domestic DNS policy covers geolocation-cn and independent dynamic whitelists', () => {
   const domesticResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
   const whitelist = {
     国内CDN解析: 'dns_domestic_cdn',
@@ -1371,8 +1371,9 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
         graph(config);
         assert.equal(config.dns['direct-nameserver'], undefined);
         assert.equal(config.dns['direct-nameserver-follow-policy'], undefined);
-        for (const provider of ['cn', 'douyin', 'geolocation-cn', 'games_cn', 'microsoft_cn', 'apple_cn'])
+        for (const provider of ['cn', 'douyin', 'games_cn', 'microsoft_cn', 'apple_cn'])
           assert.equal(policyForRuleSet(config, provider), undefined, `${provider} must not retain a stale policy`);
+        assert.deepEqual(policyForRuleSet(config, 'geolocation-cn'), domesticResolvers);
         assert.ok(!config.dns['fake-ip-filter'].includes('rule-set:cn'));
         for (const [option, name] of Object.entries(whitelist)) {
           const provider = config['rule-providers'][name];
@@ -1401,6 +1402,13 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
   assert.ok(keys.indexOf('+.guzzoni.apple.com') < keys.indexOf(domesticWhitelistKey));
   assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'microsoft')));
   assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'steam')));
+  assert.ok(
+    keys.indexOf(policyKeyForRuleSet(config, 'microsoft')) <
+      keys.indexOf(policyKeyForRuleSet(config, 'geolocation-cn')),
+  );
+  assert.ok(
+    keys.indexOf(policyKeyForRuleSet(config, 'steam')) < keys.indexOf(policyKeyForRuleSet(config, 'geolocation-cn')),
+  );
   const domesticKeys = Object.entries(config.dns['nameserver-policy'])
     .filter(([, value]) => JSON.stringify(value) === JSON.stringify(domesticResolvers))
     .map(([key]) => key)
@@ -1409,6 +1417,7 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
     domesticKeys,
     [
       domesticWhitelistKey,
+      policyKeyForRuleSet(config, 'geolocation-cn'),
       'rule-set:apple_cn',
       'gdmf.apple.com',
       'mesu.apple.com',
@@ -1445,7 +1454,7 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
     } else if (target === '直连')
       assert.deepEqual(
         dns,
-        providerName === 'apple_cn'
+        ['apple_cn', 'geolocation-cn'].includes(providerName)
           ? ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT']
           : config.dns.nameserver,
       );
