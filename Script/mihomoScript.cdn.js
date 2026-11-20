@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：5a7a8148d445ed2c38866e84d5d13a3003fc8fd61ad5e47ca34a4b8859b4a7cd
+ * 最新 Raw SHA-256：38684bd4e435af7371e431b785e19b42876085b618f7ef33c84af6d07fe14b9c
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：64a5278a35e79312d43455ae75d99f422694f6d1b5c880e28e4af4052df4c60c
+ * 缓存 CDN SHA-256：59ee8b2a5fd3783bf382403a96f647a074a1b33f6a308eb0367d3d413fc3c639
  */
 
 // --- 静态配置区域 ---
@@ -332,7 +332,7 @@ const ruleProviderCommonIpcidr = {
 };
 
 // 大陆核心服务与基础设施厂商动态集合；子品牌尽量由其厂商集合覆盖。
-// Bett 当前没有 baidu@!cn，百度按完整厂商集合路由；其他模块排除同源海外子集。
+// Bett 当前没有 baidu@!cn，百度按完整厂商集合路由和 DNS；其他模块排除同源海外子集。
 const domesticServiceModules = [
   { source: 'alibaba' },
   { source: 'baidu', excludeOverseas: false },
@@ -349,7 +349,8 @@ const domesticServiceModules = [
 ];
 
 function buildDomesticServiceRoutes(providers) {
-  if (!ruleOptionsEnable.国内服务优先直连) return [];
+  const routesEnabled = ruleOptionsEnable.国内服务优先直连;
+  if (!routesEnabled) return [];
   const rules = [];
   for (const { source, excludeOverseas = true } of domesticServiceModules) {
     const name = `domestic_${source}`;
@@ -371,6 +372,12 @@ function buildDomesticServiceRoutes(providers) {
       url: `${ruleSetBaseUrl}geosite/${overseasFile}.mrs`,
       path: `./ruleset/${overseas}.mrs`,
       'path-in-bundle': `geo/geosite/${overseasFile}.mrs`,
+    };
+    providers[`${name}_dns`] = {
+      type: 'inline',
+      format: 'text',
+      behavior: 'classical',
+      payload: [`AND,((RULE-SET,${name}),(NOT,((RULE-SET,${overseas}))))`],
     };
     rules.push(`AND,((RULE-SET,${name}),(NOT,((RULE-SET,${overseas})))),直连`);
   }
@@ -2161,7 +2168,7 @@ function applyDnsPolicies(config, options, specialRules) {
     if (!domainRuleSetEgress.has(providerName)) domainRuleSetEgress.set(providerName, target);
   }
   for (const [providerName, target] of domainRuleSetEgress) {
-    // Domestic vendor providers choose only the connection route; they do not grant DNS policy.
+    // Domestic vendor route providers use their narrower compound DNS policies below.
     if (providerName === 'private' || providerName.startsWith('domestic_')) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
     const dnsEgressGroup = config['proxy-groups'].find((group) => group.name === dnsEgressGroupName);
@@ -2189,14 +2196,26 @@ function applyDnsPolicies(config, options, specialRules) {
     const dnsEgressGroup = groups.find((group) => group.name === dnsEgressGroupName);
     config.dns['nameserver-policy'][policyKey] = dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
+  // Domestic vendor DNS policies follow the domestic-service route switch: paired sets use the
+  // same AND NOT predicate as routing, while Baidu has no upstream @!cn subset and uses its full set.
+  for (const { source, excludeOverseas = true } of domesticServiceModules) {
+    const providerName = excludeOverseas ? `domestic_${source}_dns` : `domestic_${source}`;
+    if (config['rule-providers'][providerName]) config.dns['nameserver-policy'][`rule-set:${providerName}`] = chinaDNS;
+  }
   // geolocation-cn is the existing mainland domain DNS match set. Keep its policy even
   // when the domestic-route switch removes its routing rule; specific policies must win.
   if (config['rule-providers']['geolocation-cn']) config.dns['nameserver-policy']['rule-set:geolocation-cn'] = chinaDNS;
   // Mihomo 按 policy 顺序匹配；显式主机/后缀必须先于动态集合，不能只依赖键的具体程度。
   const dnsPolicyEntries = Object.entries(config.dns['nameserver-policy']);
+  const ruleSetEntries = dnsPolicyEntries.filter(([key]) => key.startsWith('rule-set:'));
+  const ruleSetProviders = (key) => key.slice('rule-set:'.length).split(',');
+  const isDomesticVendorPolicy = (key) => ruleSetProviders(key).some((name) => name.startsWith('domestic_'));
+  const isGeolocationPolicy = (key) => ruleSetProviders(key).some((name) => name.startsWith('geolocation-'));
   const orderedDnsPolicyEntries = [
     ...dnsPolicyEntries.filter(([key]) => !key.startsWith('rule-set:')),
-    ...dnsPolicyEntries.filter(([key]) => key.startsWith('rule-set:')),
+    ...ruleSetEntries.filter(([key]) => !isDomesticVendorPolicy(key) && !isGeolocationPolicy(key)),
+    ...ruleSetEntries.filter(([key]) => isDomesticVendorPolicy(key)),
+    ...ruleSetEntries.filter(([key]) => isGeolocationPolicy(key)),
   ];
   const compactDnsPolicyEntries = [];
   for (const [key, resolvers] of orderedDnsPolicyEntries) {
@@ -2249,6 +2268,16 @@ function validateStrictDnsSettings(config, options) {
 function cleanupUnusedRuleProviders(config) {
   // 规则依赖按实际引用保留；DNS 使用的规则集也必须保留（不能只扫描 rules）。
   const references = collectRuleSetReferences([config.rules, config.dns]);
+  const pending = [...references];
+  while (pending.length) {
+    const provider = config['rule-providers'][pending.pop()];
+    if (provider?.type !== 'inline') continue;
+    for (const dependency of collectRuleSetReferences(provider.payload)) {
+      if (references.has(dependency)) continue;
+      references.add(dependency);
+      pending.push(dependency);
+    }
+  }
   for (const key of Object.keys(config['rule-providers'])) {
     if (!references.has(key)) delete config['rule-providers'][key];
   }

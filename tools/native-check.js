@@ -129,7 +129,7 @@ async function run() {
   }
   const modules = [];
   for (const name of Object.keys(providers).filter(
-    (name) => name.startsWith('domestic_') && !name.endsWith('_noncn'),
+    (name) => name.startsWith('domestic_') && !name.endsWith('_noncn') && !name.endsWith('_dns'),
   )) {
     const full = readDomainSnapshot(name);
     const overseasProvider = providers[`${name}_noncn`];

@@ -7,7 +7,7 @@
 ## 项目重点
 
 - **Apple 精细分流**：将 Apple Intelligence / Siri、`AppleProxy` 动态集合与产品入口、其他 Apple 服务分组。Siri 组默认美国，没有合格地区候选时拒绝连接；`AppleProxy` 初始选择美国且可切换直连；其他 Apple 服务默认直连。共享端点和 DNS policy 的细节见 [Apple 路由说明](docs/apple-routing.md)。
-- **DNS policy 与出口联动**：现有 `geolocation-cn` 域名 provider 和国内 CDN、Microsoft 下载、Steam 国内节点使用国内加密 DNS；后三者由默认开启的独立开关控制。其他直连规则不自动授权国内解析；地区服务保持专属解析出口。严格模式不接受生成配置里的明文或不安全 DNS，也不静默回退。它描述的是配置行为，不代表所有设备流量都已被接管。
+- **DNS policy 与出口联动**：现有 `geolocation-cn`、国内 CDN、Microsoft 下载、Steam 国内节点及国内服务集合使用国内加密 DNS；11 组服务集合按 `domestic AND NOT domestic_noncn`，百度按完整集合匹配，厂商 DNS policy 随 `国内服务优先直连` 开关启停。后三个白名单开关默认开启且可独立关闭。其他直连规则不自动授权国内解析；地区服务保持专属解析出口。严格模式不接受生成配置里的明文或不安全 DNS，也不静默回退。它描述的是配置行为，不代表所有设备流量都已被接管。
 - **机场配置只接管节点**：展开订阅时处理节点；机场 DNS、路由、策略组和其他非节点设置由脚本重建。机场 hosts 只在满足节点改写条件时用于改写节点 server，不复制到结果配置。
 - **纯 IP 域名识别**：从支持的 HTTP Host、TLS SNI 与 QUIC 元数据补充路由所需域名；不解密 HTTPS，也不改写目标地址。
 - **脚本与静态配置同源**：`Script/mihomoScript.js` 是规则和选项的来源；`Config/mihomoConfig.yaml` 由 GitHub Actions 构建并回写。YAML 中的 `x-myClashRules` 扩展字段供构建工具读取。
@@ -19,16 +19,16 @@
 提供 26 个地区节点组、倍率和家宽节点分类、AI / Google / YouTube / Microsoft 等常见服务分流，以及手动选择、测速、负载均衡和链式代理等配置选项。
 私网 IP 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用代理出口及 `no-resolve`，关闭服务组或启用极简模式时改用 `默认代理`。Apple、Microsoft、Steam、Netflix、Spotify IP 也使用 `no-resolve` 并保留原有出口组；`cn_ip` 不加该参数，保留末端解析直连兜底。AI 当前使用域名集合，没有独立 IP 集合。
 `GLOBAL` 首次默认选择 `美国`，`默认代理` 首次默认选择 `自动选择ex(大陆&香港)`；仅在相应候选组存在时生效，已有客户端选择缓存优先。
-阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米提供国内服务直连模块（统一受默认开启的 `国内服务优先直连` 开关控制）。模块动态使用 Bett 厂商集合，有同源 `@!cn` 海外子集时予以排除；阿里/淘宝、腾讯云、火山引擎等子品牌由上层厂商集合覆盖，不重复加载。百度当前没有配套 `@!cn` 子集，使用完整百度集合。模块只决定连接出口；同时属于 `geolocation-cn` 的域名由该集合的 DNS policy 使用国内解析，未标注海外的共享域名仍依赖上游分类质量。
+阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米提供国内服务模块，连接规则和厂商 DNS policy 统一受默认开启的 `国内服务优先直连` 控制。模块动态使用 Bett 厂商集合，有同源 `@!cn` 海外子集时，路由和 DNS 都排除该子集；百度当前没有配套子集，因此完整百度集合使用国内加密 DNS。阿里/淘宝、腾讯云、火山引擎等子品牌由上层厂商集合覆盖，不重复加载；未标注海外的共享域名仍依赖上游分类质量。
 测速域名 `cp.cloudflare.com` 的路由及加密 DNS policy 指向 `默认代理`；测速请求本身由内核通过被测节点发起。
 
-DNS policy 不强制修改连接路由。`geolocation-cn` 成员始终使用国内加密 DNS；关闭单个白名单开关只撤销该白名单授权，其他集合或专项例外仍可覆盖同一域名。Apple 精确 CDN 与无合格 Siri 地区时的普通 Apple 解析例外保持原有行为。节点域名及 DNS 服务器启动解析仍使用国内加密 DNS；这不代表完全不向国内解析器发送查询。来源、重叠处理和边界见 [规则来源说明](docs/rule-sources.md)。
+DNS policy 不强制修改连接路由。`geolocation-cn` 成员始终使用国内加密 DNS；国内服务的厂商 DNS policy 随 `国内服务优先直连` 开关启停。关闭单个 DNS 白名单开关只撤销该白名单授权，其他集合或专项例外仍可覆盖同一域名。Apple 精确 CDN 与无合格 Siri 地区时的普通 Apple 解析例外保持原有行为。节点域名及 DNS 服务器启动解析仍使用国内加密 DNS；这不代表完全不向国内解析器发送查询。来源、重叠处理和边界见 [规则来源说明](docs/rule-sources.md)。
 
 ## 发布入口
 
-| **产物** | **Raw下载** | **CDN下载** |
-| ------ | --------- | --------- |
-| 全量覆写脚本 | [mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js) | [mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js) |
+| **产物**     | **Raw下载**                                                                                              | **CDN下载**                                                                                                |
+| ------------ | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 全量覆写脚本 | [mihomoScript.js](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js)     | [mihomoScript.cdn.js](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js)     |
 | 全量静态配置 | [mihomoConfig.yaml](https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml) | [mihomoConfig.cdn.yaml](https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml) |
 
 ## 使用
@@ -54,7 +54,7 @@ GitHub Actions 每天定时验证并重生静态配置；脚本、配置开关�
 
 ## 维护原则
 
-后续 DNS、规则源和开关更新遵守 [国内 DNS 白名单维护原则](docs/dns-whitelist.md) 与 [仓库维护约定](AGENTS.md)：连接直连不自动授权国内解析，现有 `geolocation-cn` policy 除外；保留独立 DNS 白名单、Apple/启动解析例外及 Steam 排除项；客户端 HTTP provider 每日直接更新，上游成员不经本仓库 CI 筛选发布。
+后续 DNS、规则源和开关更新遵守 [国内 DNS 白名单维护原则](docs/dns-whitelist.md) 与 [仓库维护约定](AGENTS.md)：连接直连不自动授权国内解析；授权范围来自现有 `geolocation-cn`、受国内服务开关控制的厂商集合、独立 DNS 白名单和专项例外。客户端 HTTP provider 每日直接更新，上游成员不经本仓库 CI 筛选发布。
 
 ## 开发
 

@@ -57,7 +57,10 @@ function graph(config) {
     const target = parts.at(-1) === 'no-resolve' ? parts.at(-2) : parts.at(-1);
     assert.ok(exists(target), `unknown rule target ${rule}`);
   }
-  const refs = JSON.stringify([config.rules, config.dns]);
+  const providerPayloads = Object.values(config['rule-providers']).map((provider) =>
+    provider.type === 'inline' ? provider.payload : [],
+  );
+  const refs = JSON.stringify([config.rules, config.dns, providerPayloads]);
   for (const match of refs.matchAll(/RULE-SET,([A-Za-z0-9_!@.-]+)/g))
     assert.ok(config['rule-providers'][match[1]], `missing provider ${match[1]}`);
   const dnsRuleSetProviders = new Set([
@@ -357,7 +360,7 @@ test('GLOBAL and default proxy prefer the requested available groups in both mod
   }
 });
 
-test('domestic vendor modules use dynamic sets without adding vendor-specific DNS policy', () => {
+test('domestic vendor DNS policies follow the route toggle and match domestic sets', () => {
   const modules = [
     ['alibaba', true],
     ['baidu', false],
@@ -372,6 +375,7 @@ test('domestic vendor modules use dynamic sets without adding vendor-specific DN
     ['tencent', true],
     ['xiaomi', true],
   ];
+  const domesticResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const baseline = build({
@@ -414,7 +418,55 @@ test('domestic vendor modules use dynamic sets without adding vendor-specific DN
             if (!enabled) continue;
             assert.ok(config['rule-providers'][provider].url.endsWith(`/geosite/${file}.mrs`));
             assert.equal(config['rule-providers'][provider].interval, 86400);
-            assert.ok(!Object.keys(config.dns['nameserver-policy']).some((key) => key.includes(provider)));
+          }
+          const dnsProvider = `${name}_dns`;
+          if (excludeOverseas) {
+            assert.equal(
+              !!config['rule-providers'][dnsProvider],
+              enabled,
+              `${dnsProvider} should follow 国内服务优先直连`,
+            );
+            if (enabled)
+              assert.deepEqual(config['rule-providers'][dnsProvider], {
+                type: 'inline',
+                format: 'text',
+                behavior: 'classical',
+                payload: [`AND,((RULE-SET,${name}),(NOT,((RULE-SET,${name}_noncn))))`],
+              });
+            assert.deepEqual(policyForRuleSet(config, dnsProvider), enabled ? domesticResolvers : undefined);
+            assert.equal(policyForRuleSet(config, name), undefined);
+            assert.equal(policyForRuleSet(config, `${name}_noncn`), undefined);
+            if (enabled) {
+              const policyIndex = Object.keys(config.dns['nameserver-policy']).indexOf(
+                policyKeyForRuleSet(config, dnsProvider),
+              );
+              const geolocationIndex = Object.keys(config.dns['nameserver-policy']).indexOf(
+                policyKeyForRuleSet(config, 'geolocation-cn'),
+              );
+              const providerOrder = policyKeyForRuleSet(config, dnsProvider).slice('rule-set:'.length).split(',');
+              assert.ok(
+                policyIndex <= geolocationIndex &&
+                  providerOrder.indexOf(dnsProvider) < providerOrder.indexOf('geolocation-cn'),
+                `${dnsProvider} must precede the broad geolocation-cn policy`,
+              );
+            }
+          } else {
+            assert.equal(config['rule-providers'][dnsProvider], undefined);
+            assert.deepEqual(policyForRuleSet(config, name), enabled ? domesticResolvers : undefined);
+            if (enabled) {
+              const policyIndex = Object.keys(config.dns['nameserver-policy']).indexOf(
+                policyKeyForRuleSet(config, name),
+              );
+              const geolocationIndex = Object.keys(config.dns['nameserver-policy']).indexOf(
+                policyKeyForRuleSet(config, 'geolocation-cn'),
+              );
+              const providerOrder = policyKeyForRuleSet(config, name).slice('rule-set:'.length).split(',');
+              assert.ok(
+                policyIndex <= geolocationIndex &&
+                  providerOrder.indexOf(name) < providerOrder.indexOf('geolocation-cn'),
+                `${name} must precede the broad geolocation-cn policy`,
+              );
+            }
           }
           if (enabled) {
             const index = config.rules.indexOf(rule);
@@ -963,16 +1015,32 @@ test('default YAML is deterministic, commented and contains no template credenti
   const metadata = YAML.parse(text)['x-myClashRules'];
   assert.equal(text, build({ settings: metadata }).text);
 });
-test('provider cleanup preserves nested route, Fake-IP, and both DNS policy references', () => {
+test('provider cleanup preserves nested route, Fake-IP, DNS policy and inline DNS dependencies', () => {
   const api = loadScript('Script/mihomoScript.js', (source) => {
     const transformed = source.replace(
       '  return finalizeMyClashRules(newConfig);',
       `  const cleanupProvider = { type: 'inline', behavior: 'domain', payload: [] };
-  for (const name of ['cleanup_nested_route', 'cleanup_fake_ip', 'cleanup_dns_policy', 'cleanup_proxy_dns_policy', 'cleanup_unused'])
+  for (const name of [
+    'cleanup_nested_route',
+    'cleanup_fake_ip',
+    'cleanup_dns_policy',
+    'cleanup_proxy_dns_policy',
+    'cleanup_dns_predicate',
+    'cleanup_dns_predicate_full',
+    'cleanup_dns_predicate_noncn',
+    'cleanup_unused',
+  ])
     newConfig['rule-providers'][name] = { ...cleanupProvider };
+  newConfig['rule-providers'].cleanup_dns_predicate = {
+    type: 'inline',
+    behavior: 'classical',
+    format: 'text',
+    payload: ['AND,((RULE-SET,cleanup_dns_predicate_full),(NOT,((RULE-SET,cleanup_dns_predicate_noncn))))'],
+  };
   newConfig.rules.push('RULE-SET,cleanup_nested_route,默认代理,no-resolve');
   newConfig.dns['fake-ip-filter'].push('rule-set:cleanup_fake_ip');
   newConfig.dns['nameserver-policy']['rule-set:cleanup_dns_policy'] = 'rcode://success';
+  newConfig.dns['nameserver-policy']['rule-set:cleanup_dns_predicate'] = 'rcode://success';
   newConfig.dns['proxy-server-nameserver-policy']['rule-set:cleanup_proxy_dns_policy'] = 'rcode://success';
   return finalizeMyClashRules(newConfig);`,
     );
@@ -981,7 +1049,15 @@ test('provider cleanup preserves nested route, Fake-IP, and both DNS policy refe
   });
   const config = api.main(clean());
   graph(config);
-  for (const name of ['cleanup_nested_route', 'cleanup_fake_ip', 'cleanup_dns_policy', 'cleanup_proxy_dns_policy'])
+  for (const name of [
+    'cleanup_nested_route',
+    'cleanup_fake_ip',
+    'cleanup_dns_policy',
+    'cleanup_proxy_dns_policy',
+    'cleanup_dns_predicate',
+    'cleanup_dns_predicate_full',
+    'cleanup_dns_predicate_noncn',
+  ])
     assert.ok(config['rule-providers'][name], `${name} should be retained`);
   assert.equal(config['rule-providers'].cleanup_unused, undefined);
 });

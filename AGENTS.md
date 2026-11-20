@@ -30,7 +30,7 @@
   - `Other Apple Service` 连接默认直连；通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS policy 使用 `Siri Ai/Apple Intelligence` 当前选择。没有合格的 Siri 地区候选且普通 Apple 默认直连时，这些域名改用国内加密直连 DNS，避免直连连接被 NXDOMAIN 阻断。
   - AppleProxy 动态集合、Apple 产品入口与 `apple_ip` 进入 `AppleProxy`；`apple-dns.net` 和 `apple-dns.com` 的 DNS policy 使用该组。
 - `private` 和拒绝出口可用专用安全 policy。`geolocation-cn` 成员、国内 DNS 白名单及上述 Apple 例外使用国内加密 DNS；其他业务查询使用国外加密 DNS。节点/DoH 启动解析保留国内加密 DNS。IP-CIDR provider 本身没有域名 DNS。
-- 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米国内路由模块使用 Bett 厂商集合；有同源 `@!cn` 子集时先减去该子集，百度当前没有配套子集。统一受默认开启的 `国内服务优先直连` 开关控制；专用服务规则先于模块，模块先于通用 CN 域名、国外域名与 IP 兜底。模块自身只授权连接直连，不为整厂商集合生成 DNS policy；与 `geolocation-cn` 重叠的域名使用该集合的国内 DNS policy。海外标注不完整仍可能影响分类。
+- 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米国内服务模块使用 Bett 厂商集合；有同源 `@!cn` 子集时，路由与国内 DNS policy 都按 `domestic AND NOT domestic_noncn` 匹配，百度没有配套子集，路由和 DNS policy 都使用完整百度集合。连接规则与厂商 DNS policy 统一受默认开启的 `国内服务优先直连` 控制；专用服务规则先于模块，模块先于通用 CN 域名、国外域名与 IP 兜底。海外标注不完整仍可能影响分类。
 - IP 规则顺序保留 `apple_ip`、`private_ip`、服务 IP、`cn_ip` 直连兜底的优先级，避免服务 IP 被通用 CN 集合先匹配。
 - Apple 精确规则须先于广告、Apple CN 和可选 QUIC 拒绝规则。不得用整个 Apple、Cloudflare 或 `17/8` 网段代替精细端点分流。
 - 策略组名称原样保留：`Siri Ai/Apple Intelligence`、`AppleProxy`、`Other Apple Service`。旧 `Apple Product地区` 开关作为 `AppleProxy` 的兼容别名读取。
@@ -38,10 +38,10 @@
 
 ## 国内 DNS 白名单原则
 
-- 连接路由与国内 DNS 授权独立；普通直连、`cn_ip` 命中及通用 `cn`/`douyin` 集合不自动授权国内解析。现有 `geolocation-cn` 域名 provider 单独授权其成员使用国内加密 DNS；该 policy 不新增规则集或路由。不配置通用 `direct-nameserver`，不因未命中或解析失败而回退国内 DNS。
+- 连接路由和 DNS 解析器分别决定；普通直连、`cn_ip` 命中及通用 `cn`/`douyin` 集合不自动授权国内解析。`geolocation-cn` 独立授权其动态成员；国内服务模块开启时，11 组配对集合按 `domestic AND NOT domestic_noncn`、百度按完整集合授权国内加密 DNS，均随 `国内服务优先直连` 开关启停，不新增域名规则清单。不配置通用 `direct-nameserver`，不因未命中或解析失败而回退国内 DNS。
 - `国内CDN解析`、`微软下载解析`、`Steam下载解析` 默认开启并可独立关闭，不受服务组、极简模式或国内路由开关隐式控制。名单重叠与专项例外分别判断，不能把关闭单个集合描述为禁止域名的一切国内解析。
 - 客户端 HTTP provider 每 86400 秒直接更新上游；不改为 CI 筛选、合并或发布仓库白名单。配置构建与运行时规则更新分别维护。
-- 显式主机/后缀 DNS policy 先于动态集合；白名单与更具体服务 policy 先于广域 `geolocation-cn` policy。保留 Steam 服务器/用户内容域的国外解析和 Apple 专项例外。新源须审查实际成员，不能直接采用通用 CDN、整厂商或公共云大集合。
+- 显式主机/后缀 DNS policy 先于动态集合；白名单与更具体服务 policy 先于国内服务 policy，再先于广域 `geolocation-cn` policy。保留 Steam 服务器/用户内容域的国外解析和 Apple 专项例外。新源须审查实际成员，不能直接采用通用 CDN、整厂商或公共云大集合。
 - 修改白名单/解析器/优先级时同步 [统一原则](docs/dns-whitelist.md)、功能文档和配置/原生回归；保留 DNS 专用 provider 的引用，禁止以通用国内 DNS 兜底修复可用性。缓存、Fake-IP、DoH 与 `no-resolve` 均不能作为“零泄漏”证明。
 
 ## 文档、数据与验收

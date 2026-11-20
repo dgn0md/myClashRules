@@ -27,7 +27,7 @@
 - 配置回归断言 `apple_ip` 在 `cn_ip` 前进入 `AppleProxy`，AppleProxy/TV+ 动态集合使用同一产品组，`gspe1-ssl.ls.apple.com` 进入 `Siri Ai/Apple Intelligence`，`gateway.icloud.com` / `setup.icloud.com` 精确进入 `Other Apple Service` 且 DNS 跟随 Siri 选择。
 - Apple News、Fitness、Sports、Books、PCC、Siri 和模型下载的有限端点按功能范围回归；上游 Apple 集合未覆盖这些组的边界时，不用宽泛集合代替。
 - 实际 rule provider 保持加载，用回环 CONNECT 检查命中的规则与策略链；DNS 检查将上游替换为本地计数器，不产生公共业务 DNS 查询。
-- 国内 DNS 回归从实际 `geolocation-cn` 快照抽取样本，并覆盖白名单 provider 开关、重叠集合、Steam 排除项、名单外查询、A/AAAA 与直连拨号；它验证生成策略在隔离环境的选择，不测量真实线路延迟。
+- 国内 DNS 回归从实际 `geolocation-cn` 与 Bett 国内服务快照抽取样本，覆盖 `domestic AND NOT domestic_noncn` 命中与排除、完整百度集合、厂商 DNS policy 随国内路由开关启停、白名单 provider 开关、重叠集合、Steam 排除项、名单外查询、A/AAAA 与直连拨号；它验证生成策略在隔离环境的选择，不测量真实线路延迟。
 
 ## CI 与用户网络
 

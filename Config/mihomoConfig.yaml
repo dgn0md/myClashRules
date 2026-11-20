@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：9f43a9d52a6960a67bbf43be9494a4b9a8838c4a87f1ba728ec7098ff3aba206
+# 最新 Raw SHA-256：ea93768cee5e6a2605621f9b202edd905c94046b098a6244f0f9257499aea90f
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -69,7 +69,7 @@ x-myClashRules:
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:
-  # DNS：geolocation-cn、白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH，默认国外解析使用 Cloudflare/Google DoT；其他直连规则不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。
+  # DNS：geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH；厂商 DNS policy 随国内服务优先直连开关启停。默认国外解析使用 Cloudflare/Google DoT；其他直连规则不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。
   enable: true
   ipv6: true
   use-hosts: true
@@ -299,7 +299,7 @@ dns:
     rule-set:ehentai:
       - tls://one.one.one.one#EHentai
       - tls://dns.google#EHentai
-    rule-set:geolocation-cn:
+    rule-set:domestic_alibaba_dns,domestic_baidu,domestic_bilibili_dns,domestic_bytedance_dns,domestic_chinamobile_dns,domestic_chinatelecom_dns,domestic_chinaunicom_dns,domestic_huaweicloud_dns,domestic_jd_dns,domestic_netease_dns,domestic_tencent_dns,domestic_xiaomi_dns,geolocation-cn:
       - quic://dns.alidns.com:853#DIRECT
       - https://doh.pub/dns-query#DIRECT
     rule-set:geolocation-!cn:
@@ -2827,6 +2827,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/alibaba@!cn.mrs
     path: ./ruleset/domestic_alibaba_noncn.mrs
     path-in-bundle: geo/geosite/alibaba@!cn.mrs
+  domestic_alibaba_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_alibaba),(NOT,((RULE-SET,domestic_alibaba_noncn))))
   domestic_baidu:
     type: http
     format: mrs
@@ -2851,6 +2857,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bilibili@!cn.mrs
     path: ./ruleset/domestic_bilibili_noncn.mrs
     path-in-bundle: geo/geosite/bilibili@!cn.mrs
+  domestic_bilibili_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_bilibili),(NOT,((RULE-SET,domestic_bilibili_noncn))))
   domestic_bytedance:
     type: http
     format: mrs
@@ -2867,6 +2879,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bytedance@!cn.mrs
     path: ./ruleset/domestic_bytedance_noncn.mrs
     path-in-bundle: geo/geosite/bytedance@!cn.mrs
+  domestic_bytedance_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_bytedance),(NOT,((RULE-SET,domestic_bytedance_noncn))))
   domestic_chinamobile:
     type: http
     format: mrs
@@ -2883,6 +2901,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinamobile@!cn.mrs
     path: ./ruleset/domestic_chinamobile_noncn.mrs
     path-in-bundle: geo/geosite/chinamobile@!cn.mrs
+  domestic_chinamobile_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_chinamobile),(NOT,((RULE-SET,domestic_chinamobile_noncn))))
   domestic_chinatelecom:
     type: http
     format: mrs
@@ -2899,6 +2923,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinatelecom@!cn.mrs
     path: ./ruleset/domestic_chinatelecom_noncn.mrs
     path-in-bundle: geo/geosite/chinatelecom@!cn.mrs
+  domestic_chinatelecom_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_chinatelecom),(NOT,((RULE-SET,domestic_chinatelecom_noncn))))
   domestic_chinaunicom:
     type: http
     format: mrs
@@ -2915,6 +2945,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinaunicom@!cn.mrs
     path: ./ruleset/domestic_chinaunicom_noncn.mrs
     path-in-bundle: geo/geosite/chinaunicom@!cn.mrs
+  domestic_chinaunicom_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_chinaunicom),(NOT,((RULE-SET,domestic_chinaunicom_noncn))))
   domestic_huaweicloud:
     type: http
     format: mrs
@@ -2931,6 +2967,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/huaweicloud@!cn.mrs
     path: ./ruleset/domestic_huaweicloud_noncn.mrs
     path-in-bundle: geo/geosite/huaweicloud@!cn.mrs
+  domestic_huaweicloud_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_huaweicloud),(NOT,((RULE-SET,domestic_huaweicloud_noncn))))
   domestic_jd:
     type: http
     format: mrs
@@ -2947,6 +2989,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/jd@!cn.mrs
     path: ./ruleset/domestic_jd_noncn.mrs
     path-in-bundle: geo/geosite/jd@!cn.mrs
+  domestic_jd_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_jd),(NOT,((RULE-SET,domestic_jd_noncn))))
   domestic_netease:
     type: http
     format: mrs
@@ -2963,6 +3011,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease@!cn.mrs
     path: ./ruleset/domestic_netease_noncn.mrs
     path-in-bundle: geo/geosite/netease@!cn.mrs
+  domestic_netease_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_netease),(NOT,((RULE-SET,domestic_netease_noncn))))
   domestic_tencent:
     type: http
     format: mrs
@@ -2979,6 +3033,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent@!cn.mrs
     path: ./ruleset/domestic_tencent_noncn.mrs
     path-in-bundle: geo/geosite/tencent@!cn.mrs
+  domestic_tencent_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_tencent),(NOT,((RULE-SET,domestic_tencent_noncn))))
   domestic_xiaomi:
     type: http
     format: mrs
@@ -2995,6 +3055,12 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/xiaomi@!cn.mrs
     path: ./ruleset/domestic_xiaomi_noncn.mrs
     path-in-bundle: geo/geosite/xiaomi@!cn.mrs
+  domestic_xiaomi_dns:
+    type: inline
+    format: text
+    behavior: classical
+    payload:
+      - AND,((RULE-SET,domestic_xiaomi),(NOT,((RULE-SET,domestic_xiaomi_noncn))))
   apple_tv:
     type: http
     format: mrs

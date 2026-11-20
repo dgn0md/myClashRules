@@ -4,15 +4,15 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 
 ## 策略组
 
-| 策略组 | 路由范围 | 默认选择 |
-| --- | --- | --- |
+| 策略组                                               | 路由范围                                                                                                                                                                                                           | 默认选择                                                                                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Siri Ai/Apple Intelligence`（开关 `Apple智能分流`） | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。`gspe1` 按当前策略归入 Siri 组，尽管 Apple 也将它用于地图、eSIM、Watch 和 Wi-Fi Calling 等地区能力。 | 可选地区组排除香港、澳门、大陆及美国制裁/出口限制涉及地区，默认美国（有美国候选时）；无可用地区候选时拒绝连接。DNS 与路由跟随该组当前选择。 |
-| `AppleProxy` | Blackmatrix7 AppleProxy 动态集合、News/TV/TV+/Fitness/Sports/Books 产品入口、`apple_ip` 地址集合与 `apple-dns.net` / `apple-dns.com` 服务域名。 | 初始美国，可在客户端切换到其他可用候选或直连。旧 `Apple Product地区` 选项作为兼容别名读取。 |
-| `Other Apple Service`（开关 `Apple其他服务`） | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 连接默认直连；DNS 使用 `Siri Ai/Apple Intelligence` 当前选择的出口。 |
-| `Apple媒体代理` 开关 | 少量共享购买和媒体接口。 | 选项默认关闭。 |
-| `Apple下载直连` 开关 | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
+| `AppleProxy`                                         | Blackmatrix7 AppleProxy 动态集合、News/TV/TV+/Fitness/Sports/Books 产品入口、`apple_ip` 地址集合与 `apple-dns.net` / `apple-dns.com` 服务域名。                                                                    | 初始美国，可在客户端切换到其他可用候选或直连。旧 `Apple Product地区` 选项作为兼容别名读取。                                                 |
+| `Other Apple Service`（开关 `Apple其他服务`）        | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。                                                                                                                 | 连接默认直连；DNS 使用 `Siri Ai/Apple Intelligence` 当前选择的出口。                                                                        |
+| `Apple媒体代理` 开关                                 | 少量共享购买和媒体接口。                                                                                                                                                                                           | 选项默认关闭。                                                                                                                              |
+| `Apple下载直连` 开关                                 | 系统更新与 Apple 共用资源 CDN。                                                                                                                                                                                    | 选项默认开启并由直连规则处理。                                                                                                              |
 
-阿里、百度、B站、字节、运营商、华为云、京东、网易、腾讯、小米国内服务路由补充模块排在专用服务规则之后，不覆盖 Apple 精确例外或服务组选择；模块不改变 Apple 或其他域名的 DNS 授权。
+阿里、百度、B站、字节、运营商、华为云、京东、网易、腾讯、小米国内服务模块排在专用服务规则之后，不覆盖 Apple 精确例外或服务组选择；模块的厂商 DNS policy 与连接规则统一由 `国内服务优先直连` 控制。
 
 `AI`、`Google`、`TikTok`、`Meta` 与 Apple AI 组都只提供允许地区组，排除香港、澳门、大陆、俄罗斯、白俄罗斯、古巴、伊朗、朝鲜、克里米亚、顿涅茨克和卢甘斯克；默认选择美国（有美国候选时）。DNS policy 指向各自服务组，因此解析出口随该组当前选择变化；没有任何合格地区候选时，Apple AI 组拒绝连接，不回退到默认代理或直连。组名按完整地区名匹配，因此台湾仍是允许选项。
 
@@ -24,9 +24,9 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 4. 启用的 `apple_ip` 使用 `no-resolve` 进入 `AppleProxy`，且位于 `cn_ip` 直连兜底之前；`private_ip` 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用对应代理组及 `no-resolve`，组关闭时回退到 `默认代理`；其他服务 IP 集合按对应服务组分流。
 5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
-代理服务的精确域名、后缀域名和动态集合生成对应的 `nameserver-policy`，解析出口跟随服务组。普通直连规则不自动生成国内 DNS 授权；命中现有 `geolocation-cn` provider 的域名使用国内加密 DNS，其他直连域名使用独立白名单或默认国外解析。Apple 模型/系统资源的四个精确 CDN 例外保留国内加密 DNS。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 进入 `AppleProxy`，DNS policy 也跟随该组。AppleProxy 动态集合的域名 DNS 跟随 `AppleProxy`；其中被更早 Siri/PCC 精确或后缀规则覆盖的成员仍使用 Siri DNS。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
+代理服务的精确域名、后缀域名和动态集合生成对应的 `nameserver-policy`，解析出口跟随服务组。普通直连规则不自动生成国内 DNS 授权；命中现有 `geolocation-cn` provider 的域名始终使用国内加密 DNS，国内服务模块开启时，11 组配对集合和完整百度集合的成员也使用国内加密 DNS。其他直连域名使用独立白名单或默认国外解析。Apple 模型/系统资源的四个精确 CDN 例外保留国内加密 DNS。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 进入 `AppleProxy`，DNS policy 也跟随该组。AppleProxy 动态集合的域名 DNS 跟随 `AppleProxy`；其中被更早 Siri/PCC 精确或后缀规则覆盖的成员仍使用 Siri DNS。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
 
-通用 `cn` 集合不再参与 DNS policy 或 Fake-IP 过滤，仅在可选 QUIC 规则引用时保留；现有 `geolocation-cn` provider 单独使用国内 DNS policy，`cn_ip` 继续承担连接直连兜底。国内 DNS 不引入整份 `apple_cdn`、Apple 或 Cloudflare 网段。Apple CN 仍使用固定版本集合，不随新的下载 DNS 开关改变。
+通用 `cn` 集合不再参与 DNS policy 或 Fake-IP 过滤，仅在可选 QUIC 规则引用时保留；现有 `geolocation-cn` 独立使用国内 DNS policy，国内服务开关开启时 11 组配对集合及百度完整集合使用国内 DNS policy，`cn_ip` 继续承担连接直连兜底。国内 DNS 不引入整份 `apple_cdn`、Apple 或 Cloudflare 网段。Apple CN 仍使用固定版本集合，不随新的下载 DNS 开关改变。
 
 如果订阅没有合格的 Siri 地区候选，Siri 组仍拒绝连接。当 `Other Apple Service` 保持默认直连时，通用 Apple 集合及 `gateway.icloud.com`、`setup.icloud.com` 改用国内加密直连 DNS，维持普通 Apple 服务的直连可用性；一旦出现合格候选，其 DNS 再跟随 Siri 组。关闭普通 Apple 默认直连时，不启用此解析回退。
 

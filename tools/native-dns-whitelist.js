@@ -11,17 +11,17 @@ const YAML = require('yaml');
 const { build } = require('./build');
 const { fixtures, freePort } = require('./runtime-routing');
 
-function readGeolocationCnSnapshot(binary, rulesDir, temp) {
-  const config = build().config;
-  const spec = config['rule-providers']['geolocation-cn'];
-  assert.equal(spec?.format, 'mrs', 'geolocation-cn must remain an MRS domain provider');
-  const input = path.resolve(rulesDir, `geolocation-cn${path.extname(spec.path)}`);
-  const output = path.join(temp, 'geolocation-cn-dns-samples.txt');
+function readDomainSnapshot(binary, rulesDir, temp, providers, name) {
+  const spec = providers[name];
+  assert.equal(spec?.format, 'mrs', `${name} must remain an MRS domain provider`);
+  assert.equal(spec?.behavior, 'domain', `${name} must remain a domain provider`);
+  const input = path.resolve(rulesDir, `${name}${path.extname(spec.path)}`);
+  const output = path.join(temp, `${name}-dns-samples.txt`);
   const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output], {
     encoding: 'utf8',
     timeout: 10000,
   });
-  assert.equal(result.status, 0, `geolocation-cn: ${result.stdout}\n${result.stderr}`);
+  assert.equal(result.status, 0, `${name}: ${result.stdout}\n${result.stderr}`);
   const rules = fs
     .readFileSync(output, 'utf8')
     .split(/\r?\n/)
@@ -39,8 +39,8 @@ function readGeolocationCnSnapshot(binary, rulesDir, temp) {
   const candidates = [...[...suffix].map((domain, index) => `dns-policy-probe-${index}.${domain}`), ...exact].filter(
     (host) => domainPattern.test(host),
   );
-  assert.ok(candidates.length, 'geolocation-cn snapshot has no usable DNS sample');
-  return { candidates, exact, suffix };
+  assert.ok(candidates.length, `${name} snapshot has no usable DNS sample`);
+  return { candidates, exact, suffix, matches: (host) => matchesDomain({ exact, suffix }, host) };
 }
 
 function matchesDomain(snapshot, host) {
@@ -48,6 +48,48 @@ function matchesDomain(snapshot, host) {
   if (snapshot.exact.has(host)) return true;
   const labels = host.split('.');
   return labels.some((_, index) => snapshot.suffix.has(labels.slice(index).join('.')));
+}
+
+function hasLiteralDnsPolicy(config, host) {
+  return Object.keys(config.dns['nameserver-policy']).some((key) => {
+    if (key.startsWith('rule-set:')) return false;
+    if (key.startsWith('+.')) {
+      const suffix = key.slice(2).toLowerCase();
+      return host === suffix || host.endsWith(`.${suffix}`);
+    }
+    return key.toLowerCase() === host;
+  });
+}
+
+function readDomesticDnsSamples(binary, rulesDir, temp, config) {
+  const providers = config['rule-providers'];
+  const modules = Object.keys(providers)
+    .filter((name) => name.startsWith('domestic_') && name.endsWith('_dns'))
+    .map((policyProvider) => {
+      const sourceProvider = policyProvider.slice(0, -'_dns'.length);
+      const full = readDomainSnapshot(binary, rulesDir, temp, providers, sourceProvider);
+      const overseas = readDomainSnapshot(binary, rulesDir, temp, providers, `${sourceProvider}_noncn`);
+      const included = full.candidates.find((host) => !overseas.matches(host));
+      const excludedCandidates = [...new Set([...full.candidates, ...overseas.candidates])].filter(
+        (host) => full.matches(host) && overseas.matches(host),
+      );
+      assert.ok(included, `${sourceProvider}: no member outside its overseas subset`);
+      assert.ok(excludedCandidates.length, `${sourceProvider}: no overlap with its overseas subset`);
+      return {
+        sourceProvider,
+        policyProvider,
+        included,
+        excludedCandidates,
+        matches: (host) => full.matches(host) && !overseas.matches(host),
+      };
+    });
+  assert.ok(modules.length, 'no domestic vendor DNS policies found');
+  const baidu = readDomainSnapshot(binary, rulesDir, temp, providers, 'domestic_baidu');
+  return {
+    modules,
+    baidu,
+    matches: (host) => modules.some((module) => module.matches(host)) || baidu.matches(host),
+  };
 }
 
 async function dnsStub() {
@@ -100,7 +142,9 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
   const domestic = await dnsStub();
   const foreign = await dnsStub();
   const local = await fixtures();
-  const geolocationCn = readGeolocationCnSnapshot(binary, rulesDir, temp);
+  const configProviders = build().config['rule-providers'];
+  const geolocationCn = readDomainSnapshot(binary, rulesDir, temp, configProviders, 'geolocation-cn');
+  const domesticDnsSamples = readDomesticDnsSamples(binary, rulesDir, temp, build().config);
   const evidence = [];
   const node = { name: '美国 DNS 测试', type: 'socks5', server: '127.0.0.1', port: local.socksPort };
   const modes = [
@@ -112,9 +156,15 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
     { name: 'steam-off', options: { Steam下载解析: false } },
     { name: 'all-off', options: { 国内CDN解析: false, 微软下载解析: false, Steam下载解析: false } },
     { name: 'domestic-route-off', options: { 国内服务优先直连: false } },
+    {
+      name: 'domestic-vendor-alibaba-policy',
+      options: {},
+      domesticPolicyProvider: 'domestic_alibaba_dns',
+    },
+    { name: 'domestic-vendor-baidu-policy', options: {}, domesticPolicyProvider: 'domestic_baidu' },
   ];
   try {
-    for (const { name, options, expanded } of modes) {
+    for (const { name, options, expanded, domesticPolicyProvider } of modes) {
       const config = build({
         settings: { options },
         ...(expanded ? { subscription: { proxies: [node] } } : {}),
@@ -128,6 +178,14 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
       config.dns['use-system-hosts'] = false;
       // The omission of direct-nameserver is intentional: test actual direct dial resolution too.
       assert.equal(config.dns['direct-nameserver'], undefined);
+      if (domesticPolicyProvider) {
+        config.dns['nameserver-policy'] = {
+          [`rule-set:${domesticPolicyProvider}`]: [
+            'quic://dns.alidns.com:853#DIRECT',
+            'https://doh.pub/dns-query#DIRECT',
+          ],
+        };
+      }
       const instrument = (value) => {
         if (typeof value === 'string' && value.startsWith('rcode://')) return value;
         return value.map((server) => {
@@ -188,106 +246,137 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
           await new Promise((resolve) => setTimeout(resolve, 100));
         }
         assert.ok(ready, logs);
-        let geolocationCnSample;
-        for (const host of geolocationCn.candidates.slice(0, 256)) {
-          domestic.queries.length = foreign.queries.length = 0;
-          const response = await api(`/dns/query?name=${host}&type=A`);
-          assert.equal(response.Status, 0, `${name}: ${host} A: ${JSON.stringify(response)}`);
-          if (
-            domestic.queries.some((query) => query.host === host) &&
-            !foreign.queries.some((query) => query.host === host)
-          ) {
-            geolocationCnSample = host;
-            break;
+        if (!domesticPolicyProvider) {
+          let geolocationCnSample;
+          for (const host of geolocationCn.candidates.slice(0, 256)) {
+            domestic.queries.length = foreign.queries.length = 0;
+            const response = await api(`/dns/query?name=${host}&type=A`);
+            assert.equal(response.Status, 0, `${name}: ${host} A: ${JSON.stringify(response)}`);
+            if (
+              domestic.queries.some((query) => query.host === host) &&
+              !foreign.queries.some((query) => query.host === host)
+            ) {
+              geolocationCnSample = host;
+              break;
+            }
           }
+          assert.ok(geolocationCnSample, `${name}: no geolocation-cn member used domestic DNS`);
+          evidence.push({ mode: name, host: geolocationCnSample, type: 'A-snapshot-sample', upstream: 'domestic' });
         }
-        assert.ok(geolocationCnSample, `${name}: no geolocation-cn member used domestic DNS`);
-        evidence.push({ mode: name, host: geolocationCnSample, type: 'A-snapshot-sample', upstream: 'domestic' });
-        const cases = [
-          ['i0.hdslb.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'i0.hdslb.com')],
-          ['qhimgs7.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'qhimgs7.com')],
-          ['res.cdn.office.net', options.微软下载解析 !== false],
-          ['dl.steam.clngaa.com', options.Steam下载解析 !== false],
-          ['alibaba.cdn.steampipe.steamcontent.com', options.Steam下载解析 !== false],
-          ['ugc.steamusercontent.com', false],
-          ['api.steamserver.net', false],
-          ['store.steampowered.com', false],
-          ['steamcommunity.com', false],
-          ['www.baidu.com', matchesDomain(geolocationCn, 'www.baidu.com')],
-          ['www.qq.com', matchesDomain(geolocationCn, 'www.qq.com')],
-          ['www.bilibili.com', matchesDomain(geolocationCn, 'www.bilibili.com')],
-          ['download.dns-whitelist-probe.net', matchesDomain(geolocationCn, 'download.dns-whitelist-probe.net')],
-          ['fsend.cn', matchesDomain(geolocationCn, 'fsend.cn')],
-          ['chatgpt.com', false],
-          ['guzzoni.apple.com', false],
-          ['mesu.apple.com', true],
-          ['gs-loc-cn.apple.com', options.国内服务优先直连 !== false],
-        ];
+        const vendorCases = [];
+        if (domesticPolicyProvider === 'domestic_baidu') {
+          vendorCases.push([domesticDnsSamples.baidu.candidates[0], true]);
+        } else if (domesticPolicyProvider) {
+          const module = domesticDnsSamples.modules.find((entry) => entry.policyProvider === domesticPolicyProvider);
+          assert.ok(module, `${domesticPolicyProvider}: missing DNS match samples`);
+          vendorCases.push([module.included, true], [module.excludedCandidates[0], false]);
+        }
+        const cases = domesticPolicyProvider
+          ? vendorCases
+          : [
+              ['i0.hdslb.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'i0.hdslb.com')],
+              ['qhimgs7.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'qhimgs7.com')],
+              ['res.cdn.office.net', options.微软下载解析 !== false],
+              ['dl.steam.clngaa.com', options.Steam下载解析 !== false],
+              ['alibaba.cdn.steampipe.steamcontent.com', options.Steam下载解析 !== false],
+              ['ugc.steamusercontent.com', false],
+              ['api.steamserver.net', false],
+              ['store.steampowered.com', false],
+              ['steamcommunity.com', false],
+              ['www.baidu.com', matchesDomain(geolocationCn, 'www.baidu.com')],
+              ['www.qq.com', matchesDomain(geolocationCn, 'www.qq.com')],
+              ['www.bilibili.com', matchesDomain(geolocationCn, 'www.bilibili.com')],
+              ['download.dns-whitelist-probe.net', matchesDomain(geolocationCn, 'download.dns-whitelist-probe.net')],
+              ['fsend.cn', matchesDomain(geolocationCn, 'fsend.cn')],
+              ['chatgpt.com', false],
+              ['guzzoni.apple.com', false],
+              ['mesu.apple.com', true],
+              ['gs-loc-cn.apple.com', options.国内服务优先直连 !== false],
+            ];
         for (const [host, allowed] of cases) {
+          const domesticVendorPolicy =
+            !domesticPolicyProvider &&
+            options.国内服务优先直连 !== false &&
+            domesticDnsSamples.matches(host) &&
+            !hasLiteralDnsPolicy(config, host);
+          const shouldUseDomestic = allowed || domesticVendorPolicy;
           for (const type of ['A', 'AAAA']) {
             domestic.queries.length = foreign.queries.length = 0;
             const response = await api(`/dns/query?name=${host}&type=${type}`);
             assert.equal(response.Status, 0, `${name}: ${host} ${type}: ${JSON.stringify(response)}`);
-            const selected = allowed ? domestic : foreign;
-            const excluded = allowed ? foreign : domestic;
+            const selected = shouldUseDomestic ? domestic : foreign;
+            const excluded = shouldUseDomestic ? foreign : domestic;
             assert.ok(
               selected.queries.some((query) => query.host === host),
-              `${name}: ${host} ${type}: expected ${allowed ? 'domestic' : 'foreign'} DNS; ${logs}`,
+              `${name}: ${host} ${type}: expected ${shouldUseDomestic ? 'domestic' : 'foreign'} DNS; ${logs}`,
             );
             assert.ok(
               !excluded.queries.some((query) => query.host === host),
               `${name}: ${host} ${type}: query leaked to wrong upstream`,
             );
-            evidence.push({ mode: name, host, type, upstream: allowed ? 'domestic' : 'foreign' });
+            evidence.push({ mode: name, host, type, upstream: shouldUseDomestic ? 'domestic' : 'foreign' });
           }
         }
-        for (const [host, allowed] of [
-          [
-            'unknown-direct.dns-whitelist-probe.net',
-            matchesDomain(geolocationCn, 'unknown-direct.dns-whitelist-probe.net'),
-          ],
-          [
-            'cdn-direct.hdslb.com',
-            options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'cdn-direct.hdslb.com'),
-          ],
-        ]) {
-          domestic.queries.length = foreign.queries.length = 0;
-          const socket = local.track(net.connect(proxyPort, '127.0.0.1'));
-          try {
-            await once(socket, 'connect');
-            socket.write(`CONNECT ${host}:${local.sinkPort} HTTP/1.1\r\nHost: ${host}\r\n\r\n`);
-            const [response] = await Promise.race([
-              once(socket, 'data'),
-              new Promise((_, reject) => {
-                socket.setTimeout(5000, () => reject(new Error(`${name}: direct CONNECT timeout: ${host}`)));
-              }),
-            ]);
-            assert.match(response.toString(), /200 Connection established/i);
-            socket.write(`GET / HTTP/1.1\r\nHost: ${host}\r\n\r\n`);
-            for (let i = 0; i < 50; i++) {
-              if ([...domestic.queries, ...foreign.queries].some((query) => query.host === host)) break;
-              await new Promise((resolve) => setTimeout(resolve, 50));
+        if (!domesticPolicyProvider)
+          for (const [host, allowed] of [
+            [
+              'unknown-direct.dns-whitelist-probe.net',
+              matchesDomain(geolocationCn, 'unknown-direct.dns-whitelist-probe.net'),
+            ],
+            [
+              'cdn-direct.hdslb.com',
+              options.国内CDN解析 !== false ||
+                matchesDomain(geolocationCn, 'cdn-direct.hdslb.com') ||
+                (options.国内服务优先直连 !== false && domesticDnsSamples.matches('cdn-direct.hdslb.com')),
+            ],
+          ]) {
+            const domesticVendorPolicy =
+              options.国内服务优先直连 !== false &&
+              domesticDnsSamples.matches(host) &&
+              !hasLiteralDnsPolicy(config, host);
+            const shouldUseDomestic = allowed || domesticVendorPolicy;
+            domestic.queries.length = foreign.queries.length = 0;
+            const socket = local.track(net.connect(proxyPort, '127.0.0.1'));
+            try {
+              await once(socket, 'connect');
+              socket.write(`CONNECT ${host}:${local.sinkPort} HTTP/1.1\r\nHost: ${host}\r\n\r\n`);
+              const [response] = await Promise.race([
+                once(socket, 'data'),
+                new Promise((_, reject) => {
+                  socket.setTimeout(5000, () => reject(new Error(`${name}: direct CONNECT timeout: ${host}`)));
+                }),
+              ]);
+              assert.match(response.toString(), /200 Connection established/i);
+              socket.write(`GET / HTTP/1.1\r\nHost: ${host}\r\n\r\n`);
+              for (let i = 0; i < 50; i++) {
+                if ([...domestic.queries, ...foreign.queries].some((query) => query.host === host)) break;
+                await new Promise((resolve) => setTimeout(resolve, 50));
+              }
+              let connection;
+              for (let i = 0; i < 30; i++) {
+                const active = (await api('/connections')).connections || [];
+                connection = active.find((entry) => String(entry.metadata.sourcePort) === String(socket.localPort));
+                if (connection) break;
+                await new Promise((resolve) => setTimeout(resolve, 25));
+              }
+              assert.ok(connection?.chains.includes('直连'), `${name}: ${host}: missing actual direct connection`);
+              const selected = shouldUseDomestic ? domestic : foreign;
+              const excluded = shouldUseDomestic ? foreign : domestic;
+              assert.ok(
+                selected.queries.some((query) => query.host === host),
+                `${name}: direct ${host}: wrong DNS`,
+              );
+              assert.ok(!excluded.queries.some((query) => query.host === host), `${name}: direct ${host}: DNS leak`);
+              evidence.push({
+                mode: name,
+                host,
+                type: 'direct-CONNECT',
+                upstream: shouldUseDomestic ? 'domestic' : 'foreign',
+              });
+            } finally {
+              socket.destroy();
             }
-            let connection;
-            for (let i = 0; i < 30; i++) {
-              const active = (await api('/connections')).connections || [];
-              connection = active.find((entry) => String(entry.metadata.sourcePort) === String(socket.localPort));
-              if (connection) break;
-              await new Promise((resolve) => setTimeout(resolve, 25));
-            }
-            assert.ok(connection?.chains.includes('直连'), `${name}: ${host}: missing actual direct connection`);
-            const selected = allowed ? domestic : foreign;
-            const excluded = allowed ? foreign : domestic;
-            assert.ok(
-              selected.queries.some((query) => query.host === host),
-              `${name}: direct ${host}: wrong DNS`,
-            );
-            assert.ok(!excluded.queries.some((query) => query.host === host), `${name}: direct ${host}: DNS leak`);
-            evidence.push({ mode: name, host, type: 'direct-CONNECT', upstream: allowed ? 'domestic' : 'foreign' });
-          } finally {
-            socket.destroy();
           }
-        }
       } finally {
         fs.writeFileSync(path.join(temp, `dns-${name}.log`), logs);
         if (child.exitCode === null) {
