@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：994b2bf3a16dc773184c3791eddf7bae2d8d35475c764428e6d7616f7a24b59f
+ * 最新 Raw SHA-256：30b5db1f4912a1a4abec603b4bf81415d3872d4d1c8f00c76fbb0ef358501c6b
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：5ed9116af41b8fddb73aa4cef9d44f5e1e676dc5a2c775e5b306432ee5b6d309
+ * 缓存 CDN SHA-256：02c07f7581c6ded279fe6db756a45f313270ea29f040bb5d87461d3f3dbb2654
  */
 
 // --- 静态配置区域 ---
@@ -95,8 +95,7 @@ const prefixRules = [
   // 私有网络直连
   'RULE-SET,private,直连',
 
-  // 国内直连
-  'RULE-SET,geolocation-cn,直连',
+  // 国内专用直连
   'RULE-SET,games_cn,直连', // 已包含 steam 下载域名
   'RULE-SET,synology,直连',
   'RULE-SET,nvidia_cn,直连',
@@ -106,6 +105,7 @@ const prefixRules = [
   'DOMAIN,international-gfe.download.nvidia.com,直连',
   'DOMAIN-SUFFIX,ctaiot.com,直连',
 ];
+const geolocationCnRule = 'RULE-SET,geolocation-cn,直连';
 
 // 此处添加自定义节点，填入下方[]内（可选，留空则不生成“自建节点”策略组）
 // 自定义节点不参与节点过滤与 hosts 改写；与订阅节点（标准化后）重名时自动添加“自建-”前缀
@@ -1846,6 +1846,7 @@ function main(config) {
     ...(ruleOptionsEnable.屏蔽代理QUIC流量 ? blockForeignQuic : []),
     ...functionalRules,
     ...domesticServiceRules,
+    geolocationCnRule,
     'RULE-SET,geolocation-!cn,默认代理',
     ...appleIpRules,
     'RULE-SET,private_ip,直连,no-resolve',
@@ -2075,7 +2076,8 @@ function finalizeMyClashRules(config) {
     ...safetyRules,
     ...specialRules,
     ...config.rules.filter(
-      (rule) => !specialRules.includes(rule) && (options.国内服务优先直连 || !prefixRules.slice(1).includes(rule)),
+      (rule) => !specialRules.includes(rule) &&
+        (options.国内服务优先直连 || (!prefixRules.slice(1).includes(rule) && rule !== geolocationCnRule)),
     ),
   ];
   const domainRuleSetEgress = new Map();

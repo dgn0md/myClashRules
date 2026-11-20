@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+./tools/npmw test
+./tools/npmw run check
+./tools/npmw run native:check

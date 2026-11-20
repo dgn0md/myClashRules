@@ -9,16 +9,7 @@ const { once } = require('node:events');
 const { spawn } = require('node:child_process');
 const YAML = require('yaml');
 const { build } = require('./build');
-const { fixtures } = require('./runtime-routing');
-
-async function freePort() {
-  const server = net.createServer();
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const port = server.address().port;
-  await new Promise((resolve) => server.close(resolve));
-  return port;
-}
+const { fixtures, freePort } = require('./runtime-routing');
 
 async function dnsStub() {
   const queries = [];

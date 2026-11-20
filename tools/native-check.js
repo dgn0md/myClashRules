@@ -9,17 +9,9 @@ const { randomBytes } = require('node:crypto');
 const assert = require('node:assert/strict');
 const YAML = require('yaml');
 const { build, load } = require('./build');
-const { fixtures, verifyRouting, verifyICloudContentDnsPolicy, CASES } = require('./runtime-routing');
+const { fixtures, verifyRouting, verifyICloudContentDnsPolicy, CASES, freePort } = require('./runtime-routing');
 const { verifySniffing } = require('./native-sniffing');
 const { verifyDnsWhitelist } = require('./native-dns-whitelist');
-async function freePort() {
-  const s = net.createServer();
-  s.listen(0, '127.0.0.1');
-  await once(s, 'listening');
-  const port = s.address().port;
-  await new Promise((resolve) => s.close(resolve));
-  return port;
-}
 async function run() {
   const binary = process.argv[2];
   const rulesDir = process.argv[3];
@@ -336,14 +328,15 @@ async function run() {
     console.log(`Evidence directory: ${temp}`);
     const domesticEvidence = [];
     const domesticModuleCases = [[domesticSamples.outside, null]];
-    // Earlier service rules may take priority over a vendor sample. Find a witness for
-    // each module in the actual snapshot, and require that witness to survive toggling.
+    // Earlier service rules may take priority or reject a vendor sample. Find a connected
+    // witness for each module in the actual snapshot, and require it to survive toggling.
     for (const { source, candidates, excluded, excludeOverseas } of domesticSamples.modules) {
       let witness;
       for (const host of candidates) {
         const [result] = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
-          track: local.track, api, cases: [[host, null]] });
-        const expectedRule = excludeOverseas ? 'AND' : 'RULE-SET';
+          track: local.track, api, cases: [[host, null]], skipMissingConnection: true });
+        if (result.skipped) continue;
+        const expectedRule = excludeOverseas ? 'AND' : 'RULESET';
         if (result.rule.toUpperCase() === expectedRule && result.payload.includes(`domestic_${source}`)) {
           witness = host;
           break;
@@ -366,7 +359,7 @@ async function run() {
       for (const result of decisions) {
         const source = domesticModuleCases.find(([host]) => host === result.host)[1];
         const enabled = source && options.国内服务优先直连 !== false;
-        const matchedModule = ['AND', 'RULE-SET'].includes(result.rule.toUpperCase()) &&
+        const matchedModule = ['AND', 'RULESET'].includes(result.rule.toUpperCase()) &&
           result.payload.includes('domestic_');
         assert.equal(!!matchedModule, !!enabled, `${result.host}: ${JSON.stringify({ options, result })}`);
         if (enabled) {

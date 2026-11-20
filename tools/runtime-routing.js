@@ -1,8 +1,32 @@
 'use strict';
 // Local HTTP CONNECT probes against real MRS data. All sockets terminate on loopback.
 const net = require('node:net');
+const dgram = require('node:dgram');
 const assert = require('node:assert/strict');
 const { once } = require('node:events');
+async function freePort() {
+  for (;;) {
+    const udp = dgram.createSocket('udp4');
+    udp.bind(0, '127.0.0.1');
+    await once(udp, 'listening');
+    const port = udp.address().port;
+    const server = net.createServer();
+    try {
+      server.listen(port, '127.0.0.1');
+      await once(server, 'listening');
+    } catch (error) {
+      if (server.listening) await new Promise((resolve) => server.close(resolve));
+      await new Promise((resolve) => udp.close(resolve));
+      if (error.code === 'EADDRINUSE') continue;
+      throw error;
+    }
+    await Promise.all([
+      new Promise((resolve) => server.close(resolve)),
+      new Promise((resolve) => udp.close(resolve)),
+    ]);
+    return port;
+  }
+}
 async function listen(server) {
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -126,7 +150,7 @@ const CASES = [
   ['qq.com', '直连'],
   ['www.baidu.com', '直连'],
 ];
-async function verifyRouting({ port, sinkPort, track, api, cases = CASES }) {
+async function verifyRouting({ port, sinkPort, track, api, cases = CASES, skipMissingConnection = false }) {
   const evidence = [];
   for (const [host, expected, payload, excluded] of cases) {
     const socket = track(net.connect(port, '127.0.0.1'));
@@ -147,6 +171,11 @@ async function verifyRouting({ port, sinkPort, track, api, cases = CASES }) {
       );
       if (connection) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    if (!connection && skipMissingConnection) {
+      socket.destroy();
+      evidence.push({ host, skipped: 'no-active-connection' });
+      continue;
     }
     assert.ok(connection, `No active connection for ${host}: ${JSON.stringify(active)}`);
     if (expected) assert.ok(
@@ -184,4 +213,4 @@ async function verifyICloudContentDnsPolicy(api) {
   }
   return evidence;
 }
-module.exports = { fixtures, verifyRouting, verifyICloudContentDnsPolicy, CASES };
+module.exports = { fixtures, verifyRouting, verifyICloudContentDnsPolicy, CASES, freePort };

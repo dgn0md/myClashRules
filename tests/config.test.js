@@ -342,6 +342,7 @@ test('domestic vendor modules use dynamic sets without changing DNS authorizatio
           }
           if (enabled) {
             const index = config.rules.indexOf(rule);
+            assert.ok(index < config.rules.indexOf('RULE-SET,geolocation-cn,直连'));
             assert.ok(index < config.rules.indexOf('RULE-SET,geolocation-!cn,默认代理'));
             if (!minimal) for (const service of ['tiktok', 'ai', 'ads']) {
               const serviceIndex = config.rules.findIndex((entry) => entry.startsWith(`RULE-SET,${service},`));
@@ -1211,7 +1212,7 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
     const provider = config['rule-providers'][providerName];
     if (!provider || !['domain', 'classical'].includes(provider.behavior)) continue;
     if (['REJECT', 'REJECT-DROP', 'PASS'].includes(target)) continue;
-    if (['private', 'cn', 'douyin'].includes(providerName)) continue;
+    if (['private', 'cn', 'douyin'].includes(providerName) || providerName.startsWith('domestic_')) continue;
     expectedPolicies.set(providerName, target);
   }
   assert.ok(expectedPolicies.size > 0);

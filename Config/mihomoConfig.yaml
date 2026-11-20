@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：610976843d41869eb5c33d3ba243dd5c4cf21491094cf03199860eb9d30972a7
+# 最新 Raw SHA-256：d514704f5b7913b9c0b97fccefdd554c009cbaa05bdbf93d3ce05dd311d5f026
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -227,7 +227,7 @@ dns:
       - https://cloudflare-dns.com/dns-query#AppleProxy
       - https://dns.google/dns-query#AppleProxy
     rule-set:category-ads: rcode://name_error
-    rule-set:geolocation-cn,games_cn,synology,nvidia_cn:
+    rule-set:games_cn,synology,nvidia_cn:
       - https://cloudflare-dns.com/dns-query#默认代理
       - https://dns.google/dns-query#默认代理
     rule-set:apple_cn:
@@ -299,7 +299,7 @@ dns:
     rule-set:ehentai:
       - https://cloudflare-dns.com/dns-query#EHentai
       - https://dns.google/dns-query#EHentai
-    rule-set:geolocation-!cn:
+    rule-set:geolocation-cn,geolocation-!cn:
       - https://cloudflare-dns.com/dns-query#默认代理
       - https://dns.google/dns-query#默认代理
   listen: 127.0.0.1:1053
@@ -3058,7 +3058,6 @@ rules:
   - DOMAIN,cp.cloudflare.com,默认代理
   - RULE-SET,category-ads,AdBlock
   - RULE-SET,private,直连
-  - RULE-SET,geolocation-cn,直连
   - RULE-SET,games_cn,直连
   - RULE-SET,synology,直连
   - RULE-SET,nvidia_cn,直连
@@ -3103,6 +3102,7 @@ rules:
   - AND,((RULE-SET,domestic_netease),(NOT,((RULE-SET,domestic_netease_noncn)))),直连
   - AND,((RULE-SET,domestic_tencent),(NOT,((RULE-SET,domestic_tencent_noncn)))),直连
   - AND,((RULE-SET,domestic_xiaomi),(NOT,((RULE-SET,domestic_xiaomi_noncn)))),直连
+  - RULE-SET,geolocation-cn,直连
   - RULE-SET,geolocation-!cn,默认代理
   - RULE-SET,apple_ip,AppleProxy,no-resolve
   - RULE-SET,private_ip,直连,no-resolve
