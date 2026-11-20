@@ -5,7 +5,7 @@
 ## 项目范围与产物
 
 - 项目基于 AIsouler/MyClash `4861619be366c7bacabfed6d581bb8c450de1ca1` 全量版；上游图标约定见 `docs/upstream/AGENT.md`；其中历史规则源与测试数量不替代本仓库当前的 DNS 原则和验收要求。
-- 只维护全量脚本源文件 `Script/mihomoScript.js` 与源配置文件 `Config/mihomoConfig.yaml`，不增加精简版。`Script/mihomoScript.cdn.js` 与 `Config/mihomoConfig.cdn.yaml` 均由 GitHub Actions 生成；`极简国内外分流模式` 是脚本选项。
+- 只维护全量脚本源文件 `Script/mihomoScript.js` 与源配置文件 `Config/mihomoConfig.yaml`，不增加精简版。`Script/mihomoScript.cdn.js` 与 `Config/mihomoConfig.cdn.yaml` 均由 GitHub Actions 生成；`极简分流` 是脚本选项。
 - `Script/mihomoScript.js` 是规则、选项、节点处理和 DNS 行为的唯一来源；推送脚本或配置开关变更后，GitHub Actions 更新脚本与 YAML 的 Raw SHA-256，生成带独立 CDN SHA-256 的 CDN 副本，并提交 YAML 产物，无需本地构建。
 - YAML 的 `x-myClashRules` 扩展字段只供构建工具读取，Mihomo 内核不会执行。
 
@@ -39,7 +39,7 @@
 ## 国内 DNS 白名单原则
 
 - 连接路由与国内 DNS 授权独立；普通直连、`cn_ip` 命中和通用 `cn`/`geolocation-cn`/`douyin` 集合不自动授权国内解析。不配置通用 `direct-nameserver`，不因未命中或解析失败而回退国内 DNS。
-- `国内CDNDNS`、`微软下载DNS`、`Steam下载DNS` 默认开启并可独立关闭，不受服务组、极简模式或国内路由开关隐式控制。名单重叠与专项例外分别判断，不能把关闭单个集合描述为禁止域名的一切国内解析。
+- `国内CDN解析`、`微软下载解析`、`Steam下载解析` 默认开启并可独立关闭，不受服务组、极简模式或国内路由开关隐式控制。名单重叠与专项例外分别判断，不能把关闭单个集合描述为禁止域名的一切国内解析。
 - 客户端 HTTP provider 每 86400 秒直接更新上游；不改为 CI 筛选、合并或发布仓库白名单。配置构建与运行时规则更新分别维护。
 - 显式主机/后缀 DNS policy 先于动态集合，白名单子集先于通用服务集合；保留 Steam 服务器/用户内容域的国外解析和 Apple 专项例外。新源须审查实际成员，不能直接采用通用 CDN、整厂商或公共云大集合。
 - 修改白名单/解析器/优先级时同步 [统一原则](docs/dns-whitelist.md)、功能文档和配置/原生回归；保留 DNS 专用 provider 的引用，禁止以通用国内 DNS 兜底修复可用性。缓存、Fake-IP、DoH 与 `no-resolve` 均不能作为“零泄漏”证明。
