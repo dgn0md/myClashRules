@@ -90,9 +90,13 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
       assert.equal(config.dns['direct-nameserver'], undefined);
       const instrument = (value) => {
         if (typeof value === 'string' && value.startsWith('rcode://')) return value;
-        return value.map((server) =>
-          /^https:\/\/(223\.5\.5\.5|1\.12\.12\.12)\//.test(server) ? domestic.url : foreign.url,
-        );
+        return value.map((server) => {
+          const isDomesticResolver =
+            /^https:\/\/(?:223\.5\.5\.5|1\.12\.12\.12)\//i.test(server) ||
+            /^https:\/\/doh\.pub\/dns-query(?:#|$)/i.test(server) ||
+            /^quic:\/\/dns\.alidns\.com:853(?:#|$)/i.test(server);
+          return isDomesticResolver ? domestic.url : foreign.url;
+        });
       };
       for (const key of ['nameserver', 'default-nameserver', 'proxy-server-nameserver'])
         config.dns[key] = instrument(config.dns[key]);

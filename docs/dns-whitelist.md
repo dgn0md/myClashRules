@@ -13,6 +13,7 @@
 - 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米国内服务路由模块只决定连接出口；有同源 `@!cn` 时排除对应海外子集。模块开关不改变 DNS 白名单、Fake-IP 过滤或解析器，不为整个厂商集合生成国内 DNS policy。
 - `no-resolve` 只限制相应 IP 规则主动触发解析，不指定 DNS 上游，也不代替白名单。缓存和 Fake-IP 可减少或延后查询，不消除真实解析，也不扩大国内 DNS 授权范围。
 - 严格加密 DNS 默认开启，生成配置不接受 system/DHCP、明文 UDP/TCP 或跳过证书校验；不添加明文或国内 DNS 的隐式故障回退。机场非节点 DNS 设置不得进入输出。
+- 默认国内白名单解析使用阿里 DoQ 与腾讯 DoH；默认国外解析使用 Cloudflare 与 Google DoT。`default-nameserver` 和 `proxy-server-nameserver` 保留固定 IP 的国内 DoH，仅用于解析加密 DNS 端点及代理节点域名，避免启动解析依赖自身。
 
 ## 默认组合与开关
 

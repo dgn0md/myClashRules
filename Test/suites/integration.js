@@ -99,10 +99,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     const out = api.main(cfg);
     h.assertEqual(out.dns.enable, true);
     h.assertEqual(out.dns['enhanced-mode'], 'fake-ip');
-    h.assertDeep(out.dns.nameserver, [
-      'https://cloudflare-dns.com/dns-query#默认代理',
-      'https://dns.google/dns-query#默认代理',
-    ]);
+    h.assertDeep(out.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
     h.assertDeep(out.dns['proxy-server-nameserver'], [
       'https://223.5.5.5/dns-query#DIRECT',
       'https://1.12.12.12/dns-query#DIRECT',
@@ -125,10 +122,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       cfg.dns['nameserver-policy'] = { 'hk1.example.com': resolver };
       cfg.dns['proxy-server-nameserver-policy'] = { 'hk1.example.com': resolver };
       const out = api.main(cfg);
-      h.assertDeep(out.dns.nameserver, [
-        'https://cloudflare-dns.com/dns-query#默认代理',
-        'https://dns.google/dns-query#默认代理',
-      ]);
+      h.assertDeep(out.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
       h.assertDeep(out.dns['proxy-server-nameserver'], [
         'https://223.5.5.5/dns-query#DIRECT',
         'https://1.12.12.12/dns-query#DIRECT',
@@ -229,7 +223,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     h.assertEqual(out.dns.enable, true);
     h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '应始终清空机场 proxy-server-nameserver-policy');
     h.assertDeep(out.hosts['doh.pub'], ['1.12.12.12', '120.53.53.53']);
-    // 默认 hosts 仍生成（不再包含已移除的 dns.alidns.com/dns.google 等条目）
+    // Resolver endpoint hosts and other project mappings are generated independently of subscription hosts.
     h.assertDeep(out.hosts['services.googleapis.cn'], 'services.googleapis.com');
   });
 

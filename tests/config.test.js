@@ -14,6 +14,7 @@ const siriAiOption = 'Apple智能分流';
 const appleProxyGroup = 'AppleProxy';
 const otherAppleGroup = 'Other Apple Service';
 const otherAppleOption = 'Apple其他服务';
+const domesticDnsResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
 const autoSelectExMainlandHongKongGroup = '自动选择ex(大陆&香港)';
 const autoSelectExMainlandHongKongOption = '排除大陆香港自动选';
 const proxy = (name) => ({ name, type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' });
@@ -92,7 +93,7 @@ function encryptedDns(config) {
     for (const value of Object.values(dns[field] || {})) values.push(...(Array.isArray(value) ? value : [value]));
   }
   for (const value of values) {
-    assert.match(value, /^(https|tls|rcode):\/\//);
+    assert.match(value, /^(https|tls|quic|rcode):\/\//);
     assert.doesNotMatch(value, /skip-cert-verify=true|^system|^dhcp/);
   }
   for (const value of dns['default-nameserver']) assert.match(value, /^https:\/\/[\d.]+\/dns-query#DIRECT$/);
@@ -503,7 +504,7 @@ test('latency test domain uses the default proxy route and encrypted proxy DNS i
         assert.ok(index < config.rules.indexOf('RULE-SET,private,直连'));
         assert.ok(index < config.rules.findIndex((rule) => rule.startsWith('AND,')));
         assert.deepEqual(config.dns['nameserver-policy']['cp.cloudflare.com'], config.dns.nameserver);
-        assert.ok(config.dns.nameserver.every((dns) => dns.startsWith('https://') && dns.endsWith('#默认代理')));
+        assert.ok(config.dns.nameserver.every((dns) => /^(https|tls):\/\//.test(dns) && dns.endsWith('#默认代理')));
       }
     }
   }
@@ -866,10 +867,7 @@ test('strict script output discards unsafe airport DNS settings instead of block
     };
     const config = build({ subscription }).config;
     encryptedDns(config);
-    assert.deepEqual(config.dns.nameserver, [
-      'https://cloudflare-dns.com/dns-query#默认代理',
-      'https://dns.google/dns-query#默认代理',
-    ]);
+    assert.deepEqual(config.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
     assert.deepEqual(config.dns['proxy-server-nameserver'], [
       'https://223.5.5.5/dns-query#DIRECT',
       'https://1.12.12.12/dns-query#DIRECT',
@@ -1097,7 +1095,7 @@ test('literal domain routes use target DNS and Other Apple DNS follows the Siri 
         assert.ok(policy, `missing nameserver-policy for ${rule}`);
         checked++;
         if (target === '直连') {
-          assert.deepEqual(policy, config.dns['default-nameserver'], `${rule} is an explicit Apple DNS exception`);
+          assert.deepEqual(policy, domesticDnsResolvers, `${rule} is an explicit Apple DNS exception`);
         } else if (
           dnsGroup?.proxies.length &&
           dnsGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
@@ -1143,14 +1141,17 @@ test('Other Apple direct route keeps encrypted DNS when no eligible Siri region 
   assert.deepEqual(config['proxy-groups'].find((group) => group.name === siriAiGroup).proxies, ['REJECT']);
   assert.equal(config['proxy-groups'].find((group) => group.name === otherAppleGroup).proxies[0], '直连');
   for (const key of ['rule-set:apple', 'gateway.icloud.com', 'setup.icloud.com'])
-    assert.deepEqual(config.dns['nameserver-policy'][key], config.dns['default-nameserver']);
+    assert.deepEqual(config.dns['nameserver-policy'][key], [
+      'quic://dns.alidns.com:853#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
+    ]);
   assert.equal(config.dns['nameserver-policy']['api-siri-prod.apple.com'], 'rcode://name_error');
 });
 test('strict DNS validates every generated upstream field', () => {
   const unsafe = loadScript('Script/mihomoScript.js', (source) =>
     source.replace(
-      "const chinaDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];",
-      "const chinaDNS = ['udp://223.5.5.5'];",
+      "const bootstrapDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];",
+      "const bootstrapDNS = ['udp://223.5.5.5'];",
     ),
   );
   assert.throws(() => unsafe.main(clean()), /严格DNS校验.*default-nameserver/);
@@ -1351,6 +1352,7 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
 });
 
 test('domestic DNS uses independent dynamic whitelist switches and no generic direct resolver', () => {
+  const domesticResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
   const whitelist = {
     国内CDN解析: 'dns_domestic_cdn',
     微软下载解析: 'dns_microsoft_cdn',
@@ -1385,7 +1387,7 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
             !config.rules.some((rule) => rule.startsWith(`RULE-SET,${name},`)),
             'DNS whitelist must not force a route',
           );
-          assert.deepEqual(policyForRuleSet(config, name), config.dns['default-nameserver']);
+          assert.deepEqual(policyForRuleSet(config, name), domesticResolvers);
         }
         for (const suffix of ['+.steamserver.net', '+.steamusercontent.com'])
           assert.deepEqual(config.dns['nameserver-policy'][suffix], config.dns.nameserver);
@@ -1400,7 +1402,7 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
   assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'microsoft')));
   assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'steam')));
   const domesticKeys = Object.entries(config.dns['nameserver-policy'])
-    .filter(([, value]) => JSON.stringify(value) === JSON.stringify(config.dns['default-nameserver']))
+    .filter(([, value]) => JSON.stringify(value) === JSON.stringify(domesticResolvers))
     .map(([key]) => key)
     .sort();
   assert.deepEqual(
@@ -1441,7 +1443,12 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
     ) {
       assert.equal(dns, 'rcode://name_error');
     } else if (target === '直连')
-      assert.deepEqual(dns, providerName === 'apple_cn' ? config.dns['default-nameserver'] : config.dns.nameserver);
+      assert.deepEqual(
+        dns,
+        providerName === 'apple_cn'
+          ? ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT']
+          : config.dns.nameserver,
+      );
     else {
       for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.ok(resolver.endsWith(`#${dnsTarget}`));
     }
@@ -1475,7 +1482,7 @@ test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers a
   const policy = config.dns['nameserver-policy'];
   for (const key of ['gspe1-ssl.ls.apple.com', '+.guzzoni.apple.com', '+.siri.apple.com']) {
     assert.ok(policy[key]);
-    for (const resolver of policy[key]) assert.match(resolver, /^https:\/\//);
+    for (const resolver of policy[key]) assert.match(resolver, /^(https|tls|quic):\/\//);
   }
   const suffixMatches = (suffix, domain) => domain === suffix || domain.endsWith(`.${suffix}`);
   for (const host of ['icloud-content.com', 'edge.hkg.icloud-content.com', 'a.b.icloud-content.com'])

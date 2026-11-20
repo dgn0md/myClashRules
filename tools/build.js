@@ -189,7 +189,7 @@ function render(config, api, settings) {
   const options = doc.getIn(['x-myClashRules', 'options'], true);
   for (const pair of options.items) pair.value.comment = ' ' + (descriptions[pair.key.value] || '');
   const comments = {
-    dns: 'DNS：白名单使用国内加密解析，其他业务使用国外 DoH；直连不自动授权国内 DNS。保留 Apple 专项例外与节点/DoH 启动解析。',
+    dns: 'DNS：白名单使用阿里 DoQ 与腾讯 DoH，默认国外解析使用 Cloudflare/Google DoT；直连不自动授权国内 DNS。保留 Apple 例外与固定 IP DoH 启动解析。',
     tun: 'TUN 接管 TCP/UDP 53；strict-route 在支持的平台防多网卡旁路。关闭 TUN 需上级 DNS 接管。',
     'proxy-providers': '填入 Clash/Mihomo 订阅 URL；静态 provider 模式不能读取机场的顶层 DNS/hosts。',
     proxies: '自定义节点与五种直连出口；链式落地须在 x-myClashRules.customProxies 配置并重新生成。',

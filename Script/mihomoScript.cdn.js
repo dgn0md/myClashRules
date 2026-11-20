@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：eda3db29339aee11cbf25b7fa47f7b70e1bb2d8c60585c0b22d1c0fb03e40657
+ * 最新 Raw SHA-256：ae512606975629b5ee5d579b4fdab22116d975c6db0d747a7494d2de18cc510d
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：63c84f7c4e1764d1575d802c1606b4c819c359646df71dd2b89fe2e094847bdf
+ * 缓存 CDN SHA-256：3c7feca5edf29be38d0463c4d99dc79fc4a26291db426a851fa425b1057025fd
  */
 
 // --- 静态配置区域 ---
@@ -1569,14 +1569,16 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
 // ---dns和hosts相关处理---
 
 // 国内外 DNS 定义
-// 国内运营商可达的公共加密 DNS，固定 IP 启动避免解析 DoH 域名时再发明文 DNS。
-// 不配置 UDP/53、system 或 skip-cert-verify；不可达时失败，不降级为明文。
-const chinaDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
-const foreignDNS = ['https://cloudflare-dns.com/dns-query#默认代理', 'https://dns.google/dns-query#默认代理'];
+// 国内 DNS 白名单：阿里 DoQ 与腾讯 DoH；默认国外查询：Cloudflare 与 Google DoT。
+// 不配置明文 DNS 或 skip-cert-verify；不可达时失败，不降级为明文。
+const chinaDNS = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
+const foreignDNS = ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理'];
+// Nameserver hostnames and proxy nodes bootstrap through IP-literal encrypted DoH to avoid recursive resolution.
+const bootstrapDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
 // Other Apple Service connections keep their own group, while Apple DNS uses the Siri selector.
 const appleOtherDnsEgressGroupName = appleAiGroupName;
-const defaultDNS = [...chinaDNS];
-const proxyServerDNS = [...chinaDNS];
+const defaultDNS = [...bootstrapDNS];
+const proxyServerDNS = [...bootstrapDNS];
 
 /**
  * hosts 匹配优先级：精确 > +. > . > *（同级按出现顺序）
@@ -1774,7 +1776,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 
   const hosts = {
     'doh.pub': ['1.12.12.12', '120.53.53.53'],
-    'cloudflare-dns.com': ['1.1.1.1', '1.0.0.1'],
+    'one.one.one.one': ['1.1.1.1', '1.0.0.1'],
     'dns.google': ['8.8.8.8', '8.8.4.4'],
 
     // 解决谷歌商店无法下载的问题
@@ -2218,7 +2220,7 @@ function validateStrictDnsSettings(config, options) {
         const parts = server.split('#');
         if (
           parts.length > 2 ||
-          !/^(https|tls):\/\/[^\s#@]+$/i.test(parts[0]) ||
+          !/^(https|tls|quic):\/\/[^\s#@]+$/i.test(parts[0]) ||
           /skip-cert-verify|@/i.test(server) ||
           (parts.length === 2 && !['DIRECT', ...groups.map((group) => group.name)].includes(parts[1]))
         )
