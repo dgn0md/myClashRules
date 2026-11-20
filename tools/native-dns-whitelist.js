@@ -75,11 +75,11 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
   const modes = [
     { name: 'provider', options: {} },
     { name: 'expanded', options: {}, expanded: true },
-    { name: 'minimal', options: { 极简国内外分流模式: true } },
-    { name: 'domestic-off', options: { 国内CDNDNS: false } },
-    { name: 'microsoft-off', options: { 微软下载DNS: false } },
-    { name: 'steam-off', options: { Steam下载DNS: false } },
-    { name: 'all-off', options: { 国内CDNDNS: false, 微软下载DNS: false, Steam下载DNS: false } },
+    { name: 'minimal', options: { 极简分流: true } },
+    { name: 'domestic-off', options: { 国内CDN解析: false } },
+    { name: 'microsoft-off', options: { 微软下载解析: false } },
+    { name: 'steam-off', options: { Steam下载解析: false } },
+    { name: 'all-off', options: { 国内CDN解析: false, 微软下载解析: false, Steam下载解析: false } },
     { name: 'domestic-route-off', options: { 国内服务优先直连: false } },
   ];
   try {
@@ -154,11 +154,11 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
         }
         assert.ok(ready, logs);
         const cases = [
-          ['i0.hdslb.com', options.国内CDNDNS !== false],
-          ['qhimgs7.com', options.国内CDNDNS !== false],
-          ['res.cdn.office.net', options.微软下载DNS !== false],
-          ['dl.steam.clngaa.com', options.Steam下载DNS !== false],
-          ['alibaba.cdn.steampipe.steamcontent.com', options.Steam下载DNS !== false],
+          ['i0.hdslb.com', options.国内CDN解析 !== false],
+          ['qhimgs7.com', options.国内CDN解析 !== false],
+          ['res.cdn.office.net', options.微软下载解析 !== false],
+          ['dl.steam.clngaa.com', options.Steam下载解析 !== false],
+          ['alibaba.cdn.steampipe.steamcontent.com', options.Steam下载解析 !== false],
           ['ugc.steamusercontent.com', false],
           ['api.steamserver.net', false],
           ['store.steampowered.com', false],
@@ -193,7 +193,7 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
         }
         for (const [host, allowed] of [
           ['unknown-direct.dns-whitelist-probe.net', false],
-          ['cdn-direct.hdslb.com', options.国内CDNDNS !== false],
+          ['cdn-direct.hdslb.com', options.国内CDN解析 !== false],
         ]) {
           domestic.queries.length = foreign.queries.length = 0;
           const socket = local.track(net.connect(proxyPort, '127.0.0.1'));

@@ -7,7 +7,8 @@ const { computeConfigSha256 } = require('./config-sha');
 const ROOT = path.resolve(__dirname, '..');
 const RAW_CONFIG = path.join(ROOT, 'Config/mihomoConfig.yaml');
 const CDN_CONFIG = path.join(ROOT, 'Config/mihomoConfig.cdn.yaml');
-const CDN_LINK = /^([ \t]*# CDN 配置：https:\/\/cdn\.jsdelivr\.net\/gh\/dgn0md\/myClashRules@main\/Config\/mihomoConfig\.cdn\.yaml)$/gm;
+const CDN_LINK =
+  /^([ \t]*# CDN 配置：https:\/\/cdn\.jsdelivr\.net\/gh\/dgn0md\/myClashRules@main\/Config\/mihomoConfig\.cdn\.yaml)$/gm;
 const CDN_HASH_FIELD = /^([ \t]*# 缓存 CDN SHA-256：)[0-9a-f]{64}$/gm;
 const RAW_HASH_FIELD = /^# 最新 Raw SHA-256：([0-9a-f]{64})$/gm;
 
@@ -29,8 +30,7 @@ function computeCdnConfigSha256(source) {
 function buildCdnConfig(source) {
   const rawSha256 = computeConfigSha256(source);
   const rawHashes = [...source.matchAll(RAW_HASH_FIELD)];
-  if (rawHashes.length !== 1 || rawHashes[0][1] !== rawSha256)
-    throw new Error('源 YAML 的 Raw SHA-256 标识已过期');
+  if (rawHashes.length !== 1 || rawHashes[0][1] !== rawSha256) throw new Error('源 YAML 的 Raw SHA-256 标识已过期');
 
   let count = 0;
   const template = source.replace(CDN_LINK, (line) => {

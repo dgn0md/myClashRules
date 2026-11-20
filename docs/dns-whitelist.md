@@ -20,9 +20,9 @@
 
 | 开关 | DNS provider | 使用范围与维护限制 |
 | --- | --- | --- |
-| `国内CDNDNS` | `dns_domestic_cdn` | Sukka `domestic_cdn`，国内服务资源/CDN 小集合；不替换为通用 `cdn` 或 `domestic` 全量集合。 |
-| `微软下载DNS` | `dns_microsoft_cdn` | Sukka `microsoft_cdn`，Microsoft 下载与静态资源；不扩大为整个 Microsoft、Azure 或登录/账号服务。 |
-| `Steam下载DNS` | `dns_steam_cn` | MetaCubeX `steam@cn` 动态成品，保留国内下载、更新与中国站条目；`steamserver.net`、`steamusercontent.com` 根域及子域明确使用国外 DNS。不能将成品描述为未经合并的纯 v2fly `@cn` 集合。 |
+| `国内CDN解析` | `dns_domestic_cdn` | Sukka `domestic_cdn`，国内服务资源/CDN 小集合；不替换为通用 `cdn` 或 `domestic` 全量集合。 |
+| `微软下载解析` | `dns_microsoft_cdn` | Sukka `microsoft_cdn`，Microsoft 下载与静态资源；不扩大为整个 Microsoft、Azure 或登录/账号服务。 |
+| `Steam下载解析` | `dns_steam_cn` | MetaCubeX `steam@cn` 动态成品，保留国内下载、更新与中国站条目；`steamserver.net`、`steamusercontent.com` 根域及子域明确使用国外 DNS。不能将成品描述为未经合并的纯 v2fly `@cn` 集合。 |
 
 具体下载地址、格式和上游来源见 [规则来源说明](rule-sources.md)。这些 provider 只决定 DNS，不增加连接直连规则。不得为其下载域名或图标 CDN 补充直连规则。
 
@@ -47,7 +47,7 @@
 | 场景 | 解析约定 |
 | --- | --- |
 | 固定版本 `apple_cn` | 其直连路由启用时保留国内加密 DNS，不改成整份动态 `apple_cdn`。 |
-| `Apple模型下载直连` 开启 | `gdmf.apple.com`、`mesu.apple.com`、`updates.cdn-apple.com`、`assets.cdn-apple.com` 四个精确域名保留国内加密 DNS。 |
+| `Apple下载直连` 开启 | `gdmf.apple.com`、`mesu.apple.com`、`updates.cdn-apple.com`、`assets.cdn-apple.com` 四个精确域名保留国内加密 DNS。 |
 | 无合格 Siri 地区候选，且普通 Apple 默认直连 | `rule-set:apple`、`gateway.icloud.com`、`setup.icloud.com` 保留国内加密解析回退；有合格候选时恢复跟随 Siri 组，关闭普通 Apple 默认直连时不启用此回退。 |
 | 节点域名与 DoH 服务器启动解析 | 继续使用独立的国内加密 DNS，避免代理自依赖；不把这些专用解析器作为普通业务查询的通用兜底。 |
 | 私有域名与拒绝出口 | 保留本地 hosts/专用 RCODE 安全处理；严格模式不为 LAN 名称查询系统或公共 DNS。 |

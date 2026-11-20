@@ -10,9 +10,12 @@ const { loadScript } = require('../Test/lib/loader');
 const YAML = require('yaml');
 const fx = require('../Test/lib/fixtures');
 const siriAiGroup = 'Siri Ai/Apple Intelligence';
+const siriAiOption = 'Apple智能分流';
 const appleProxyGroup = 'AppleProxy';
 const otherAppleGroup = 'Other Apple Service';
+const otherAppleOption = 'Apple其他服务';
 const autoSelectExMainlandHongKongGroup = '自动选择ex(大陆&香港)';
+const autoSelectExMainlandHongKongOption = '排除大陆香港自动选';
 const proxy = (name) => ({ name, type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' });
 const clean = () => ({
   proxies: [proxy('美国 测试')],
@@ -179,9 +182,32 @@ test('announcement and website rows are filtered even when they contain a recogn
 test('static provider has all sample region groups and compatible filters preserve regional backups', () => {
   const config = build().config;
   const regions = [
-    '香港', '日本', '美国', '新加坡', '台湾', '韩国', '澳大利亚', '印度', '加拿大', '德国', '英国', '法国',
-    '荷兰', '西班牙', '俄罗斯', '乌克兰', '土耳其', '挪威', '瑞士', '瑞典', '爱尔兰', '菲律宾', '印度尼西亚',
-    '越南', '泰国', '马来西亚',
+    '香港',
+    '日本',
+    '美国',
+    '新加坡',
+    '台湾',
+    '韩国',
+    '澳大利亚',
+    '印度',
+    '加拿大',
+    '德国',
+    '英国',
+    '法国',
+    '荷兰',
+    '西班牙',
+    '俄罗斯',
+    '乌克兰',
+    '土耳其',
+    '挪威',
+    '瑞士',
+    '瑞典',
+    '爱尔兰',
+    '菲律宾',
+    '印度尼西亚',
+    '越南',
+    '泰国',
+    '马来西亚',
   ];
   for (const region of regions) {
     const group = config['proxy-groups'].find((entry) => entry.name === region);
@@ -233,38 +259,70 @@ test('mainland/Hong Kong auto-select group excludes those labels and keeps Taiwa
   assert.equal(staticGroup['include-all-providers'], true);
   assert.match(staticGroup['exclude-filter'], /香港/);
   assert.match(staticGroup['exclude-filter'], /大陆/);
-  assert.ok(staticConfig['proxy-groups'].find((entry) => entry.name === '默认代理').proxies.includes(autoSelectExMainlandHongKongGroup));
-  assert.ok(staticConfig['proxy-groups'].find((entry) => entry.name === 'GLOBAL').proxies.includes(autoSelectExMainlandHongKongGroup));
+  assert.ok(
+    staticConfig['proxy-groups']
+      .find((entry) => entry.name === '默认代理')
+      .proxies.includes(autoSelectExMainlandHongKongGroup),
+  );
+  assert.ok(
+    staticConfig['proxy-groups']
+      .find((entry) => entry.name === 'GLOBAL')
+      .proxies.includes(autoSelectExMainlandHongKongGroup),
+  );
   assert.ok(!staticConfig['proxy-groups'].some((entry) => entry.name === '自动选择'));
   const serviceGroupsWithGeneralCandidates = [
-    'FCM', 'YouTube', 'GitHub', 'Microsoft', otherAppleGroup, 'Telegram', 'Steam', 'Twitter', 'Line', 'Netflix',
-    'Emby', 'PikPak', 'Spotify', 'Crypto', 'PayPal', 'Patreon', 'EHentai', appleProxyGroup,
+    'FCM',
+    'YouTube',
+    'GitHub',
+    'Microsoft',
+    otherAppleGroup,
+    'Telegram',
+    'Steam',
+    'Twitter',
+    'Line',
+    'Netflix',
+    'Emby',
+    'PikPak',
+    'Spotify',
+    'Crypto',
+    'PayPal',
+    'Patreon',
+    'EHentai',
+    appleProxyGroup,
   ];
   for (const name of serviceGroupsWithGeneralCandidates) {
     assert.ok(
-      staticConfig['proxy-groups'].find((entry) => entry.name === name).proxies.includes(autoSelectExMainlandHongKongGroup),
+      staticConfig['proxy-groups']
+        .find((entry) => entry.name === name)
+        .proxies.includes(autoSelectExMainlandHongKongGroup),
       `${name} should offer the replacement auto-select group`,
     );
   }
   for (const name of ['Google', 'AI', 'TikTok', 'Meta', siriAiGroup]) {
     assert.ok(
-      !staticConfig['proxy-groups'].find((entry) => entry.name === name).proxies.includes(autoSelectExMainlandHongKongGroup),
+      !staticConfig['proxy-groups']
+        .find((entry) => entry.name === name)
+        .proxies.includes(autoSelectExMainlandHongKongGroup),
       `${name} should retain its restricted regional candidates`,
     );
   }
 
-  const disabled = build({ settings: { options: { [autoSelectExMainlandHongKongGroup]: false } } }).config;
+  const disabled = build({ settings: { options: { [autoSelectExMainlandHongKongOption]: false } } }).config;
   assert.ok(!disabled['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
   const migrated = build({ settings: { options: { 自动选择: false } } });
   assert.ok(!migrated.config['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
-  assert.equal(YAML.parse(migrated.text)['x-myClashRules'].options[autoSelectExMainlandHongKongGroup], false);
+  assert.equal(YAML.parse(migrated.text)['x-myClashRules'].options[autoSelectExMainlandHongKongOption], false);
   const explicitNewOptionWins = build({
-    settings: { options: { 自动选择: false, [autoSelectExMainlandHongKongGroup]: true } },
+    settings: { options: { 自动选择: false, [autoSelectExMainlandHongKongOption]: true } },
   }).config;
   assert.ok(explicitNewOptionWins['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
-  const minimal = build({ settings: { options: { 极简国内外分流模式: true } } }).config;
+  const minimal = build({ settings: { options: { 极简分流: true } } }).config;
   assert.ok(minimal['proxy-groups'].some((entry) => entry.name === autoSelectExMainlandHongKongGroup));
-  assert.ok(minimal['proxy-groups'].find((entry) => entry.name === '默认代理').proxies.includes(autoSelectExMainlandHongKongGroup));
+  assert.ok(
+    minimal['proxy-groups']
+      .find((entry) => entry.name === '默认代理')
+      .proxies.includes(autoSelectExMainlandHongKongGroup),
+  );
 });
 
 test('GLOBAL and default proxy prefer the requested available groups in both modes', () => {
@@ -275,8 +333,8 @@ test('GLOBAL and default proxy prefer the requested available groups in both mod
           subscription,
           settings: {
             options: {
-              极简国内外分流模式: minimal,
-              [autoSelectExMainlandHongKongGroup]: enabled,
+              极简分流: minimal,
+              [autoSelectExMainlandHongKongOption]: enabled,
             },
           },
         }).config;
@@ -299,13 +357,24 @@ test('domestic vendor modules use dynamic differences without changing DNS autho
   const modules = ['tencent', 'netease', 'bytedance'];
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
-      const baseline = build({ subscription, settings: { options: {
-        极简国内外分流模式: minimal,
-      } } }).config;
+      const baseline = build({
+        subscription,
+        settings: {
+          options: {
+            极简分流: minimal,
+          },
+        },
+      }).config;
       for (const options of [{}, { 国内服务优先直连: false }]) {
-        const config = build({ subscription, settings: { options: {
-          极简国内外分流模式: minimal, ...options,
-        } } }).config;
+        const config = build({
+          subscription,
+          settings: {
+            options: {
+              极简分流: minimal,
+              ...options,
+            },
+          },
+        }).config;
         for (const field of ['nameserver', 'default-nameserver', 'proxy-server-nameserver', 'fake-ip-filter'])
           assert.deepEqual(config.dns[field], baseline.dns[field]);
         for (const provider of ['dns_domestic_cdn', 'dns_microsoft_cdn', 'dns_steam_cn'])
@@ -315,7 +384,10 @@ test('domestic vendor modules use dynamic differences without changing DNS autho
           const rule = `AND,((RULE-SET,${name}),(NOT,((RULE-SET,${name}_noncn)))),直连`;
           const enabled = options.国内服务优先直连 !== false;
           assert.equal(config.rules.includes(rule), enabled);
-          for (const [provider, file] of [[name, source], [`${name}_noncn`, `${source}@!cn`]]) {
+          for (const [provider, file] of [
+            [name, source],
+            [`${name}_noncn`, `${source}@!cn`],
+          ]) {
             assert.equal(!!config['rule-providers'][provider], enabled);
             if (!enabled) continue;
             assert.ok(config['rule-providers'][provider].url.endsWith(`/geosite/${file}.mrs`));
@@ -325,10 +397,11 @@ test('domestic vendor modules use dynamic differences without changing DNS autho
           if (enabled) {
             const index = config.rules.indexOf(rule);
             assert.ok(index < config.rules.indexOf('RULE-SET,geolocation-!cn,默认代理'));
-            if (!minimal) for (const service of ['tiktok', 'ai', 'ads']) {
-              const serviceIndex = config.rules.findIndex((entry) => entry.startsWith(`RULE-SET,${service},`));
-              if (serviceIndex >= 0) assert.ok(serviceIndex < index);
-            }
+            if (!minimal)
+              for (const service of ['tiktok', 'ai', 'ads']) {
+                const serviceIndex = config.rules.findIndex((entry) => entry.startsWith(`RULE-SET,${service},`));
+                if (serviceIndex >= 0) assert.ok(serviceIndex < index);
+              }
           }
         }
         graph(config);
@@ -340,15 +413,18 @@ test('domestic vendor modules use dynamic differences without changing DNS autho
 test('static provider applies enabled rate filters to every node-bearing group', () => {
   const rates = load().rateRegionDefinitions;
   const cases = [
-    ['过滤低倍率节点', '低倍率节点'],
-    ['过滤高倍率节点', '高倍率节点'],
+    ['过滤低倍率', '低倍率节点'],
+    ['过滤高倍率', '高倍率节点'],
   ];
   for (const [option, name] of cases) {
     const pattern = rates.find((entry) => entry.name === name).regex.source;
     const config = build({ settings: { options: { [option]: true } } }).config;
     for (const groupName of ['手动选择', '美国', '家宽节点', '其他节点']) {
       const group = config['proxy-groups'].find((entry) => entry.name === groupName);
-      assert.ok(group?.['exclude-filter']?.includes(pattern), `${option} must exclude matching nodes from ${groupName}`);
+      assert.ok(
+        group?.['exclude-filter']?.includes(pattern),
+        `${option} must exclude matching nodes from ${groupName}`,
+      );
     }
   }
 });
@@ -364,11 +440,15 @@ test('regional selectors default to their own auto-select groups only when those
       assert.ok(group.proxies.includes(group['default-selected']));
     }
     for (const name of ['低倍率节点', '高倍率节点', '家宽节点', '其他节点'])
-      assert.equal(groups.get(name)?.['default-selected'], undefined, `${name} should keep its existing selection behavior`);
+      assert.equal(
+        groups.get(name)?.['default-selected'],
+        undefined,
+        `${name} should keep its existing selection behavior`,
+      );
   }
   const noAutoSelect = build({
     subscription: fx.typicalSubscription(),
-    settings: { options: { 生成地区自动选择组: false } },
+    settings: { options: { 地区测速组: false } },
   }).config;
   for (const region of regions) {
     const group = noAutoSelect['proxy-groups'].find((entry) => entry.name === region);
@@ -389,9 +469,16 @@ test('latency test domain uses the default proxy route and encrypted proxy DNS i
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       for (const domesticFirst of [false, true]) {
-        const config = build({ subscription, settings: { options: {
-          极简国内外分流模式: minimal, 国内服务优先直连: domesticFirst, 屏蔽代理QUIC流量: true,
-        } } }).config;
+        const config = build({
+          subscription,
+          settings: {
+            options: {
+              极简分流: minimal,
+              国内服务优先直连: domesticFirst,
+              拦截代理QUIC: true,
+            },
+          },
+        }).config;
         const index = config.rules.indexOf('DOMAIN,cp.cloudflare.com,默认代理');
         assert.ok(index >= 0);
         assert.ok(index < config.rules.indexOf('RULE-SET,private,直连'));
@@ -405,7 +492,7 @@ test('latency test domain uses the default proxy route and encrypted proxy DNS i
 test('sniffing recovers pure-IP domain metadata without overriding destinations in every output mode', () => {
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
-      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
       assert.equal(config.sniffer.enable, true);
       assert.equal(config.sniffer['parse-pure-ip'], true);
       assert.equal(config.sniffer['force-dns-mapping'], true);
@@ -420,7 +507,7 @@ test('sniffing recovers pure-IP domain metadata without overriding destinations 
   }
 });
 test('Apple AI/Siri and product endpoints precede Apple CN, advertising and QUIC', () => {
-  const config = build({ settings: { options: { 屏蔽代理QUIC流量: true } } }).config;
+  const config = build({ settings: { options: { 拦截代理QUIC: true } } }).config;
   const rules = config.rules;
   assert.equal(config['rule-providers'].apple_cn.behavior, 'classical');
   assert.equal(config['rule-providers'].apple_cn.format, 'text');
@@ -449,7 +536,7 @@ test('Apple AI/Siri and product endpoints precede Apple CN, advertising and QUIC
     assert.ok(direct >= 0, `missing direct download exception ${domain}`);
     assert.ok(direct < appleProxyDynamic, `${domain} must keep priority over the broad AppleProxy provider`);
   }
-  const downloadsProxied = build({ settings: { options: { Apple模型下载直连: false } } }).config;
+  const downloadsProxied = build({ settings: { options: { Apple下载直连: false } } }).config;
   assert.ok(!downloadsProxied.rules.includes('DOMAIN,assets.cdn-apple.com,直连'));
   assert.ok(downloadsProxied.rules.includes(`RULE-SET,apple_proxy,${appleProxyGroup}`));
   assert.ok(!rules.includes('RULE-SET,cn,直连'));
@@ -457,7 +544,7 @@ test('Apple AI/Siri and product endpoints precede Apple CN, advertising and QUIC
 test('Apple IP routes to AppleProxy before cn_ip in every output mode', () => {
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
-      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
       assert.ok(config['rule-providers'].apple_ip);
       const appleIp = config.rules.indexOf(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`);
       assert.ok(appleIp >= 0);
@@ -469,12 +556,10 @@ test('Apple IP routes to AppleProxy before cn_ip in every output mode', () => {
   }
 });
 test('Apple DNS domain suffixes route to AppleProxy with matching DNS', () => {
-  const targets = [
-    [`DOMAIN-SUFFIX,apple-dns.com,${appleProxyGroup}`, '+.apple-dns.com'],
-  ];
+  const targets = [[`DOMAIN-SUFFIX,apple-dns.com,${appleProxyGroup}`, '+.apple-dns.com']];
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
-      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
       for (const [rule, policyKey] of targets) {
         const index = config.rules.indexOf(rule);
         assert.ok(index >= 0, `missing ${rule}`);
@@ -515,8 +600,14 @@ test('Apple DNS domain suffixes route to AppleProxy with matching DNS', () => {
 const proxyIpProviders = new Set(['google_ip', 'telegram_ip', 'tiktok_ip', 'twitter_ip', 'facebook_ip']);
 
 test('required proxy IP routes survive disabled service groups and minimal mode without resolving domains', () => {
-  const services = { google_ip: 'Google', telegram_ip: 'Telegram', tiktok_ip: 'TikTok', twitter_ip: 'Twitter', facebook_ip: 'Meta' };
-  const modes = [{}, { 极简国内外分流模式: true }, ...Object.values(services).map((service) => ({ [service]: false }))];
+  const services = {
+    google_ip: 'Google',
+    telegram_ip: 'Telegram',
+    tiktok_ip: 'TikTok',
+    twitter_ip: 'Twitter',
+    facebook_ip: 'Meta',
+  };
+  const modes = [{}, { 极简分流: true }, ...Object.values(services).map((service) => ({ [service]: false }))];
   for (const subscription of [undefined, clean()]) {
     for (const options of modes) {
       const config = build({ subscription, settings: { options } }).config;
@@ -532,7 +623,7 @@ test('required proxy IP routes survive disabled service groups and minimal mode 
         for (const member of groups.get(name)?.proxies || []) assertProxyOnly(member, visited);
       };
       for (const [provider, service] of Object.entries(services)) {
-        const target = options.极简国内外分流模式 || options[service] === false ? '默认代理' : service;
+        const target = options.极简分流 || options[service] === false ? '默认代理' : service;
         const rule = `RULE-SET,${provider},${target},no-resolve`;
         assert.equal(config.rules.filter((entry) => entry.startsWith(`RULE-SET,${provider},`)).length, 1);
         assert.ok(config.rules.includes(rule), rule);
@@ -573,13 +664,17 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
   };
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
-      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
       const routes = new Map();
       for (const rule of config.rules) {
         const match = /^RULE-SET,([^,]+),([^,]+)/.exec(rule);
         if (!match || config['rule-providers'][match[1]]?.behavior !== 'ipcidr') continue;
         const [, provider, target] = match;
-        assert.equal(target, minimal && proxyIpProviders.has(provider) ? '默认代理' : expectedTargets[provider], `unexpected target for ${provider}`);
+        assert.equal(
+          target,
+          minimal && proxyIpProviders.has(provider) ? '默认代理' : expectedTargets[provider],
+          `unexpected target for ${provider}`,
+        );
         if (provider === 'cn_ip') assert.equal(rule, 'RULE-SET,cn_ip,直连');
         else assert.equal(rule.split(',').at(-1), 'no-resolve', `${provider} must not trigger DNS resolution`);
         // IP-CIDR providers have no DNS names; their domain companion carries the DNS policy.
@@ -596,7 +691,10 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
       for (const [ipProvider, domainProvider] of Object.entries(domainPartners)) {
         const target = routes.get(ipProvider);
         if (!target || (minimal && proxyIpProviders.has(ipProvider))) continue;
-        assert.ok(config.rules.includes(`RULE-SET,${domainProvider},${target}`), `${domainProvider} must share ${ipProvider} egress`);
+        assert.ok(
+          config.rules.includes(`RULE-SET,${domainProvider},${target}`),
+          `${domainProvider} must share ${ipProvider} egress`,
+        );
         const dns = policyForRuleSet(config, domainProvider);
         assert.ok(dns, `missing DNS policy for ${domainProvider}`);
         for (const resolver of Array.isArray(dns) ? dns : [dns])
@@ -605,11 +703,14 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
             `${ipProvider} → ${target}, ${domainProvider} DNS → ${resolver}`,
           );
       }
-      if (routes.has('cn_ip'))
-        assert.equal(config.dns['nameserver-policy']['rule-set:cn'], undefined);
-      if (routes.has('private_ip')) assert.equal(config.dns['nameserver-policy']['rule-set:private'], 'rcode://success');
+      if (routes.has('cn_ip')) assert.equal(config.dns['nameserver-policy']['rule-set:cn'], undefined);
+      if (routes.has('private_ip'))
+        assert.equal(config.dns['nameserver-policy']['rule-set:private'], 'rcode://success');
       if (routes.has('apple_ip')) {
-        assert.ok(config.rules.indexOf(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`) < config.rules.indexOf('RULE-SET,cn_ip,直连'));
+        assert.ok(
+          config.rules.indexOf(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`) <
+            config.rules.indexOf('RULE-SET,cn_ip,直连'),
+        );
         if (config['rule-providers'].apple) {
           assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
           assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
@@ -623,7 +724,7 @@ test('Siri AI domain routes use matching DNS policy and precede QUIC rejection i
     for (const minimal of [false, true]) {
       const config = build({
         subscription,
-        settings: { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } },
+        settings: { options: { 极简分流: minimal, 拦截代理QUIC: true } },
       }).config;
       const routes = config.rules
         .map((rule, index) => ({ index, parts: rule.split(',') }))
@@ -648,7 +749,7 @@ test('shared iCloud endpoints use Other Apple Service and matching DNS in both o
     for (const minimal of [false, true]) {
       const config = build({
         subscription,
-        settings: { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } },
+        settings: { options: { 极简分流: minimal, 拦截代理QUIC: true } },
       }).config;
       for (const host of hosts) {
         const rule = `DOMAIN,${host},${otherAppleGroup}`;
@@ -659,7 +760,10 @@ test('shared iCloud endpoints use Other Apple Service and matching DNS in both o
         const dns = config.dns['nameserver-policy'][host];
         assert.ok(dns, `missing DNS policy for ${host}`);
         for (const resolver of Array.isArray(dns) ? dns : [dns])
-          assert.ok(resolver.endsWith(`#${siriAiGroup}`), `Other Apple Service DNS must use ${siriAiGroup}: ${resolver}`);
+          assert.ok(
+            resolver.endsWith(`#${siriAiGroup}`),
+            `Other Apple Service DNS must use ${siriAiGroup}: ${resolver}`,
+          );
       }
       assert.ok(!config.dns['fake-ip-filter'].includes('setup.icloud.com'));
       const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
@@ -670,7 +774,7 @@ test('shared iCloud endpoints use Other Apple Service and matching DNS in both o
     }
     const disabled = build({
       subscription,
-      settings: { options: { [otherAppleGroup]: false } },
+      settings: { options: { [otherAppleOption]: false } },
     }).config;
     for (const host of hosts) {
       assert.ok(!disabled.rules.includes(`DOMAIN,${host},${otherAppleGroup}`));
@@ -679,14 +783,12 @@ test('shared iCloud endpoints use Other Apple Service and matching DNS in both o
   }
 });
 test('international iCloud content suffix shares priority routing and DNS while excluding China sites', () => {
-  const targets = [
-    [`DOMAIN-SUFFIX,icloud-content.com,${siriAiGroup}`, '+.icloud-content.com'],
-  ];
+  const targets = [[`DOMAIN-SUFFIX,icloud-content.com,${siriAiGroup}`, '+.icloud-content.com']];
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const config = build({
         subscription,
-        settings: { options: { 极简国内外分流模式: minimal, 屏蔽代理QUIC流量: true } },
+        settings: { options: { 极简分流: minimal, 拦截代理QUIC: true } },
       }).config;
       graph(config);
       encryptedDns(config);
@@ -714,7 +816,7 @@ test('international iCloud content suffix shares priority routing and DNS while 
         assert.ok(!config.dns['nameserver-policy'][host]);
       }
     }
-    const off = build({ subscription, settings: { options: { [siriAiGroup]: false } } }).config;
+    const off = build({ subscription, settings: { options: { [siriAiOption]: false } } }).config;
     graph(off);
     for (const [rule, policy] of targets) {
       assert.ok(!off.rules.includes(rule));
@@ -786,12 +888,12 @@ test('each boolean option is accepted, takes part in generation and leaves valid
       const result = build({ settings, subscription });
       graph(result.config);
       assert.equal(YAML.parse(result.text)['x-myClashRules'].options[key], !value);
-      if (key !== '严格加密DNS') encryptedDns(result.config);
+      if (key !== '严格DNS校验') encryptedDns(result.config);
     }
   }
 });
 test('minimal mode keeps independently enabled Apple and DNS protections', () => {
-  const config = build({ settings: { options: { 极简国内外分流模式: true } } }).config;
+  const config = build({ settings: { options: { 极简分流: true } } }).config;
   graph(config);
   encryptedDns(config);
   assert.ok(config.rules.includes(`DOMAIN-SUFFIX,guzzoni.apple.com,${siriAiGroup}`));
@@ -803,14 +905,14 @@ test('Apple/CDN/PCDN/IPv6/TUN/LAN switches change their advertised behavior', ()
   const config = build({
     settings: {
       options: {
-        [siriAiGroup]: false,
+        [siriAiOption]: false,
         [appleProxyGroup]: false,
-        Apple模型下载直连: false,
+        Apple下载直连: false,
         PCDN拦截: false,
         IPv6: false,
         TUN: false,
         局域网访问: true,
-        拦截外部明文DNS: false,
+        接管DNS53: false,
       },
     },
   }).config;
@@ -827,7 +929,7 @@ test('Apple/CDN/PCDN/IPv6/TUN/LAN switches change their advertised behavior', ()
 });
 test('invalid true/false values and unknown options are rejected', () => {
   for (const value of ['ture', 'false', 1, null])
-    assert.throws(() => build({ settings: { options: { [siriAiGroup]: value } } }), /true.*false/);
+    assert.throws(() => build({ settings: { options: { [siriAiOption]: value } } }), /true.*false/);
   assert.throws(() => build({ settings: { options: { typo: true } } }), /未知配置项/);
 });
 test('default YAML is deterministic, commented and contains no template credentials', () => {
@@ -836,10 +938,32 @@ test('default YAML is deterministic, commented and contains no template credenti
   assert.equal(fs.readFileSync('Config/mihomoConfig.yaml', 'utf8'), text);
   assert.deepEqual(YAML.parse(text).dns, config.dns);
   assert.match(text, /Mihomo 不执行 x-myClashRules/);
-  assert.match(text, /Siri Ai\/Apple Intelligence: true #/);
+  assert.match(text, /Apple智能分流: true #/);
   assert.equal(text, build().text);
   const metadata = YAML.parse(text)['x-myClashRules'];
   assert.equal(text, build({ settings: metadata }).text);
+});
+test('provider cleanup preserves nested route, Fake-IP, and both DNS policy references', () => {
+  const api = loadScript('Script/mihomoScript.js', (source) => {
+    const transformed = source.replace(
+      '  return finalizeMyClashRules(newConfig);',
+      `  const cleanupProvider = { type: 'inline', behavior: 'domain', payload: [] };
+  for (const name of ['cleanup_nested_route', 'cleanup_fake_ip', 'cleanup_dns_policy', 'cleanup_proxy_dns_policy', 'cleanup_unused'])
+    newConfig['rule-providers'][name] = { ...cleanupProvider };
+  newConfig.rules.push('RULE-SET,cleanup_nested_route,默认代理,no-resolve');
+  newConfig.dns['fake-ip-filter'].push('rule-set:cleanup_fake_ip');
+  newConfig.dns['nameserver-policy']['rule-set:cleanup_dns_policy'] = 'rcode://success';
+  newConfig.dns['proxy-server-nameserver-policy']['rule-set:cleanup_proxy_dns_policy'] = 'rcode://success';
+  return finalizeMyClashRules(newConfig);`,
+    );
+    assert.notEqual(transformed, source);
+    return transformed;
+  });
+  const config = api.main(clean());
+  graph(config);
+  for (const name of ['cleanup_nested_route', 'cleanup_fake_ip', 'cleanup_dns_policy', 'cleanup_proxy_dns_policy'])
+    assert.ok(config['rule-providers'][name], `${name} should be retained`);
+  assert.equal(config['rule-providers'].cleanup_unused, undefined);
 });
 test('combined group switches and custom chain stay acyclic', () => {
   const settings = {
@@ -848,11 +972,11 @@ test('combined group switches and custom chain stay acyclic', () => {
       手动选择: false,
       自动选择: false,
       负载均衡: false,
-      生成地区自动选择组: false,
-      生成高低倍率组: false,
-      生成家宽节点组: false,
-      分流组添加所有节点: true,
-      过滤高倍率节点: true,
+      地区测速组: false,
+      倍率节点组: false,
+      家宽节点组: false,
+      服务组含全节点: true,
+      过滤高倍率: true,
     },
     customProxies: [{ ...clean().proxies[0], name: '日本 自建 住宅' }],
   };
@@ -895,14 +1019,31 @@ test('AppleProxy and Apple product endpoints share one regional group; overseas 
   assert.equal(appleProxyProvider.interval, 86400);
   assert.ok(appleProxyProvider.url.endsWith('/rule/Clash/AppleProxy/AppleProxy.yaml'));
   assert.ok(defaults.rules.includes(`RULE-SET,apple_proxy,${appleProxyGroup}`));
-  assert.ok(defaults.rules.indexOf(`RULE-SET,apple_proxy,${appleProxyGroup}`) < defaults.rules.indexOf('RULE-SET,apple_cn,直连'));
-  assert.ok(defaults.dns['nameserver-policy']['rule-set:apple_proxy']?.every((dns) => dns.endsWith(`#${appleProxyGroup}`)));
+  assert.ok(
+    defaults.rules.indexOf(`RULE-SET,apple_proxy,${appleProxyGroup}`) <
+      defaults.rules.indexOf('RULE-SET,apple_cn,直连'),
+  );
+  assert.ok(
+    defaults.dns['nameserver-policy']['rule-set:apple_proxy']?.every((dns) => dns.endsWith(`#${appleProxyGroup}`)),
+  );
   assert.ok(defaults['rule-providers'].apple_tv.url.endsWith('/apple-tvplus.mrs'));
-  assert.ok(defaults.rules.indexOf(`RULE-SET,apple_tv,${appleProxyGroup}`) < defaults.rules.indexOf('RULE-SET,apple_cn,直连'));
-  assert.ok(defaults.dns['nameserver-policy']['rule-set:apple_tv']?.every((dns) => dns.endsWith(`#${appleProxyGroup}`)));
+  assert.ok(
+    defaults.rules.indexOf(`RULE-SET,apple_tv,${appleProxyGroup}`) < defaults.rules.indexOf('RULE-SET,apple_cn,直连'),
+  );
+  assert.ok(
+    defaults.dns['nameserver-policy']['rule-set:apple_tv']?.every((dns) => dns.endsWith(`#${appleProxyGroup}`)),
+  );
   assert.ok(defaults.rules.includes(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`));
   assert.ok(defaults.rules.includes(`DOMAIN,mask.icloud.com,${siriAiGroup}`));
-  for (const oldName of ['AppleNews', 'AppleTV', 'AppleFitness', 'AppleSports', 'AppleBooks', 'AppleRelay', 'Apple地区检测'])
+  for (const oldName of [
+    'AppleNews',
+    'AppleTV',
+    'AppleFitness',
+    'AppleSports',
+    'AppleBooks',
+    'AppleRelay',
+    'Apple地区检测',
+  ])
     assert.ok(!defaults['proxy-groups'].some((group) => group.name === oldName));
   const off = build({ settings: { options: { [appleProxyGroup]: false } } }).config;
   assert.ok(!off['proxy-groups'].some((group) => group.name === appleProxyGroup));
@@ -910,14 +1051,14 @@ test('AppleProxy and Apple product endpoints share one regional group; overseas 
   assert.ok(!off['rule-providers'].apple_proxy);
   assert.ok(!off['rule-providers'].apple_tv);
   assert.ok(!off.rules.some((rule) => rule.endsWith(`,${appleProxyGroup}`)));
-  const media = build({ settings: { options: { Apple海外媒体: true } } }).config;
+  const media = build({ settings: { options: { Apple媒体代理: true } } }).config;
   for (const host of ['buy.itunes.apple.com', 'p12-buy.itunes.apple.com', 'play.itunes.apple.com'])
     assert.ok(media.rules.includes(`DOMAIN,${host},${appleProxyGroup}`));
 });
 test('literal domain routes use target DNS and Other Apple DNS follows the Siri selector', () => {
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
-      const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+      const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
       const groups = new Map(config['proxy-groups'].map((group) => [group.name, group]));
       let checked = 0;
       for (const rule of config.rules) {
@@ -968,10 +1109,13 @@ test('Other Apple Service traffic stays on its group while DNS follows the Siri 
   }
 });
 test('Other Apple DNS retains a Siri egress selector when Siri routing is disabled', () => {
-  const config = build({ settings: { options: { [siriAiGroup]: false } } }).config;
+  const config = build({ settings: { options: { [siriAiOption]: false } } }).config;
   const siriGroup = config['proxy-groups'].find((group) => group.name === siriAiGroup);
   assert.ok(siriGroup, 'Siri selector is required as the DNS egress group');
-  assert.ok(!config.rules.some((rule) => rule.endsWith(`,${siriAiGroup}`)), 'Siri service routes should remain disabled');
+  assert.ok(
+    !config.rules.some((rule) => rule.endsWith(`,${siriAiGroup}`)),
+    'Siri service routes should remain disabled',
+  );
   assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
   graph(config);
 });
@@ -985,9 +1129,12 @@ test('Other Apple direct route keeps encrypted DNS when no eligible Siri region 
 });
 test('strict DNS validates every generated upstream field', () => {
   const unsafe = loadScript('Script/mihomoScript.js', (source) =>
-    source.replace("const chinaDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];",
-      "const chinaDNS = ['udp://223.5.5.5'];"));
-  assert.throws(() => unsafe.main(clean()), /严格加密DNS.*default-nameserver/);
+    source.replace(
+      "const chinaDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];",
+      "const chinaDNS = ['udp://223.5.5.5'];",
+    ),
+  );
+  assert.throws(() => unsafe.main(clean()), /严格DNS校验.*default-nameserver/);
 });
 test('legacy Apple group switches migrate to the consolidated names and explicit new names win', () => {
   const legacy = {
@@ -1011,16 +1158,18 @@ test('legacy Apple group switches migrate to the consolidated names and explicit
   const legacyRegionDetectionOff = build({ settings: { options: { Apple地区检测: false } } }).config;
   assert.ok(legacyRegionDetectionOff['proxy-groups'].some((group) => group.name === siriAiGroup));
   assert.ok(!legacyRegionDetectionOff.rules.some((rule) => rule.endsWith(`,${siriAiGroup}`)));
-  assert.ok(legacyRegionDetectionOff.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+  assert.ok(
+    legacyRegionDetectionOff.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)),
+  );
   assert.ok(legacyRegionDetectionOff['proxy-groups'].some((group) => group.name === appleProxyGroup));
 
   const explicit = build({
     settings: {
       options: {
         ...legacy,
-        [siriAiGroup]: false,
+        [siriAiOption]: false,
         [appleProxyGroup]: false,
-        [otherAppleGroup]: true,
+        [otherAppleOption]: true,
       },
     },
   }).config;
@@ -1030,8 +1179,51 @@ test('legacy Apple group switches migrate to the consolidated names and explicit
   assert.ok(explicit['proxy-groups'].some((group) => group.name === otherAppleGroup));
 });
 
+test('renamed option keys migrate to their short names and explicit short names win', () => {
+  const aliases = {
+    '自动选择ex(大陆&香港)': '排除大陆香港自动选',
+    'Siri Ai/Apple Intelligence': 'Apple智能分流',
+    'Other Apple Service': 'Apple其他服务',
+    Apple海外媒体: 'Apple媒体代理',
+    Apple模型下载直连: 'Apple下载直连',
+    Apple服务默认直连: 'Apple其他默认直连',
+    国内CDNDNS: '国内CDN解析',
+    微软下载DNS: '微软下载解析',
+    Steam下载DNS: 'Steam下载解析',
+    严格加密DNS: '严格DNS校验',
+    拦截外部明文DNS: '接管DNS53',
+    微软服务默认直连: '微软默认直连',
+    代理IPV4优先: '节点IPv4优先',
+    代理IPV6优先: '节点IPv6优先',
+    极简国内外分流模式: '极简分流',
+    生成地区自动选择组: '地区测速组',
+    隐藏地区手动选择组: '隐藏地区手选组',
+    生成高低倍率组: '倍率节点组',
+    生成家宽节点组: '家宽节点组',
+    分流组添加所有节点: '服务组含全节点',
+    过滤低倍率节点: '过滤低倍率',
+    过滤高倍率节点: '过滤高倍率',
+    过滤非地区节点: '过滤公告信息项',
+    屏蔽代理QUIC流量: '拦截代理QUIC',
+  };
+  const defaults = YAML.parse(build().text)['x-myClashRules'].options;
+
+  for (const [oldName, newName] of Object.entries(aliases)) {
+    const migratedValue = !defaults[newName];
+    const migrated = build({ settings: { options: { [oldName]: migratedValue } } });
+    const migratedOptions = YAML.parse(migrated.text)['x-myClashRules'].options;
+    assert.equal(migratedOptions[newName], migratedValue, `${oldName} should migrate to ${newName}`);
+
+    const explicit = build({
+      settings: { options: { [oldName]: migratedValue, [newName]: defaults[newName] } },
+    });
+    const explicitOptions = YAML.parse(explicit.text)['x-myClashRules'].options;
+    assert.equal(explicitOptions[newName], defaults[newName], `${newName} should take precedence`);
+  }
+});
+
 test('AppleFlow PCC and Siri endpoints use the eligible selector with US default before QUIC rejection', () => {
-  const config = build({ subscription: clean(), settings: { options: { 屏蔽代理QUIC流量: true } } }).config;
+  const config = build({ subscription: clean(), settings: { options: { 拦截代理QUIC: true } } }).config;
   const pcc = [
     ['DOMAIN-SUFFIX', 'issuer.apple.com', siriAiGroup],
     ['DOMAIN-SUFFIX', 'ropes.apple.com', siriAiGroup],
@@ -1071,17 +1263,19 @@ test('AppleFlow PCC and Siri endpoints use the eligible selector with US default
   const usGroup = config['proxy-groups'].find((group) => group.name === '美国');
   assert.ok(usGroup.proxies.includes('美国-自动选择'));
   assert.ok(config['proxy-groups'].find((group) => group.name === '美国-自动选择').proxies.includes('🇺🇸 美国 测试'));
-  assert.ok(!config.rules.some((rule) => /,(直连|DIRECT)$/.test(rule) && /guzzoni|siri\.apple|dejavu|sequoia|smoot/.test(rule)));
+  assert.ok(
+    !config.rules.some((rule) => /,(直连|DIRECT)$/.test(rule) && /guzzoni|siri\.apple|dejavu|sequoia|smoot/.test(rule)),
+  );
 });
 
 test('region-restricted service routes fail closed when no eligible country candidate exists', () => {
   const subscription = { proxies: [{ ...clean().proxies[0], name: 'Unlabelled node' }] };
-  for (const settings of [{}, { options: { 极简国内外分流模式: true } }]) {
+  for (const settings of [{}, { options: { 极简分流: true } }]) {
     const config = build({ subscription, settings }).config;
     assert.ok(!config['proxy-groups'].some((group) => group.name === '美国'));
     for (const name of ['AI', siriAiGroup]) {
       const group = config['proxy-groups'].find((entry) => entry.name === name);
-      if (name === 'AI' && settings.options?.极简国内外分流模式) assert.equal(group, undefined);
+      if (name === 'AI' && settings.options?.极简分流) assert.equal(group, undefined);
       else assert.deepEqual(group.proxies, ['REJECT']);
     }
     const products = config['proxy-groups'].find((group) => group.name === appleProxyGroup);
@@ -1108,7 +1302,7 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
   const allowed = new Set(['日本', '美国', '新加坡', '台湾']);
 
   for (const minimal of [false, true]) {
-    const config = build({ subscription, settings: { options: { 极简国内外分流模式: minimal } } }).config;
+    const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
     const groups = new Map(config['proxy-groups'].map((group) => [group.name, group]));
     for (const name of serviceNames) {
       if (minimal && name !== siriAiGroup) {
@@ -1138,12 +1332,21 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
 });
 
 test('domestic DNS uses independent dynamic whitelist switches and no generic direct resolver', () => {
-  const whitelist = { 国内CDNDNS: 'dns_domestic_cdn', 微软下载DNS: 'dns_microsoft_cdn', Steam下载DNS: 'dns_steam_cn' };
+  const whitelist = {
+    国内CDN解析: 'dns_domestic_cdn',
+    微软下载解析: 'dns_microsoft_cdn',
+    Steam下载解析: 'dns_steam_cn',
+  };
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       for (let mask = 0; mask < 8; mask++) {
         const options = Object.fromEntries(Object.keys(whitelist).map((key, i) => [key, Boolean(mask & (1 << i))]));
-        const config = build({ subscription, settings: { options: { ...options, 极简国内外分流模式: minimal, Microsoft: false, Steam: false, 国内服务优先直连: false } } }).config;
+        const config = build({
+          subscription,
+          settings: {
+            options: { ...options, 极简分流: minimal, Microsoft: false, Steam: false, 国内服务优先直连: false },
+          },
+        }).config;
         graph(config);
         assert.equal(config.dns['direct-nameserver'], undefined);
         assert.equal(config.dns['direct-nameserver-follow-policy'], undefined);
@@ -1159,7 +1362,10 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
           }
           assert.equal(provider.type, 'http');
           assert.equal(provider.interval, 86400);
-          assert.ok(!config.rules.some((rule) => rule.startsWith(`RULE-SET,${name},`)), 'DNS whitelist must not force a route');
+          assert.ok(
+            !config.rules.some((rule) => rule.startsWith(`RULE-SET,${name},`)),
+            'DNS whitelist must not force a route',
+          );
           assert.deepEqual(policyForRuleSet(config, name), config.dns['default-nameserver']);
         }
         for (const suffix of ['+.steamserver.net', '+.steamusercontent.com'])
@@ -1176,11 +1382,19 @@ test('domestic DNS uses independent dynamic whitelist switches and no generic di
   assert.ok(keys.indexOf(domesticWhitelistKey) < keys.indexOf(policyKeyForRuleSet(config, 'steam')));
   const domesticKeys = Object.entries(config.dns['nameserver-policy'])
     .filter(([, value]) => JSON.stringify(value) === JSON.stringify(config.dns['default-nameserver']))
-    .map(([key]) => key).sort();
-  assert.deepEqual(domesticKeys, [
-    domesticWhitelistKey, 'rule-set:apple_cn',
-    'gdmf.apple.com', 'mesu.apple.com', 'updates.cdn-apple.com', 'assets.cdn-apple.com',
-  ].sort());
+    .map(([key]) => key)
+    .sort();
+  assert.deepEqual(
+    domesticKeys,
+    [
+      domesticWhitelistKey,
+      'rule-set:apple_cn',
+      'gdmf.apple.com',
+      'mesu.apple.com',
+      'updates.cdn-apple.com',
+      'assets.cdn-apple.com',
+    ].sort(),
+  );
 });
 
 test('every routed domain rule-set uses its configured DNS egress group', () => {
@@ -1202,10 +1416,13 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
     assert.ok(dns, `missing DNS egress for rule-set:${providerName} → ${target}`);
     const dnsTarget = target === otherAppleGroup ? siriAiGroup : target;
     const dnsTargetGroup = config['proxy-groups'].find((group) => group.name === dnsTarget);
-    if (dnsTargetGroup?.proxies.length && dnsTargetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
+    if (
+      dnsTargetGroup?.proxies.length &&
+      dnsTargetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
+    ) {
       assert.equal(dns, 'rcode://name_error');
-    } else if (target === '直连') assert.deepEqual(dns,
-      providerName === 'apple_cn' ? config.dns['default-nameserver'] : config.dns.nameserver);
+    } else if (target === '直连')
+      assert.deepEqual(dns, providerName === 'apple_cn' ? config.dns['default-nameserver'] : config.dns.nameserver);
     else {
       for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.ok(resolver.endsWith(`#${dnsTarget}`));
     }
@@ -1233,7 +1450,8 @@ test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers a
     'mask-h2.icloud.com',
     '+.app.apple.com',
     '+.apple-relay.akamaized.net',
-  ]) assert.ok(filters.includes(domain), `missing Fake-IP filter ${domain}`);
+  ])
+    assert.ok(filters.includes(domain), `missing Fake-IP filter ${domain}`);
   assert.ok(!filters.includes('+.icloud-content.com'));
   const policy = config.dns['nameserver-policy'];
   for (const key of ['gspe1-ssl.ls.apple.com', '+.guzzoni.apple.com', '+.siri.apple.com']) {
@@ -1250,7 +1468,10 @@ test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers a
 test('dynamic AI provider and DNS policy share the AI egress group', () => {
   const config = build().config;
   assert.ok(config.rules.includes('RULE-SET,ai,AI'));
-  assert.deepEqual(config.rules.filter((rule) => rule.endsWith(',AI')), ['RULE-SET,ai,AI']);
+  assert.deepEqual(
+    config.rules.filter((rule) => rule.endsWith(',AI')),
+    ['RULE-SET,ai,AI'],
+  );
   const resolvers = config.dns['nameserver-policy']['rule-set:ai'];
   assert.ok(resolvers?.length > 0, 'missing DNS policy for the AI rule-set');
   assert.ok(resolvers.every((dns) => dns.endsWith('#AI')));
@@ -1265,18 +1486,18 @@ test('node UDP declarations pass through unchanged and QUIC blocking stays opt-i
     assert.equal(actual.udp, udp);
   }
   const defaults = build().config;
-  assert.equal(load().ruleOptionsEnable['屏蔽代理QUIC流量'], false);
+  assert.equal(load().ruleOptionsEnable['拦截代理QUIC'], false);
   assert.ok(!defaults.rules.some((rule) => rule.startsWith('AND,') && rule.endsWith(',REJECT')));
-  const enabled = build({ settings: { options: { 屏蔽代理QUIC流量: true } } }).config;
+  const enabled = build({ settings: { options: { 拦截代理QUIC: true } } }).config;
   assert.ok(enabled.rules.some((rule) => rule.startsWith('AND,') && rule.endsWith(',REJECT')));
 });
 test('provider IP preference and both rate filters preserve ordinary region groups', () => {
   const config = build({
-    settings: { options: { 代理IPV4优先: true, 过滤高倍率节点: true, 过滤低倍率节点: true } },
+    settings: { options: { 节点IPv4优先: true, 过滤高倍率: true, 过滤低倍率: true } },
   }).config;
   assert.equal(config['proxy-providers'].订阅.override['ip-version'], 'ipv4-prefer');
   assert.ok(config['proxy-groups'].some((g) => g.name === '香港'));
-  const both = build({ settings: { options: { 代理IPV4优先: true, 代理IPV6优先: true } } }).config;
+  const both = build({ settings: { options: { 节点IPv4优先: true, 节点IPv6优先: true } } }).config;
   assert.ok(!('ip-version' in both['proxy-providers'].订阅.override));
   assert.ok(both['proxy-providers'].订阅.override['proxy-name']);
 });
@@ -1296,7 +1517,9 @@ test('airport fake-IP filters, DNS policies, and extra DNS settings never leak i
   subscription.hosts = { 'airport-host.example': '192.0.2.10' };
   subscription.rules = ['DOMAIN,airport.example,DIRECT'];
   subscription['proxy-groups'] = [{ name: '机场自定义组', type: 'select', proxies: ['DIRECT'] }];
-  subscription['rule-providers'] = { airport: { type: 'inline', behavior: 'domain', payload: ['DOMAIN,airport.example'] } };
+  subscription['rule-providers'] = {
+    airport: { type: 'inline', behavior: 'domain', payload: ['DOMAIN,airport.example'] },
+  };
   subscription.tun = { enable: false, stack: 'system' };
   subscription['profile'] = { 'store-fake-ip': false };
   subscription['external-controller'] = '0.0.0.0:9999';
@@ -1322,7 +1545,7 @@ test('airport fake-IP filters, DNS policies, and extra DNS settings never leak i
 test('CLI applies edited booleans and preserves the subscription URL from a settings YAML', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'myclash-cli-'));
   const settings = YAML.parse(build().text);
-  settings['x-myClashRules'].options[siriAiGroup] = false;
+  settings['x-myClashRules'].options[siriAiOption] = false;
   settings['proxy-providers'].订阅.url = 'https://subscription.example.test/fixture';
   const input = path.join(dir, 'settings.yaml');
   const output = path.join(dir, 'output.yaml');
@@ -1340,18 +1563,22 @@ test('CLI refuses private subscription output inside tracked repository paths', 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'myclash-private-'));
   const subscription = path.join(dir, 'subscription.yaml');
   fs.writeFileSync(subscription, YAML.stringify(clean()));
-  const result = spawnSync(process.execPath,
+  const result = spawnSync(
+    process.execPath,
     ['tools/build.js', '--subscription', subscription, '--output', 'Config/mihomoConfig.yaml'],
-    { encoding: 'utf8' });
+    { encoding: 'utf8' },
+  );
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /只能输出到仓库内 .local/);
   const settings = YAML.parse(build().text);
   settings['proxy-providers'].订阅.url = 'https://subscription.example.test/private-fixture';
   const input = path.join(dir, 'private-settings.yaml');
   fs.writeFileSync(input, YAML.stringify(settings));
-  const withUrl = spawnSync(process.execPath,
+  const withUrl = spawnSync(
+    process.execPath,
     ['tools/build.js', '--settings', input, '--output', 'Config/mihomoConfig.yaml'],
-    { encoding: 'utf8' });
+    { encoding: 'utf8' },
+  );
   assert.notEqual(withUrl.status, 0);
   assert.match(withUrl.stderr, /只能输出到仓库内 .local/);
 });

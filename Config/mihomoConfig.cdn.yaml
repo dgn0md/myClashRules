@@ -1,10 +1,10 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：84667c4f8fe55e109554753114cac538cc206445ea96d2e2563a2098383d5e05
+# 最新 Raw SHA-256：c08d56a98452054894a7d8592b3063ff9813bc7524bdf7aeb7cc092b98f1ead7
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
-# 缓存 CDN SHA-256：8a307ee6e2cbcb7253f211049d4b12a412297bd3dd10b2d56a9fd915177e89be
+# 缓存 CDN SHA-256：136af111c3f1b8f0e41e0947f6f57872c3ea2e517493f99b9bbc318845807f78
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
@@ -14,7 +14,7 @@
 x-myClashRules:
   options:
     手动选择: true # 是否启用手动选择策略组
-    自动选择ex(大陆&香港): true # 是否启用排除大陆和香港节点的自动选择策略组
+    排除大陆香港自动选: true # 是否启用排除大陆和香港节点的自动选择策略组
     负载均衡: true # 是否启用负载均衡策略组
     FCM: true # GoogleFCM服务
     YouTube: true # YouTube视频平台
@@ -22,7 +22,7 @@ x-myClashRules:
     AI: true # 国外AI服务
     GitHub: true # GitHub代码托管平台
     Microsoft: true # Microsoft服务
-    Other Apple Service: true # 普通 Apple 服务
+    Apple其他服务: true # 普通 Apple 服务
     Telegram: true # Telegram通讯软件
     Steam: true # Steam游戏平台
     TikTok: true # TikTok视频平台
@@ -38,35 +38,35 @@ x-myClashRules:
     Patreon: true # Patreon创作者赞助平台
     EHentai: true # E-Hentai网站
     AdBlock: true # 广告拦截
-    Siri Ai/Apple Intelligence: true # PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国；无允许地区候选时拒绝
+    Apple智能分流: true # PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国；无允许地区候选时拒绝
     AppleProxy: true # AppleProxy 动态集合、产品入口与 Apple IP，默认美国并可选直连
-    Apple海外媒体: false # iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
-    Apple模型下载直连: true # 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
-    严格加密DNS: true # 校验脚本生成的加密 DNS；不从机场配置继承 DNS
-    拦截外部明文DNS: true # 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
-    国内CDNDNS: true # 国内 CDN 小集合使用国内加密 DNS；不决定连接出口
-    微软下载DNS: true # Microsoft 下载 CDN 独立使用国内加密 DNS
-    Steam下载DNS: true # Steam 国内节点动态集合使用国内 DNS，排除宽泛的服务器/用户内容后缀
+    Apple媒体代理: false # iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
+    Apple下载直连: true # 模型/系统资源下载保持国内 CDN；关闭后交给 Apple 其他服务组
+    严格DNS校验: true # 校验脚本生成的加密 DNS；不从机场配置继承 DNS
+    接管DNS53: true # 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
+    国内CDN解析: true # 国内 CDN 小集合使用国内加密 DNS；不决定连接出口
+    微软下载解析: true # Microsoft 下载 CDN 独立使用国内加密 DNS
+    Steam下载解析: true # Steam 国内节点动态集合使用国内 DNS，排除宽泛的服务器/用户内容后缀
     国内服务优先直连: true # 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
-    Apple服务默认直连: true # Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
-    微软服务默认直连: true # 国内可用服务优先直连，需要时可在组内切换
+    Apple其他默认直连: true # Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
+    微软默认直连: true # 国内可用服务优先直连，需要时可在组内切换
     TUN: true # 接管 DNS 所必需；关闭仅适合上级路由器已经接管 DNS 的环境
     域名嗅探: true # 从 HTTP/TLS/QUIC 补充缺失域名，避免纯 IP 入站误走服务 IP 规则
     IPv6: true # DNS AAAA 与全局 IPv6 同步；关闭后不返回 AAAA
     局域网访问: false # 是否将 mixed-port 暴露给局域网
     PCDN拦截: true # 将 Bilibili PCDN hosts 加入黑洞规则
-    极简国内外分流模式: false # 是否启用极简国内外分流模式
-    生成地区自动选择组: true # 是否生成地区自动选择策略组
-    隐藏地区手动选择组: false # 是否隐藏地区手动选择策略组
-    生成高低倍率组: true # 是否生成低倍率/高倍率策略组
-    生成家宽节点组: true # 是否生成家宽（住宅/原生 IP）节点策略组
-    分流组添加所有节点: false # 是否为分流策略组添加所有节点
-    过滤低倍率节点: false # 是否过滤低倍率节点
-    过滤高倍率节点: false # 是否过滤高倍率节点
-    过滤非地区节点: true # 是否过滤非地区节点
-    屏蔽代理QUIC流量: false # 是否屏蔽非国内目标的 QUIC 流量
-    代理IPV4优先: false # 是否将订阅节点统一为 IPv4 优先（与“代理IPV6优先”同时开启时不生效）
-    代理IPV6优先: false # 是否将订阅节点统一为 IPv6 优先（与“代理IPV4优先”同时开启时不生效）
+    极简分流: false # 是否启用精简的国内外分流模式
+    地区测速组: true # 是否生成地区自动选择策略组
+    隐藏地区手选组: false # 是否隐藏地区手动选择策略组
+    倍率节点组: true # 是否生成低倍率/高倍率策略组
+    家宽节点组: true # 是否生成家宽（住宅/原生 IP）节点策略组
+    服务组含全节点: false # 是否为分流策略组添加所有节点
+    过滤低倍率: false # 是否过滤低倍率节点
+    过滤高倍率: false # 是否过滤高倍率节点
+    过滤公告信息项: true # 是否过滤公告、信息和无地区节点
+    拦截代理QUIC: false # 是否屏蔽非国内目标的 QUIC 流量
+    节点IPv4优先: false # 是否将订阅节点统一为 IPv4 优先（与“节点IPv6优先”同时开启时不生效）
+    节点IPv6优先: false # 是否将订阅节点统一为 IPv6 优先（与“节点IPv4优先”同时开启时不生效）
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:

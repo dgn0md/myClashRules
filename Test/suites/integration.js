@@ -249,7 +249,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     }
   });
   h.test('极简模式保留 Apple 特例所需地区组且 MATCH 走默认代理', () =>
-    withOptions(api, { 极简国内外分流模式: true }, () => {
+    withOptions(api, { 极简分流: true }, () => {
       const out = api.main(fx.typicalSubscription());
       const groups = out['proxy-groups'];
       h.assertDeep(
@@ -276,16 +276,16 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       h.assert(!out.rules.some((rule) => /,(Google|AI|Telegram|Steam|AdBlock)$/.test(rule)), '不应生成分流规则');
     }),
   );
-  h.test('过滤高倍率节点=true → 移除高倍率节点及组', () =>
-    withOptions(api, { 过滤高倍率节点: true }, () => {
+  h.test('过滤高倍率=true → 移除高倍率节点及组', () =>
+    withOptions(api, { 过滤高倍率: true }, () => {
       const out = api.main(fx.minimalSubscription());
       h.assert(!proxyNames(out.proxies).includes('日本 2x 高倍率'), '高倍率节点应被过滤');
       h.assert(!groupByName(out['proxy-groups'], '高倍率节点'), '不应生成高倍率组');
       h.assert(groupByName(out['proxy-groups'], '日本'), '日本组仍应存在');
     }),
   );
-  h.test('过滤低倍率节点=true → 移除低倍率节点及组', () =>
-    withOptions(api, { 过滤低倍率节点: true }, () => {
+  h.test('过滤低倍率=true → 移除低倍率节点及组', () =>
+    withOptions(api, { 过滤低倍率: true }, () => {
       const out = api.main(fx.typicalSubscription());
       h.assert(
         !proxyNames(out.proxies).some((name) => name.includes('0.3x') || name.includes('0.5倍')),
@@ -295,8 +295,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       h.assert(groupByName(out['proxy-groups'], '日本'), '日本组仍应存在');
     }),
   );
-  h.test('生成高低倍率组=false → 不生成高低倍率组，节点按地区归类', () =>
-    withOptions(api, { 生成高低倍率组: false }, () => {
+  h.test('倍率节点组=false → 不倍率节点组，节点按地区归类', () =>
+    withOptions(api, { 倍率节点组: false }, () => {
       const out = api.main(fx.typicalSubscription());
       h.assert(!groupByName(out['proxy-groups'], '低倍率节点'), '不应生成低倍率组');
       h.assert(!groupByName(out['proxy-groups'], '高倍率节点'), '不应生成高倍率组');
@@ -318,14 +318,14 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       );
     }),
   );
-  h.test('生成地区自动选择组=false → 无自动选择组', () =>
-    withOptions(api, { 生成地区自动选择组: false }, () => {
+  h.test('地区测速组=false → 无自动选择组', () =>
+    withOptions(api, { 地区测速组: false }, () => {
       const out = api.main(fx.minimalSubscription());
       h.assert(!out['proxy-groups'].some((g) => g.name.endsWith('-自动选择')), '不应有自动选择组');
       h.assert(groupByName(out['proxy-groups'], '香港'), '香港组仍应存在');
     }),
   );
-  h.test('生成地区自动选择组=true → 自动选择组排在地区组之后', () => {
+  h.test('地区测速组=true → 自动选择组排在地区组之后', () => {
     const out = api.main(fx.minimalSubscription());
     const names = out['proxy-groups'].map((g) => g.name);
     const idx = names.indexOf('香港');
@@ -334,14 +334,14 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     h.assert(!names.slice(0, idx).includes('香港-自动选择'), '自动选择组不应排在地区组之前');
     h.assert(groupByName(out['proxy-groups'], '香港').proxies.includes('香港-自动选择'), '地区组应包含自动选择组');
   });
-  h.test('隐藏地区手动选择组=true → 地区组 hidden', () =>
-    withOptions(api, { 隐藏地区手动选择组: true }, () => {
+  h.test('隐藏地区手选组=true → 地区组 hidden', () =>
+    withOptions(api, { 隐藏地区手选组: true }, () => {
       const out = api.main(fx.minimalSubscription());
       h.assertEqual(groupByName(out['proxy-groups'], '香港').hidden, true);
     }),
   );
-  h.test('分流组添加所有节点=true → AI 仍只提供允许的地区组', () =>
-    withOptions(api, { 分流组添加所有节点: true }, () => {
+  h.test('服务组含全节点=true → AI 仍只提供允许的地区组', () =>
+    withOptions(api, { 服务组含全节点: true }, () => {
       const out = api.main(fx.minimalSubscription());
       h.assertDeep(groupByName(out['proxy-groups'], 'AI').proxies, ['日本', '美国'], 'AI 组只提供非香港地区组');
     }),
@@ -361,8 +361,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       h.assert(!groupByName(out['proxy-groups'], '默认代理').proxies.includes('手动选择'), '默认代理不应含手动选择');
     }),
   );
-  h.test('过滤非地区节点=false → 保留信息节点', () =>
-    withOptions(api, { 过滤非地区节点: false }, () => {
+  h.test('过滤公告信息项=false → 保留信息节点', () =>
+    withOptions(api, { 过滤公告信息项: false }, () => {
       const out = api.main(fx.minimalSubscription());
       h.assert(proxyNames(out.proxies).includes('官网公告'), '信息节点应被保留');
     }),
@@ -370,10 +370,10 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
 
   // ---------------- 家宽节点 ----------------
   h.section('集成测试 · 家宽节点');
-  h.test('家宽节点归类：生成家宽节点组，地区家宽节点仍归地区组', () => {
+  h.test('家宽节点归类：家宽节点组，地区家宽节点仍归地区组', () => {
     const out = api.main(fx.homeBroadbandSubscription());
     const g = groupByName(out['proxy-groups'], '家宽节点');
-    h.assert(g, '应生成家宽节点组');
+    h.assert(g, '应家宽节点组');
     h.assertEqual(g.type, 'select', '家宽节点组应为 select 类型');
     h.assert(g.proxies.includes('🇭🇰 香港 家宽 01'), '地区家宽节点应入家宽组');
     h.assert(g.proxies.includes('家宽专线 03'), '无地区关键词的家宽节点应入家宽组');
@@ -385,10 +385,10 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     );
     h.assert(groupByName(out['proxy-groups'], '默认代理').proxies.includes('家宽节点'), '默认代理应含家宽节点组');
   });
-  h.test('生成家宽节点组=false → 不生成家宽节点组，节点仍按地区/其他归类', () =>
-    withOptions(api, { 生成家宽节点组: false }, () => {
+  h.test('家宽节点组=false → 不家宽节点组，节点仍按地区/其他归类', () =>
+    withOptions(api, { 家宽节点组: false }, () => {
       const out = api.main(fx.homeBroadbandSubscription());
-      h.assert(!groupByName(out['proxy-groups'], '家宽节点'), '不应生成家宽节点组');
+      h.assert(!groupByName(out['proxy-groups'], '家宽节点'), '不应家宽节点组');
       h.assert(!groupByName(out['proxy-groups'], '家宽节点-自动选择'), '不应生成家宽自动选择组');
       h.assert(groupByName(out['proxy-groups'], '香港').proxies.includes('🇭🇰 香港 家宽 01'), '地区家宽节点仍归地区组');
       h.assert(
@@ -403,7 +403,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
   // ---------------- 代理 IP 版本优先 ----------------
   h.section('集成测试 · 代理IP版本优先');
   const nonDirectProxies = (out) => out.proxies.filter((p) => p.type !== 'direct' && p.type !== 'dns');
-  h.test('代理IPV4优先=true → 订阅节点统一为 ipv4-prefer，自定义/直连节点不受影响', () => {
+  h.test('节点IPv4优先=true → 订阅节点统一为 ipv4-prefer，自定义/直连节点不受影响', () => {
     // 注入带 ip-version 的自定义节点，验证其不参与改写
     const customApi = loadScript(scriptFile, (code) =>
       code.replace(
@@ -414,7 +414,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
         }];`,
       ),
     );
-    withOptions(customApi, { 代理IPV4优先: true, 代理IPV6优先: false }, () => {
+    withOptions(customApi, { 节点IPv4优先: true, 节点IPv6优先: false }, () => {
       const out = customApi.main(fx.typicalSubscription());
       const subs = nonDirectProxies(out);
       h.assert(subs.length > 1, '前置：应存在订阅节点');
@@ -432,8 +432,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       );
     });
   });
-  h.test('代理IPV6优先=true → 订阅节点统一为 ipv6-prefer', () =>
-    withOptions(api, { 代理IPV4优先: false, 代理IPV6优先: true }, () => {
+  h.test('节点IPv6优先=true → 订阅节点统一为 ipv6-prefer', () =>
+    withOptions(api, { 节点IPv4优先: false, 节点IPv6优先: true }, () => {
       const out = api.main(fx.typicalSubscription());
       for (const p of nonDirectProxies(out)) {
         h.assertEqual(p['ip-version'], 'ipv6-prefer', `订阅节点 ${p.name} 应为 ipv6-prefer`);
@@ -453,7 +453,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     }
   });
   h.test('两开关同时开启 → 不应用任何偏好', () =>
-    withOptions(api, { 代理IPV4优先: true, 代理IPV6优先: true }, () => {
+    withOptions(api, { 节点IPv4优先: true, 节点IPv6优先: true }, () => {
       const out = api.main(fx.typicalSubscription());
       // 不应用任何 IP 版本偏好：订阅节点保持原样（不新增 ip-version）
       for (const p of nonDirectProxies(out)) {

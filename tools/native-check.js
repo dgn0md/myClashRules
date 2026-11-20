@@ -58,7 +58,7 @@ async function run() {
       name: key,
       settings: { options: { [key]: !value }, ...(key === '链式代理' ? { customProxies: [node] } : {}) },
     });
-  cases.push({ name: 'both-rate-filters', settings: { options: { 过滤高倍率节点: true, 过滤低倍率节点: true } } });
+  cases.push({ name: 'both-rate-filters', settings: { options: { 过滤高倍率: true, 过滤低倍率: true } } });
   cases.push({ name: 'expanded-subscription', settings: {}, subscription: { proxies: [node] } });
   cases.push({
     name: 'expanded-chain',
@@ -90,17 +90,27 @@ async function run() {
     let rules;
     if (spec.format === 'mrs' && spec.behavior === 'domain') {
       const output = path.join(temp, `${name}-samples.txt`);
-      const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output],
-        { encoding: 'utf8', timeout: 10000 });
+      const result = spawnSync(binary, ['convert-ruleset', 'domain', 'mrs', input, output], {
+        encoding: 'utf8',
+        timeout: 10000,
+      });
       assert.equal(result.status, 0, `${name}: ${result.stdout}\n${result.stderr}`);
-      rules = fs.readFileSync(output, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      rules = fs
+        .readFileSync(output, 'utf8')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
     } else if (spec.format === 'yaml' && spec.behavior === 'classical') {
       const document = YAML.parseDocument(fs.readFileSync(input, 'utf8'), { uniqueKeys: true });
       assert.equal(document.errors.length, 0, `${name}: ${document.errors[0]?.message}`);
       rules = document.toJS()?.payload;
       assert.ok(Array.isArray(rules), `${name}: missing YAML payload`);
     } else if (spec.format === 'text' && spec.behavior === 'classical') {
-      rules = fs.readFileSync(input, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      rules = fs
+        .readFileSync(input, 'utf8')
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
     } else assert.fail(`unsupported sample provider ${name}: ${spec.format}/${spec.behavior}`);
 
     const exact = new Set();
@@ -109,14 +119,14 @@ async function run() {
       if (/^DOMAIN,/i.test(rule)) exact.add(rule.split(',')[1].toLowerCase());
       else if (/^DOMAIN-SUFFIX,/i.test(rule)) suffix.add(rule.split(',')[1].toLowerCase());
       else if (rule.startsWith('+.')) suffix.add(rule.slice(2).toLowerCase());
-      else if (!/^(?:PROCESS-NAME|PROCESS-PATH),/i.test(rule) && spec.format === 'mrs')
-        exact.add(rule.toLowerCase());
+      else if (!/^(?:PROCESS-NAME|PROCESS-PATH),/i.test(rule) && spec.format === 'mrs') exact.add(rule.toLowerCase());
     }
     assert.ok(exact.size || suffix.size, `${name}: no domain members in snapshot`);
     const members = [...exact].map((domain) => domain).concat([...suffix]);
     return {
       hosts: [...new Set(members)]
-        .filter((host) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9-]+$/i.test(host)).sort(),
+        .filter((host) => /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9-]+$/i.test(host))
+        .sort(),
       matches(host) {
         host = host.toLowerCase();
         if (exact.has(host)) return true;
@@ -126,8 +136,9 @@ async function run() {
     };
   }
   const modules = [];
-  for (const name of Object.keys(providers).filter((name) =>
-    name.startsWith('domestic_') && providers[`${name}_noncn`])) {
+  for (const name of Object.keys(providers).filter(
+    (name) => name.startsWith('domestic_') && providers[`${name}_noncn`],
+  )) {
     const full = readDomainSnapshot(name);
     const overseas = readDomainSnapshot(`${name}_noncn`);
     const candidates = full.hosts.filter((host) => !overseas.matches(host)).slice(0, 64);
@@ -170,16 +181,29 @@ async function run() {
   delete config['external-ui'];
   delete config['external-ui-url'];
   config.profile = { 'store-selected': false, 'store-fake-ip': false };
-  const nodes = ['香港 1x', '日本 1x', '美国 1x', '新加坡 1x', '台湾 1x', '🇨🇳 台湾 矛盾 1x', '日本 0.5x 家宽', '美国 3x', '德国 家宽'].map(
-    (name) => ({ name, type: 'socks5', server: '127.0.0.1', port: local.socksPort }),
-  );
-  if (probe) config.proxies = config.proxies.map((entry) => entry.type === 'direct'
-    ? { name: entry.name, type: 'socks5', server: '127.0.0.1', port: local.socksPort }
-    : entry);
+  const nodes = [
+    '香港 1x',
+    '日本 1x',
+    '美国 1x',
+    '新加坡 1x',
+    '台湾 1x',
+    '🇨🇳 台湾 矛盾 1x',
+    '日本 0.5x 家宽',
+    '美国 3x',
+    '德国 家宽',
+  ].map((name) => ({ name, type: 'socks5', server: '127.0.0.1', port: local.socksPort }));
+  if (probe)
+    config.proxies = config.proxies.map((entry) =>
+      entry.type === 'direct'
+        ? { name: entry.name, type: 'socks5', server: '127.0.0.1', port: local.socksPort }
+        : entry,
+    );
   const provider = path.join(temp, 'subscription.yaml');
   fs.writeFileSync(provider, YAML.stringify({ proxies: nodes }));
   const providerOverride = config['proxy-providers'].订阅.override;
-  config['proxy-providers'] = { 订阅: { type: 'file', path: provider, override: providerOverride, 'health-check': { enable: false } } };
+  config['proxy-providers'] = {
+    订阅: { type: 'file', path: provider, override: providerOverride, 'health-check': { enable: false } },
+  };
   for (const [name, spec] of Object.entries(config['rule-providers'])) {
     if (spec.type === 'inline') continue;
     const filename = `${name}${path.extname(spec.path)}`;
@@ -204,7 +228,8 @@ async function run() {
     (await fetch(`http://127.0.0.1:${port}${route}`, { signal: AbortSignal.timeout(2000) })).json();
   async function reloadRules(rules, label) {
     const response = await fetch(`http://127.0.0.1:${port}/configs?force=true`, {
-      method: 'PUT', headers: { 'content-type': 'application/json' },
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ payload: YAML.stringify({ ...config, rules }) }),
     });
     assert.equal(response.status, 204, `cannot reload ${label}: ${await response.text()}`);
@@ -227,6 +252,12 @@ async function run() {
     }
     assert.ok(providers, logs);
     for (const [name, p] of Object.entries(providers)) assert.ok(p.ruleCount > 0, `${name} failed to load: ${logs}`);
+    if (process.env.MYCLASH_RSS_BENCH === '1') {
+      const rss = spawnSync('ps', ['-o', 'rss=', '-p', String(child.pid)], { encoding: 'utf8' });
+      assert.equal(rss.status, 0, `cannot read Mihomo RSS: ${rss.stderr}`);
+      console.log(`RSS_BENCH_KB ${Number(rss.stdout.trim())}`);
+      return;
+    }
     const proxies = (await api('/proxies')).proxies;
     for (const name of ['香港', '日本', '美国', '新加坡', '台湾', '低倍率节点', '高倍率节点', '家宽节点'])
       assert.ok(proxies[name].all.length > 0, `${name} empty`);
@@ -234,7 +265,10 @@ async function run() {
     assert.ok(!proxies['日本'].all.includes('美国 1x'));
     const taiwanConflictName = proxies['台湾'].all.find((name) => name.includes('台湾 矛盾 1x'));
     assert.ok(taiwanConflictName, 'Taiwan name with contradictory mainland flag was not classified');
-    assert.ok(proxies['自动选择ex(大陆&香港)'].all.includes(taiwanConflictName), 'Taiwan node was excluded by its contradictory flag');
+    assert.ok(
+      proxies['自动选择ex(大陆&香港)'].all.includes(taiwanConflictName),
+      'Taiwan node was excluded by its contradictory flag',
+    );
     assert.equal(proxies.AppleProxy.now, '美国');
     assert.equal(proxies['Siri Ai/Apple Intelligence'].now, '美国');
     assert.equal(proxies['Other Apple Service'].now, '直连');
@@ -262,7 +296,7 @@ async function run() {
       }
     }
     assert.ok(appleProxyRoute, 'no AppleProxy snapshot member reached its dynamic provider');
-    const downloadsProxied = build({ settings: { options: { Apple模型下载直连: false } } }).config;
+    const downloadsProxied = build({ settings: { options: { Apple下载直连: false } } }).config;
     await reloadRules(downloadsProxied.rules, 'Apple download proxy routing');
     const [downloadRoute] = await verifyRouting({
       port: proxyPort,
@@ -277,24 +311,43 @@ async function run() {
     for (const [group, member] of selections) {
       if (!proxies[group]?.all?.includes(member)) throw new Error(`${group} 不包含 ${member}`);
       const response = await fetch(`http://127.0.0.1:${port}/proxies/${encodeURIComponent(group)}`, {
-        method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: member }),
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: member }),
       });
       assert.equal(response.status, 204, `无法切换 ${group} 到 ${member}`);
     }
     if (probe) {
-      const [result] = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort, track: local.track, api,
-        cases: [[probe.value, null]] });
+      const [result] = await verifyRouting({
+        port: proxyPort,
+        sinkPort: local.sinkPort,
+        track: local.track,
+        api,
+        cases: [[probe.value, null]],
+      });
       const dnsCandidates = [];
       if (probe.type === 'domain') {
         const host = probe.value.toLowerCase();
         for (const [key, resolvers] of Object.entries(productionDnsPolicy)) {
-          if (key === host || (key.startsWith('+.') && (host === key.slice(2) || host.endsWith(key.slice(1)))) ||
-              (key.startsWith('rule-set:') && key.slice(9).split(',').includes(result.payload)))
+          if (
+            key === host ||
+            (key.startsWith('+.') && (host === key.slice(2) || host.endsWith(key.slice(1)))) ||
+            (key.startsWith('rule-set:') && key.slice(9).split(',').includes(result.payload))
+          )
             dnsCandidates.push({ key, resolvers });
         }
       }
-      console.log('Routing diagnosis: ' + JSON.stringify({ target: probe, rule: result.rule,
-        payload: result.payload, chains: result.chains, dnsPolicyCandidates: dnsCandidates, selections }));
+      console.log(
+        'Routing diagnosis: ' +
+          JSON.stringify({
+            target: probe,
+            rule: result.rule,
+            payload: result.payload,
+            chains: result.chains,
+            dnsPolicyCandidates: dnsCandidates,
+            selections,
+          }),
+      );
     }
     const selected = await fetch(`http://127.0.0.1:${port}/proxies/Other%20Apple%20Service`, {
       method: 'PUT',
@@ -339,8 +392,13 @@ async function run() {
     for (const { source, candidates, excluded } of domesticSamples.modules) {
       let witness;
       for (const host of candidates) {
-        const [result] = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
-          track: local.track, api, cases: [[host, null]] });
+        const [result] = await verifyRouting({
+          port: proxyPort,
+          sinkPort: local.sinkPort,
+          track: local.track,
+          api,
+          cases: [[host, null]],
+        });
         if (result.rule.toUpperCase() === 'AND' && result.payload.includes(`domestic_${source}`)) {
           witness = host;
           break;
@@ -350,15 +408,22 @@ async function run() {
       domesticModuleCases.push([witness, source], [excluded, null]);
     }
     const domesticModes = [
-      {}, { 极简国内外分流模式: true }, { 国内服务优先直连: false },
-      { 极简国内外分流模式: true, 国内服务优先直连: false },
+      {},
+      { 极简分流: true },
+      { 国内服务优先直连: false },
+      { 极简分流: true, 国内服务优先直连: false },
     ];
     for (const options of domesticModes) {
       // Keep the same local sinks, hosts and file snapshots; reload production routing for each mode.
       const rules = build({ settings: { options } }).config.rules;
       await reloadRules(rules, 'domestic routing');
-      const decisions = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
-        track: local.track, api, cases: domesticModuleCases.map(([host]) => [host, null]) });
+      const decisions = await verifyRouting({
+        port: proxyPort,
+        sinkPort: local.sinkPort,
+        track: local.track,
+        api,
+        cases: domesticModuleCases.map(([host]) => [host, null]),
+      });
       for (const result of decisions) {
         const source = domesticModuleCases.find(([host]) => host === result.host)[1];
         const enabled = source && options.国内服务优先直连 !== false;
