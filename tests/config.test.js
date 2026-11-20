@@ -96,7 +96,10 @@ function encryptedDns(config) {
     assert.match(value, /^(https|tls|quic|rcode):\/\//);
     assert.doesNotMatch(value, /skip-cert-verify=true|^system|^dhcp/);
   }
-  for (const value of dns['default-nameserver']) assert.match(value, /^https:\/\/[\d.]+\/dns-query#DIRECT$/);
+  assert.deepEqual(dns['default-nameserver'], [
+    'tls://223.5.5.5:853#DIRECT&name-cert-verify=dns.alidns.com',
+    'tls://223.6.6.6:853#DIRECT&name-cert-verify=dns.alidns.com',
+  ]);
 }
 test('sample-style country names cover regional groups and correct conflicting Taiwan flags', () => {
   const samples = [
@@ -869,8 +872,8 @@ test('strict script output discards unsafe airport DNS settings instead of block
     encryptedDns(config);
     assert.deepEqual(config.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
     assert.deepEqual(config.dns['proxy-server-nameserver'], [
-      'https://223.5.5.5/dns-query#DIRECT',
-      'https://1.12.12.12/dns-query#DIRECT',
+      'quic://dns.alidns.com:853#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
     ]);
     assert.deepEqual(config.dns['proxy-server-nameserver-policy'], {});
     assert.ok(!('us.node.test' in config.dns['nameserver-policy']), `airport policy leaked: ${resolver}`);
@@ -887,8 +890,8 @@ test('airport DNS policy does not override the script-owned node resolver policy
   const dns = build({ subscription }).config.dns;
   assert.deepEqual(dns['proxy-server-nameserver-policy'], {});
   assert.deepEqual(dns['proxy-server-nameserver'], [
-    'https://223.5.5.5/dns-query#DIRECT',
-    'https://1.12.12.12/dns-query#DIRECT',
+    'quic://dns.alidns.com:853#DIRECT',
+    'https://doh.pub/dns-query#DIRECT',
   ]);
 });
 test('private hosts rewrite still removes local-loop DNS before strict validation', () => {
@@ -1149,10 +1152,7 @@ test('Other Apple direct route keeps encrypted DNS when no eligible Siri region 
 });
 test('strict DNS validates every generated upstream field', () => {
   const unsafe = loadScript('Script/mihomoScript.js', (source) =>
-    source.replace(
-      "const bootstrapDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];",
-      "const bootstrapDNS = ['udp://223.5.5.5'];",
-    ),
+    source.replace("'tls://223.5.5.5:853#DIRECT&name-cert-verify=dns.alidns.com'", "'udp://223.5.5.5'"),
   );
   assert.throws(() => unsafe.main(clean()), /严格DNS校验.*default-nameserver/);
 });

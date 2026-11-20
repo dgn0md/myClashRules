@@ -92,9 +92,9 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
         if (typeof value === 'string' && value.startsWith('rcode://')) return value;
         return value.map((server) => {
           const isDomesticResolver =
-            /^https:\/\/(?:223\.5\.5\.5|1\.12\.12\.12)\//i.test(server) ||
             /^https:\/\/doh\.pub\/dns-query(?:#|$)/i.test(server) ||
-            /^quic:\/\/dns\.alidns\.com:853(?:#|$)/i.test(server);
+            /^quic:\/\/dns\.alidns\.com:853(?:#|$)/i.test(server) ||
+            /^tls:\/\/(?:223\.5\.5\.5|223\.6\.6\.6):853#DIRECT&name-cert-verify=dns\.alidns\.com$/i.test(server);
           return isDomesticResolver ? domestic.url : foreign.url;
         });
       };

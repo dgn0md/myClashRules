@@ -101,8 +101,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     h.assertEqual(out.dns['enhanced-mode'], 'fake-ip');
     h.assertDeep(out.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
     h.assertDeep(out.dns['proxy-server-nameserver'], [
-      'https://223.5.5.5/dns-query#DIRECT',
-      'https://1.12.12.12/dns-query#DIRECT',
+      'quic://dns.alidns.com:853#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
     ]);
     h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '机场节点 DNS policy 应明确清空');
     h.assert(!out.dns['fake-ip-filter'].includes('+.airport-filter.example'), '不得继承机场 Fake-IP 例外');
@@ -124,8 +124,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       const out = api.main(cfg);
       h.assertDeep(out.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
       h.assertDeep(out.dns['proxy-server-nameserver'], [
-        'https://223.5.5.5/dns-query#DIRECT',
-        'https://1.12.12.12/dns-query#DIRECT',
+        'quic://dns.alidns.com:853#DIRECT',
+        'https://doh.pub/dns-query#DIRECT',
       ]);
       h.assertDeep(out.dns['proxy-server-nameserver-policy'], {});
       h.assert(!('hk1.example.com' in out.dns['nameserver-policy']), `机场 DNS policy 不应进入输出：${resolver}`);

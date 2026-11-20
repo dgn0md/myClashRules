@@ -4,7 +4,7 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：ae512606975629b5ee5d579b4fdab22116d975c6db0d747a7494d2de18cc510d
+ * 最新 Raw SHA-256：131b5a3c81dd1b9a5b762a452a402bac40a8f5348d410032ead7e2396f4b6ce7
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  */
@@ -1571,12 +1571,15 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
 // 不配置明文 DNS 或 skip-cert-verify；不可达时失败，不降级为明文。
 const chinaDNS = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
 const foreignDNS = ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理'];
-// Nameserver hostnames and proxy nodes bootstrap through IP-literal encrypted DoH to avoid recursive resolution.
-const bootstrapDNS = ['https://223.5.5.5/dns-query#DIRECT', 'https://1.12.12.12/dns-query#DIRECT'];
+// Mihomo 的 default-nameserver 要求 IP 字面量；用阿里 DoT 引导解析加密 DNS 端点域名。
+const bootstrapDNS = [
+  'tls://223.5.5.5:853#DIRECT&name-cert-verify=dns.alidns.com',
+  'tls://223.6.6.6:853#DIRECT&name-cert-verify=dns.alidns.com',
+];
 // Other Apple Service connections keep their own group, while Apple DNS uses the Siri selector.
 const appleOtherDnsEgressGroupName = appleAiGroupName;
 const defaultDNS = [...bootstrapDNS];
-const proxyServerDNS = [...bootstrapDNS];
+const proxyServerDNS = [...chinaDNS];
 
 /**
  * hosts 匹配优先级：精确 > +. > . > *（同级按出现顺序）
@@ -2216,11 +2219,13 @@ function validateStrictDnsSettings(config, options) {
         if (typeof server !== 'string') throw new Error(`严格DNS校验：${field} 必须使用加密 DNS`);
         if (/^rcode:\/\/(success|name_error|refused)$/i.test(server)) continue;
         const parts = server.split('#');
+        const [outbound, ...parameters] = parts[1]?.split('&') || [];
         if (
           parts.length > 2 ||
           !/^(https|tls|quic):\/\/[^\s#@]+$/i.test(parts[0]) ||
           /skip-cert-verify|@/i.test(server) ||
-          (parts.length === 2 && !['DIRECT', ...groups.map((group) => group.name)].includes(parts[1]))
+          (parts.length === 2 && !['DIRECT', ...groups.map((group) => group.name)].includes(outbound)) ||
+          parameters.some((parameter) => !/^name-cert-verify=[a-z0-9.-]+$/i.test(parameter))
         )
           throw new Error(`严格DNS校验：脚本生成的 ${field} 含不受支持或明文 DNS；严格模式不会降级。`);
       }
