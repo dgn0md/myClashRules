@@ -6,11 +6,11 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 
 | 策略组 | 路由范围 | 默认选择 |
 | --- | --- | --- |
-| `Siri Ai/Apple Intelligence` | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。`gspe1` 按当前策略归入 Siri 组，尽管 Apple 也将它用于地图、eSIM、Watch 和 Wi-Fi Calling 等地区能力。 | 可选地区组排除香港、澳门、大陆及美国制裁/出口限制涉及地区，默认美国（有美国候选时）；无可用地区候选时拒绝连接。DNS 与路由跟随该组当前选择。 |
+| `Siri Ai/Apple Intelligence`（开关 `Apple智能分流`） | Apple Intelligence、Siri、PCC、`gspe1-ssl.ls.apple.com` 地区检测端点，以及部分 Private Relay/iCloud 内容端点。`gspe1` 按当前策略归入 Siri 组，尽管 Apple 也将它用于地图、eSIM、Watch 和 Wi-Fi Calling 等地区能力。 | 可选地区组排除香港、澳门、大陆及美国制裁/出口限制涉及地区，默认美国（有美国候选时）；无可用地区候选时拒绝连接。DNS 与路由跟随该组当前选择。 |
 | `AppleProxy` | Blackmatrix7 AppleProxy 动态集合、News/TV/TV+/Fitness/Sports/Books 产品入口、`apple_ip` 地址集合与 `apple-dns.net` / `apple-dns.com` 服务域名。 | 初始美国，可在客户端切换到其他可用候选或直连。旧 `Apple Product地区` 选项作为兼容别名读取。 |
-| `Other Apple Service` | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 连接默认直连；DNS 使用 `Siri Ai/Apple Intelligence` 当前选择的出口。 |
-| `Apple海外媒体` | 少量共享购买和媒体接口。 | 选项默认关闭。 |
-| `Apple模型下载直连` | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
+| `Other Apple Service`（开关 `Apple其他服务`） | Apple 动态域名集合、其他常规 Apple 规则，以及精确匹配的 `gateway.icloud.com`、`setup.icloud.com`。 | 连接默认直连；DNS 使用 `Siri Ai/Apple Intelligence` 当前选择的出口。 |
+| `Apple媒体代理` 开关 | 少量共享购买和媒体接口。 | 选项默认关闭。 |
+| `Apple下载直连` 开关 | 系统更新与 Apple 共用资源 CDN。 | 选项默认开启并由直连规则处理。 |
 
 阿里、百度、B站、字节、运营商、华为云、京东、网易、腾讯、小米国内服务路由补充模块排在专用服务规则之后，不覆盖 Apple 精确例外或服务组选择；模块不改变 Apple 或其他域名的 DNS 授权。
 

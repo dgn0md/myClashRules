@@ -20,10 +20,7 @@ async function freePort() {
       if (error.code === 'EADDRINUSE') continue;
       throw error;
     }
-    await Promise.all([
-      new Promise((resolve) => server.close(resolve)),
-      new Promise((resolve) => udp.close(resolve)),
-    ]);
+    await Promise.all([new Promise((resolve) => server.close(resolve)), new Promise((resolve) => udp.close(resolve))]);
     return port;
   }
 }
@@ -166,9 +163,7 @@ async function verifyRouting({ port, sinkPort, track, api, cases = CASES, skipMi
     let active;
     for (let attempt = 0; attempt < 20; attempt++) {
       active = (await api('/connections')).connections || [];
-      connection = active.find(
-        (c) => String(c.metadata.sourcePort) === String(socket.localPort),
-      );
+      connection = active.find((c) => String(c.metadata.sourcePort) === String(socket.localPort));
       if (connection) break;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
@@ -178,10 +173,11 @@ async function verifyRouting({ port, sinkPort, track, api, cases = CASES, skipMi
       continue;
     }
     assert.ok(connection, `No active connection for ${host}: ${JSON.stringify(active)}`);
-    if (expected) assert.ok(
-      connection.chains.includes(expected),
-      `${host}: expected ${expected}; actual ${JSON.stringify(connection)}`,
-    );
+    if (expected)
+      assert.ok(
+        connection.chains.includes(expected),
+        `${host}: expected ${expected}; actual ${JSON.stringify(connection)}`,
+      );
     if (payload) assert.equal(connection.rulePayload, payload, `${host}: wrong matched rule`);
     if (excluded) assert.ok(!connection.chains.includes(excluded), `${host}: unexpected ${excluded}`);
     evidence.push({

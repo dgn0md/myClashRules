@@ -4,7 +4,7 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：30b5db1f4912a1a4abec603b4bf81415d3872d4d1c8f00c76fbb0ef358501c6b
+ * 最新 Raw SHA-256：eda3db29339aee11cbf25b7fa47f7b70e1bb2d8c60585c0b22d1c0fb03e40657
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  */
@@ -17,6 +17,7 @@ const appleAiGroupName = 'Siri Ai/Apple Intelligence';
 const appleProxyGroupName = 'AppleProxy';
 const appleOtherGroupName = 'Other Apple Service';
 const autoSelectExMainlandHongKongGroupName = '自动选择ex(大陆&香港)';
+const autoSelectExMainlandHongKongOptionName = '排除大陆香港自动选';
 
 /**
  * 自定义配置选项
@@ -26,7 +27,7 @@ const autoSelectExMainlandHongKongGroupName = '自动选择ex(大陆&香港)';
 const ruleOptionsEnable = {
   // 基础策略组
   手动选择: true, // 是否启用手动选择策略组
-  '自动选择ex(大陆&香港)': true, // 是否启用排除大陆和香港节点的自动选择策略组
+  排除大陆香港自动选: true, // 是否启用排除大陆和香港节点的自动选择策略组
   负载均衡: true, // 是否启用负载均衡策略组
 
   // 以下为分流策略配置
@@ -36,7 +37,7 @@ const ruleOptionsEnable = {
   AI: true, // 国外AI服务
   GitHub: true, // GitHub代码托管平台
   Microsoft: true, // Microsoft服务
-  'Other Apple Service': true, // 普通 Apple 服务
+  Apple其他服务: true, // 普通 Apple 服务
   Telegram: true, // Telegram通讯软件
   Steam: true, // Steam游戏平台
   TikTok: true, // TikTok视频平台
@@ -54,18 +55,18 @@ const ruleOptionsEnable = {
   AdBlock: true, // 广告拦截
 
   // Apple 精细分流组：AI/Siri 与产品地区服务各自共用一个出口选择器。
-  'Siri Ai/Apple Intelligence': true, // PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国；无允许地区候选时拒绝
+  Apple智能分流: true, // PCC、Apple Intelligence、Siri、地区检测及部分共享端点，默认美国；无允许地区候选时拒绝
   AppleProxy: true, // AppleProxy 动态集合、产品入口与 Apple IP，默认美国并可选直连
-  Apple海外媒体: false, // iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
-  Apple模型下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Other Apple Service 组
-  严格加密DNS: true, // 校验脚本生成的加密 DNS；不从机场配置继承 DNS
-  拦截外部明文DNS: true, // 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
-  国内CDNDNS: true, // 国内 CDN 小集合使用国内加密 DNS；不决定连接出口
-  微软下载DNS: true, // Microsoft 下载 CDN 独立使用国内加密 DNS
-  Steam下载DNS: true, // Steam 国内节点动态集合使用国内 DNS，排除宽泛的服务器/用户内容后缀
+  Apple媒体代理: false, // iTunes/App Store/Arcade 共用购买与媒体接口；会增加 Music/商店代理流量
+  Apple下载直连: true, // 模型/系统资源下载保持国内 CDN；关闭后交给 Apple 其他服务组
+  严格DNS校验: true, // 校验脚本生成的加密 DNS；不从机场配置继承 DNS
+  接管DNS53: true, // 接管流量中的 TCP/UDP 53 交给内置 DNS（需 TUN）
+  国内CDN解析: true, // 国内 CDN 小集合使用国内加密 DNS；不决定连接出口
+  微软下载解析: true, // Microsoft 下载 CDN 独立使用国内加密 DNS
+  Steam下载解析: true, // Steam 国内节点动态集合使用国内 DNS，排除宽泛的服务器/用户内容后缀
   国内服务优先直连: true, // 保留国内服务/CDN 例外；不将整个 cn 域名库强制直连
-  Apple服务默认直连: true, // Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
-  微软服务默认直连: true, // 国内可用服务优先直连，需要时可在组内切换
+  Apple其他默认直连: true, // Other Apple Service 默认直连；AI/Siri 和产品地区组独立优先
+  微软默认直连: true, // 国内可用服务优先直连，需要时可在组内切换
   TUN: true, // 接管 DNS 所必需；关闭仅适合上级路由器已经接管 DNS 的环境
   域名嗅探: true, // 从 HTTP/TLS/QUIC 补充缺失域名，避免纯 IP 入站误走服务 IP 规则
   IPv6: true, // DNS AAAA 与全局 IPv6 同步；关闭后不返回 AAAA
@@ -73,18 +74,18 @@ const ruleOptionsEnable = {
   PCDN拦截: true, // 将 Bilibili PCDN hosts 加入黑洞规则
 
   // 以下为非分流策略配置
-  极简国内外分流模式: false, // 是否启用极简国内外分流模式
-  生成地区自动选择组: true, // 是否生成地区自动选择策略组
-  隐藏地区手动选择组: false, // 是否隐藏地区手动选择策略组
-  生成高低倍率组: true, // 是否生成低倍率/高倍率策略组
-  生成家宽节点组: true, // 是否生成家宽（住宅/原生 IP）节点策略组
-  分流组添加所有节点: false, // 是否为分流策略组添加所有节点
-  过滤低倍率节点: false, // 是否过滤低倍率节点
-  过滤高倍率节点: false, // 是否过滤高倍率节点
-  过滤非地区节点: true, // 是否过滤非地区节点
-  屏蔽代理QUIC流量: false, // 是否屏蔽非国内目标的 QUIC 流量
-  代理IPV4优先: false, // 是否将订阅节点统一为 IPv4 优先（与“代理IPV6优先”同时开启时不生效）
-  代理IPV6优先: false, // 是否将订阅节点统一为 IPv6 优先（与“代理IPV4优先”同时开启时不生效）
+  极简分流: false, // 是否启用精简的国内外分流模式
+  地区测速组: true, // 是否生成地区自动选择策略组
+  隐藏地区手选组: false, // 是否隐藏地区手动选择策略组
+  倍率节点组: true, // 是否生成低倍率/高倍率策略组
+  家宽节点组: true, // 是否生成家宽（住宅/原生 IP）节点策略组
+  服务组含全节点: false, // 是否为分流策略组添加所有节点
+  过滤低倍率: false, // 是否过滤低倍率节点
+  过滤高倍率: false, // 是否过滤高倍率节点
+  过滤公告信息项: true, // 是否过滤公告、信息和无地区节点
+  拦截代理QUIC: false, // 是否屏蔽非国内目标的 QUIC 流量
+  节点IPv4优先: false, // 是否将订阅节点统一为 IPv4 优先（与“节点IPv6优先”同时开启时不生效）
+  节点IPv6优先: false, // 是否将订阅节点统一为 IPv6 优先（与“节点IPv4优先”同时开启时不生效）
   链式代理: false, // 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
 };
 
@@ -140,7 +141,7 @@ const announcementFilter =
 const excludeFilter =
   /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|电报|无法|说明|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|优惠|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|过滤|⚠️|@|t\.me\/\+|\bexpire\b|\bhttps?:\/\/|\.com|\btraffic\b/iu;
 
-// 屏蔽代理QUIC流量
+// 拦截代理QUIC
 const blockForeignQuic = [
   'AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn),(RULE-SET,cn_ip,no-resolve)))))),REJECT',
 ];
@@ -515,6 +516,7 @@ const baseGroups = [
   },
   {
     name: autoSelectExMainlandHongKongGroupName,
+    option: autoSelectExMainlandHongKongOptionName,
     baseOption: urlTestBaseOption,
     includeAll: true,
     excludeProxyNameRegex: autoSelectExMainlandHongKongNodeNameRegex,
@@ -638,6 +640,7 @@ const serviceConfigs = [
   },
   {
     name: appleOtherGroupName,
+    option: 'Apple其他服务',
     baseOption: selectBaseOption,
     direct: true,
     providers: {
@@ -945,43 +948,51 @@ const serviceConfigs = [
 // DOMAIN-SUFFIX 不匹配 icloud-content.com.cn，不靠地区代码推断大陆，也不按 IP 地理位置判断。
 // 同时覆盖地区根域、edge 以及其他命名结构；照片/文件等普通国际 iCloud 内容也会代理。
 // 不代理整个 apple.com / cloudflare.com / icloud.com 或 17/8。
-const appleEndpointDefinitions = {
-  [appleAiGroupName]: [
-    '+.issuer.apple.com',
-    '+.ropes.apple.com',
-    'mask-api.icloud.com',
-    'mask.icloud.com',
-    'mask-h2.icloud.com',
-    // app.apple.com 后缀规则已覆盖 Apple 清理代理主机。
-    '+.app.apple.com',
-    '+.apple-relay.apple.com',
-    '+.apple-relay.cloudflare.com',
-    '+.apple-relay.fastly-edge.com',
-    '+.apple-relay.akamaized.net',
-    'cp4.cloudflare.com',
-    // 国际内容域整体覆盖，中国站内容域保留原规则；gateway 单独归入 Other Apple Service。
-    '+.icloud-content.com',
-    // +.guzzoni.apple.com 同时覆盖根域主机。
-    '+.guzzoni.apple.com',
-    '+.siri.apple.com',
-    'dejavu.apple.com',
-    'sequoia.apple.com',
-    '+.smoot.apple.com',
-    // 精确匹配 Siri API 主机，并沿用该组的 DNS 与出口。
-    'api-siri-prod.apple.com',
-    // Apple 地区检测端点按用户指定与 Siri/Apple Intelligence 共用此组出口。
-    'gspe1-ssl.ls.apple.com',
-  ],
-  [appleProxyGroupName]: [
-    // Apple DNS service namespace not covered by the AppleProxy provider.
-    '+.apple-dns.com',
-    'news-client-search.apple.com',
-    // TV+ domain membership is supplied by the daily apple-tvplus rule provider below.
-    '+.fitness.apple.com',
-    '+.sports.apple.com',
-    '+.books.apple.com',
-  ],
-};
+const appleEndpointDefinitions = [
+  {
+    name: appleAiGroupName,
+    option: 'Apple智能分流',
+    domains: [
+      '+.issuer.apple.com',
+      '+.ropes.apple.com',
+      'mask-api.icloud.com',
+      'mask.icloud.com',
+      'mask-h2.icloud.com',
+      // app.apple.com 后缀规则已覆盖 Apple 清理代理主机。
+      '+.app.apple.com',
+      '+.apple-relay.apple.com',
+      '+.apple-relay.cloudflare.com',
+      '+.apple-relay.fastly-edge.com',
+      '+.apple-relay.akamaized.net',
+      'cp4.cloudflare.com',
+      // 国际内容域整体覆盖，中国站内容域保留原规则；gateway 单独归入 Other Apple Service。
+      '+.icloud-content.com',
+      // +.guzzoni.apple.com 同时覆盖根域主机。
+      '+.guzzoni.apple.com',
+      '+.siri.apple.com',
+      'dejavu.apple.com',
+      'sequoia.apple.com',
+      '+.smoot.apple.com',
+      // 精确匹配 Siri API 主机，并沿用该组的 DNS 与出口。
+      'api-siri-prod.apple.com',
+      // Apple 地区检测端点按用户指定与 Siri/Apple Intelligence 共用此组出口。
+      'gspe1-ssl.ls.apple.com',
+    ],
+  },
+  {
+    name: appleProxyGroupName,
+    option: appleProxyGroupName,
+    domains: [
+      // Apple DNS service namespace not covered by the AppleProxy provider.
+      '+.apple-dns.com',
+      'news-client-search.apple.com',
+      // TV+ domain membership is supplied by the daily apple-tvplus rule provider below.
+      '+.fitness.apple.com',
+      '+.sports.apple.com',
+      '+.books.apple.com',
+    ],
+  },
+];
 const appleProxyRuleProvider = {
   type: 'http',
   format: 'yaml',
@@ -998,9 +1009,10 @@ const appleOverseasMediaEndpoints = [
   'se.itunes.apple.com',
   'se2.itunes.apple.com',
 ];
-for (const name of Object.keys(appleEndpointDefinitions)) {
+for (const { name, option } of appleEndpointDefinitions) {
   serviceConfigs.push({
     name,
+    option,
     baseOption: selectBaseOption,
     direct: true,
     defaultSelected: '美国',
@@ -1051,20 +1063,21 @@ function toMatchableName(name) {
  * 节点匹配缓存，避免重复执行正则
  */
 const regionMatchCache = new Map();
-function getMatchedRegions(proxyName) {
-  if (regionMatchCache.has(proxyName)) {
-    return regionMatchCache.get(proxyName);
+function getMatchedRegions(proxyName, cache = regionMatchCache) {
+  if (cache.has(proxyName)) {
+    return cache.get(proxyName);
   }
 
   const matchableName = toMatchableName(proxyName);
-  const namedRegions = regionDefinitions.filter((region) => region.nameRegex.test(matchableName));
-  const flagRegions = regionDefinitions.filter((region) => matchableName.includes(region.flag));
-  const classifiedRegions = namedRegions.length ? namedRegions : flagRegions;
-  const regions = [
-    ...classifiedRegions,
-    ...[...rateRegionDefinitions, ...homeRegionDefinitions].filter((region) => region.regex.test(matchableName)),
-  ];
-  regionMatchCache.set(proxyName, regions);
+  const namedRegions = [];
+  for (const region of regionDefinitions) if (region.nameRegex.test(matchableName)) namedRegions.push(region);
+
+  const regions = namedRegions;
+  if (!namedRegions.length)
+    for (const region of regionDefinitions) if (matchableName.includes(region.flag)) regions.push(region);
+  for (const region of rateRegionDefinitions) if (region.regex.test(matchableName)) regions.push(region);
+  for (const region of homeRegionDefinitions) if (region.regex.test(matchableName)) regions.push(region);
+  cache.set(proxyName, regions);
 
   return regions;
 }
@@ -1073,23 +1086,21 @@ function getMatchedRegions(proxyName) {
  * 标准化节点名称：补全地区国旗、折叠多余空格，并预缓存匹配结果
  */
 const flagRegex = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
-function normalizeProxyName(proxy) {
+function normalizeProxyName(proxy, cache = regionMatchCache) {
   const originalName = proxy.name;
 
   const flag = originalName.match(flagRegex)?.[0];
 
   const nameWithoutFlag = (flag ? originalName.replace(flag, '') : originalName).replace(/\s+/g, ' ').trim();
 
-  const matchedRegions = getMatchedRegions(originalName);
+  const matchedRegions = getMatchedRegions(originalName, cache);
 
-  const matchableName = toMatchableName(originalName);
-  const namedRegion = regionDefinitions.find((region) => region.nameRegex.test(matchableName));
-  const regionFlag = namedRegion?.flag || matchedRegions.find((region) => region.flag)?.flag || flag;
+  const regionFlag = matchedRegions.find((region) => region.flag)?.flag || flag;
 
   const normalizedName = regionFlag ? `${regionFlag} ${nameWithoutFlag}` : nameWithoutFlag;
 
   if (normalizedName !== originalName) {
-    regionMatchCache.set(normalizedName, matchedRegions);
+    cache.set(normalizedName, matchedRegions);
   }
 
   return normalizedName === originalName ? proxy : { ...proxy, name: normalizedName };
@@ -1120,8 +1131,8 @@ function fixDialerProxy(proxy, renameMap, normalizedProxyNames) {
  * 同时开启或同时关闭时返回 null（不应用任何偏好，节点保持原样）
  */
 function getIpVersionPreference() {
-  const ipv4PreferEnabled = ruleOptionsEnable.代理IPV4优先;
-  const ipv6PreferEnabled = ruleOptionsEnable.代理IPV6优先;
+  const ipv4PreferEnabled = ruleOptionsEnable.节点IPv4优先;
+  const ipv6PreferEnabled = ruleOptionsEnable.节点IPv6优先;
 
   if (ipv4PreferEnabled && !ipv6PreferEnabled) return 'ipv4-prefer';
   if (ipv6PreferEnabled && !ipv4PreferEnabled) return 'ipv6-prefer';
@@ -1131,12 +1142,12 @@ function getIpVersionPreference() {
 /**
  * 过滤并标准化节点：剔除内置/信息节点、按配置过滤、去重、修复 dialer-proxy 引用，空列表时抛错
  */
-function filterAndNormalizeProxies(config) {
-  regionMatchCache.clear();
+function filterAndNormalizeProxies(config, classificationCache = new Map()) {
+  classificationCache.clear();
 
-  const filterLowRateProxiesEnabled = ruleOptionsEnable.过滤低倍率节点;
-  const filterHighRateProxiesEnabled = ruleOptionsEnable.过滤高倍率节点;
-  const filterNonRegionProxiesEnabled = ruleOptionsEnable.过滤非地区节点;
+  const filterLowRateProxiesEnabled = ruleOptionsEnable.过滤低倍率;
+  const filterHighRateProxiesEnabled = ruleOptionsEnable.过滤高倍率;
+  const filterNonRegionProxiesEnabled = ruleOptionsEnable.过滤公告信息项;
 
   const lowRateRegex = filterLowRateProxiesEnabled
     ? rateRegionDefinitions.find((r) => r.name === lowRateRegionName)?.regex
@@ -1146,30 +1157,28 @@ function filterAndNormalizeProxies(config) {
     : null;
 
   const originalProxies = config.proxies || [];
-
-  const filteredRawProxies = originalProxies.filter((proxy) => {
-    const type = String(proxy.type ?? '').toLowerCase();
-    if (type === 'direct' || type === 'reject' || type === 'rematch') return false;
-
-    const matchableName = toMatchableName(proxy.name);
-
-    if (lowRateRegex?.test(matchableName) || highRateRegex?.test(matchableName)) return false;
-
-    if (!filterNonRegionProxiesEnabled) return true;
-    if (announcementFilter.test(matchableName)) return false;
-
-    const isRegionProxy = getMatchedRegions(proxy.name).some((region) => regionDefinitions.includes(region));
-
-    return isRegionProxy || !excludeFilter.test(matchableName);
-  });
-
-  const renameMap = new Map();
+  const hasDialerProxy = originalProxies.some((proxy) => proxy['dialer-proxy']);
+  const renameMap = hasDialerProxy ? new Map() : null;
   const normalizedProxies = [];
   const uniqueNames = new Set();
 
-  for (const rawProxy of filteredRawProxies) {
-    const normalized = normalizeProxyName(rawProxy);
-    if (normalized.name !== rawProxy.name) {
+  for (const rawProxy of originalProxies) {
+    const type = String(rawProxy.type ?? '').toLowerCase();
+    if (type === 'direct' || type === 'reject' || type === 'rematch') continue;
+
+    const matchableName = toMatchableName(rawProxy.name);
+    if (lowRateRegex?.test(matchableName) || highRateRegex?.test(matchableName)) continue;
+
+    if (filterNonRegionProxiesEnabled) {
+      if (announcementFilter.test(matchableName)) continue;
+      const isRegionProxy = getMatchedRegions(rawProxy.name, classificationCache).some((region) =>
+        regionDefinitions.includes(region),
+      );
+      if (!isRegionProxy && excludeFilter.test(matchableName)) continue;
+    }
+
+    const normalized = normalizeProxyName(rawProxy, classificationCache);
+    if (renameMap && normalized.name !== rawProxy.name) {
       renameMap.set(rawProxy.name, normalized.name);
     }
     if (!uniqueNames.has(normalized.name)) {
@@ -1178,9 +1187,11 @@ function filterAndNormalizeProxies(config) {
     }
   }
 
-  const normalizedProxyNames = new Set(normalizedProxies.map((p) => p.name));
-
-  const filteredProxies = normalizedProxies.map((proxy) => fixDialerProxy(proxy, renameMap, normalizedProxyNames));
+  let filteredProxies = normalizedProxies;
+  if (renameMap) {
+    const normalizedProxyNames = new Set(normalizedProxies.map((proxy) => proxy.name));
+    filteredProxies = normalizedProxies.map((proxy) => fixDialerProxy(proxy, renameMap, normalizedProxyNames));
+  }
 
   if (!filteredProxies.length) {
     throw new Error('配置文件中未找到任何代理节点，请使用机场提供的配置文件进行覆写');
@@ -1202,8 +1213,8 @@ function filterAndNormalizeProxies(config) {
  * 构建地区策略组，可附带自动选择组
  */
 function createRegionGroup(name, icon, proxies) {
-  const generateRegionAutoSelectEnabled = ruleOptionsEnable.生成地区自动选择组;
-  const hideManualSelectGroupEnabled = ruleOptionsEnable.隐藏地区手动选择组;
+  const generateRegionAutoSelectEnabled = ruleOptionsEnable.地区测速组;
+  const hideManualSelectGroupEnabled = ruleOptionsEnable.隐藏地区手选组;
 
   if (generateRegionAutoSelectEnabled) {
     const urlTestName = `${name}-自动选择`;
@@ -1238,15 +1249,15 @@ function createRegionGroup(name, icon, proxies) {
 /**
  * 将节点按地区/倍率归类，构建地区策略组、倍率策略组与“其他节点”组
  */
-function buildRegionGroups(filteredProxies, customProxies) {
-  const generateRateGroupEnabled = ruleOptionsEnable.生成高低倍率组;
-  const generateHomeGroupEnabled = ruleOptionsEnable.生成家宽节点组;
+function buildRegionGroups(filteredProxies, customProxies, classificationCache = regionMatchCache) {
+  const generateRateGroupEnabled = ruleOptionsEnable.倍率节点组;
+  const generateHomeGroupEnabled = ruleOptionsEnable.家宽节点组;
 
   const regionGroups = Object.fromEntries(allRegionDefinitions.map(({ name }) => [name, []]));
   const otherProxies = [];
 
-  for (const proxy of [...filteredProxies, ...customProxies]) {
-    const matchedRegions = getMatchedRegions(proxy.name);
+  const addProxy = (proxy) => {
+    const matchedRegions = getMatchedRegions(proxy.name, classificationCache);
     const isRegionProxy = matchedRegions.some((region) => regionDefinitions.includes(region));
 
     for (const region of matchedRegions) {
@@ -1256,7 +1267,9 @@ function buildRegionGroups(filteredProxies, customProxies) {
     if (!isRegionProxy) {
       otherProxies.push(proxy.name);
     }
-  }
+  };
+  for (const proxy of filteredProxies) addProxy(proxy);
+  for (const proxy of customProxies) addProxy(proxy);
 
   const generatedRegionGroups = allRegionDefinitions
     .filter(
@@ -1275,13 +1288,15 @@ function buildRegionGroups(filteredProxies, customProxies) {
 }
 
 /** Keep eligible country selectors in minimal mode for the region-restricted service groups. */
-function buildMinimalServiceRegionGroups(filteredProxies, customProxies) {
+function buildMinimalServiceRegionGroups(filteredProxies, customProxies, classificationCache = regionMatchCache) {
   const candidatesByRegion = new Map([...serviceRegionNames].map((name) => [name, []]));
-  for (const proxy of [...filteredProxies, ...customProxies]) {
-    for (const region of getMatchedRegions(proxy.name)) {
+  const addProxy = (proxy) => {
+    for (const region of getMatchedRegions(proxy.name, classificationCache)) {
       if (candidatesByRegion.has(region.name)) candidatesByRegion.get(region.name).push(proxy.name);
     }
-  }
+  };
+  for (const proxy of filteredProxies) addProxy(proxy);
+  for (const proxy of customProxies) addProxy(proxy);
 
   return regionDefinitions
     .filter(({ name }) => serviceRegionNames.has(name) && candidatesByRegion.get(name).length > 0)
@@ -1295,7 +1310,11 @@ function buildMinimalServiceRegionGroups(filteredProxies, customProxies) {
  * 并构建“自建节点”策略组。
  * 自定义节点不参与订阅节点过滤，也不参与 hosts 改写及 DNS 域名处理。
  */
-function buildCustomizeGroups(filteredProxies, customizeList = customizeProxies) {
+function buildCustomizeGroups(
+  filteredProxies,
+  customizeList = customizeProxies,
+  classificationCache = regionMatchCache,
+) {
   const chainEnabled = ruleOptionsEnable.链式代理;
 
   if (!customizeList.length) {
@@ -1305,15 +1324,20 @@ function buildCustomizeGroups(filteredProxies, customizeList = customizeProxies)
     return { customProxies: [], customProxyNames: [], customGroup: null };
   }
 
-  const usedNames = new Set(filteredProxies.map((p) => p.name));
+  const usedNames = new Set();
+  for (const proxy of filteredProxies) usedNames.add(proxy.name);
   const customPrefix = '自建-';
   const customProxies = [];
+  const customProxyNames = [];
 
   for (const proxy of customizeList) {
-    const normalized = normalizeProxyName(proxy);
+    const normalized = normalizeProxyName(proxy, classificationCache);
     let name = normalized.name;
     while (usedNames.has(name)) {
-      name = normalizeProxyName({ name: `${customPrefix}${name}` }).name.replace(`${customPrefix} `, customPrefix);
+      name = normalizeProxyName({ name: `${customPrefix}${name}` }, classificationCache).name.replace(
+        `${customPrefix} `,
+        customPrefix,
+      );
     }
     usedNames.add(name);
 
@@ -1322,9 +1346,8 @@ function buildCustomizeGroups(filteredProxies, customizeList = customizeProxies)
       customProxy = { ...customProxy, 'dialer-proxy': dialerProxyName };
     }
     customProxies.push(customProxy);
+    customProxyNames.push(name);
   }
-
-  const customProxyNames = customProxies.map((p) => p.name);
 
   const customGroup = {
     ...selectBaseOption,
@@ -1342,27 +1365,57 @@ function buildCustomizeGroups(filteredProxies, customizeList = customizeProxies)
 
 // ---构建基础策略组和分流策略组---
 
-/**
- * 构建基础/分流策略组/部分节点组、GLOBAL 组与规则集，并汇总分流规则
- */
-function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customizeInfo) {
-  const minimalModeEnabled = ruleOptionsEnable.极简国内外分流模式;
-  const addAllNodesToServiceGroupsEnabled = ruleOptionsEnable.分流组添加所有节点;
-  const chainEnabled = ruleOptionsEnable.链式代理;
-  const hideManualSelectGroupEnabled = ruleOptionsEnable.隐藏地区手动选择组;
-
-  const functionalGroups = [];
+/** 构建功能分流规则、IP 兜底规则与实际使用的规则集。 */
+function buildFunctionalRulesAndProviders(minimalModeEnabled) {
   const functionalRules = [];
   const functionalIpRules = [];
   const priorityRules = [];
   const finalRuleProviders = { ...baseRuleProviders };
+  const fallbackProxyIpRules = [];
+
+  // 必须代理的服务 IP 不随服务组开关消失；组关闭时使用默认代理。
+  for (const svc of serviceConfigs) {
+    if (!svc.proxyIpRequired || (!minimalModeEnabled && ruleOptionsEnable[svc.option || svc.name])) continue;
+    for (const rule of svc.ipRules) {
+      const [, provider] = rule.split(',');
+      finalRuleProviders[provider] = svc.providers[provider];
+      fallbackProxyIpRules.push(`RULE-SET,${provider},默认代理,no-resolve`);
+    }
+  }
+
+  functionalIpRules.push(...fallbackProxyIpRules);
+  if (!minimalModeEnabled) {
+    for (const svc of serviceConfigs) {
+      if (!ruleOptionsEnable[svc.option || svc.name]) continue;
+
+      (svc.priority ? priorityRules : functionalRules).push(...(svc.rules || []));
+      functionalIpRules.push(...(svc.ipRules || []));
+      Object.assign(finalRuleProviders, svc.providers || {});
+    }
+  }
+
+  return { functionalRules, functionalIpRules, priorityRules, finalRuleProviders };
+}
+
+/**
+ * 构建基础/分流策略组/部分节点组、GLOBAL 组与规则集，并汇总分流规则
+ */
+function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customizeInfo) {
+  const minimalModeEnabled = ruleOptionsEnable.极简分流;
+  const addAllNodesToServiceGroupsEnabled = ruleOptionsEnable.服务组含全节点;
+  const chainEnabled = ruleOptionsEnable.链式代理;
+  const hideManualSelectGroupEnabled = ruleOptionsEnable.隐藏地区手选组;
+
+  const functionalGroups = [];
+  const { functionalRules, functionalIpRules, priorityRules, finalRuleProviders } =
+    buildFunctionalRulesAndProviders(minimalModeEnabled);
 
   const { customProxyNames = [], customGroup = null } = customizeInfo || {};
   const filteredProxyNames = filteredProxies.map((p) => p.name);
   const allProxiesNames = [...filteredProxyNames, ...customProxyNames];
   const groupNamesOfSelect = generatedRegionGroups.filter((g) => g.type === 'select').map((g) => g.name);
   const serviceRegionGroupNames = groupNamesOfSelect.filter((name) => serviceRegionNames.has(name));
-  const baseGroupNames = baseGroups.filter((g) => ruleOptionsEnable[g.name]).map((g) => g.name);
+  const baseGroupNames = baseGroups.filter((g) => ruleOptionsEnable[g.option || g.name]).map((g) => g.name);
   const customGroupNames = customGroup ? [customGroup.name] : [];
 
   const chainGroup =
@@ -1375,19 +1428,8 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
         }
       : null;
 
-  // 必须代理的服务 IP 不随服务组开关消失；组关闭时使用默认代理。
-  const fallbackProxyIpRules = [];
-  for (const svc of serviceConfigs) {
-    if (!svc.proxyIpRequired || (!minimalModeEnabled && ruleOptionsEnable[svc.name])) continue;
-    for (const rule of svc.ipRules) {
-      const [, provider] = rule.split(',');
-      finalRuleProviders[provider] = svc.providers[provider];
-      fallbackProxyIpRules.push(`RULE-SET,${provider},默认代理,no-resolve`);
-    }
-  }
-
   if (minimalModeEnabled) {
-    const autoSelectExMainlandHongKongEnabled = ruleOptionsEnable[autoSelectExMainlandHongKongGroupName];
+    const autoSelectExMainlandHongKongEnabled = ruleOptionsEnable[autoSelectExMainlandHongKongOptionName];
 
     const defaultGroup = {
       ...selectBaseOption,
@@ -1434,16 +1476,14 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
         defaultGroup,
         ...(autoSelectExMainlandHongKongEnabled ? [autoSelectExMainlandHongKongGroup] : []),
       ],
-      functionalRules: [],
-      functionalIpRules: fallbackProxyIpRules,
-      priorityRules: [],
+      functionalRules,
+      functionalIpRules,
+      priorityRules,
       finalRuleProviders,
       chainGroup,
       directGroup,
     };
   }
-
-  functionalIpRules.push(...fallbackProxyIpRules);
 
   functionalGroups.push({
     ...selectBaseOption,
@@ -1453,15 +1493,7 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
   });
 
   for (const svc of serviceConfigs) {
-    if (!ruleOptionsEnable[svc.name]) continue;
-
-    (svc.priority ? priorityRules : functionalRules).push(...(svc.rules || []));
-    functionalIpRules.push(...(svc.ipRules || []));
-    Object.assign(finalRuleProviders, svc.providers || {});
-  }
-
-  for (const svc of serviceConfigs) {
-    if (!ruleOptionsEnable[svc.name]) continue;
+    if (!ruleOptionsEnable[svc.option || svc.name]) continue;
 
     const groupProxies = regionRestrictedServiceNames.has(svc.name)
       ? serviceRegionGroupNames.length
@@ -1696,7 +1728,7 @@ function applyHostsToProxies(proxies, hosts) {
  * 2. proxy-server-nameserver 有且仅有一个 DNS 并且该 DNS 包含 127.0.0.1 并且 listen 包含 0.0.0.0
  */
 function buildDnsAndHostsConfig(config, filteredProxies) {
-  const minimalModeEnabled = ruleOptionsEnable.极简国内外分流模式;
+  const minimalModeEnabled = ruleOptionsEnable.极简分流;
 
   const originalDnsConfig = config.dns || {};
 
@@ -1764,13 +1796,18 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
 function main(config) {
   const newConfig = {};
 
-  const filteredProxies = filterAndNormalizeProxies(config);
+  const classificationCache = new Map();
+  const filteredProxies = filterAndNormalizeProxies(config, classificationCache);
 
-  const { customProxies, customProxyNames, customGroup } = buildCustomizeGroups(filteredProxies);
+  const { customProxies, customProxyNames, customGroup } = buildCustomizeGroups(
+    filteredProxies,
+    customizeProxies,
+    classificationCache,
+  );
 
-  const generatedRegionGroups = ruleOptionsEnable.极简国内外分流模式
-    ? buildMinimalServiceRegionGroups(filteredProxies, customProxies)
-    : buildRegionGroups(filteredProxies, customProxies);
+  const generatedRegionGroups = ruleOptionsEnable.极简分流
+    ? buildMinimalServiceRegionGroups(filteredProxies, customProxies, classificationCache)
+    : buildRegionGroups(filteredProxies, customProxies, classificationCache);
 
   const {
     globalGroup,
@@ -1841,7 +1878,7 @@ function main(config) {
     'DOMAIN,cp.cloudflare.com,默认代理',
     ...priorityRules,
     ...prefixRules,
-    ...(ruleOptionsEnable.屏蔽代理QUIC流量 ? blockForeignQuic : []),
+    ...(ruleOptionsEnable.拦截代理QUIC ? blockForeignQuic : []),
     ...functionalRules,
     ...domesticServiceRules,
     geolocationCnRule,
@@ -1850,7 +1887,7 @@ function main(config) {
     'RULE-SET,private_ip,直连,no-resolve',
     ...otherFunctionalIpRules,
     'RULE-SET,cn_ip,直连',
-    `MATCH,${ruleOptionsEnable.极简国内外分流模式 ? '默认代理' : '漏网之鱼'}`,
+    `MATCH,${ruleOptionsEnable.极简分流 ? '默认代理' : '漏网之鱼'}`,
   ];
 
   return finalizeMyClashRules(newConfig);
@@ -1860,11 +1897,10 @@ function main(config) {
  * 配置收尾处理：统一补齐项目 DNS、Apple 例外与流量偏好配置。
  * 静态 YAML 由 tools/build.js 调用同一个 main() 生成，确保规则来源一致。
  */
-function finalizeMyClashRules(config) {
-  for (const [key, value] of Object.entries(ruleOptionsEnable)) {
+function applyRuntimeConfigOptions(config, options) {
+  for (const [key, value] of Object.entries(options)) {
     if (typeof value !== 'boolean') throw new Error(`配置项 ${key} 必须为 true 或 false（不是 ture 或字符串）`);
   }
-  const options = ruleOptionsEnable;
   config['allow-lan'] = options.局域网访问;
   config['bind-address'] = options.局域网访问 ? '*' : '127.0.0.1';
   config.ipv6 = options.IPv6;
@@ -1887,9 +1923,10 @@ function finalizeMyClashRules(config) {
   config.dns.listen = '127.0.0.1:1053';
   config.dns['prefer-h3'] = false;
   config.dns['respect-rules'] = false; // 每个 DNS 显式选出口，避免解析节点时递归进入代理
+}
 
+function prioritizePreferredGroups(config) {
   const groups = config['proxy-groups'];
-  const usGroup = groups.find((group) => group.name === unitedStatesRegion.name);
   // 首项决定首次加载时的选择；已有客户端选择缓存仍由内核保留。
   for (const [name, preferred] of [
     ['GLOBAL', unitedStatesRegion.name],
@@ -1900,10 +1937,15 @@ function finalizeMyClashRules(config) {
     group.proxies = [preferred, ...group.proxies.filter((entry) => entry !== preferred)];
     delete group['default-selected'];
   }
+}
+
+function applyAppleRouting(config, options) {
+  const groups = config['proxy-groups'];
+  const usGroup = groups.find((group) => group.name === unitedStatesRegion.name);
   const specialRules = [];
   // 极简模式仅关闭常规服务组；安全与 Apple 精细例外仍由各自开关控制。
-  for (const [name, domains] of Object.entries(appleEndpointDefinitions)) {
-    if (!options[name]) continue;
+  for (const { name, option, domains } of appleEndpointDefinitions) {
+    if (!options[option]) continue;
     let group = groups.find((g) => g.name === name);
     if (!group) {
       group = {
@@ -1961,7 +2003,7 @@ function finalizeMyClashRules(config) {
       config.dns['nameserver-policy']['rule-set:apple_tv'] = foreignDNS.map((dns) =>
         dns.replace('#默认代理', `#${appleProxyGroupName}`),
       );
-      if (options.Apple海外媒体) {
+      if (options.Apple媒体代理) {
         for (const domain of appleOverseasMediaEndpoints) {
           specialRules.push(`DOMAIN,${domain},${appleProxyGroupName}`);
           config.dns['nameserver-policy'][domain] = foreignDNS.map((dns) =>
@@ -1971,7 +2013,7 @@ function finalizeMyClashRules(config) {
       }
     }
   }
-  if (options[appleOtherGroupName] && !groups.some((group) => group.name === appleOtherDnsEgressGroupName)) {
+  if (options.Apple其他服务 && !groups.some((group) => group.name === appleOtherDnsEgressGroupName)) {
     const candidates = groups
       .filter((entry) => entry.type === 'select' && serviceRegionNames.has(entry.name))
       .map((entry) => entry.name);
@@ -1986,7 +2028,7 @@ function finalizeMyClashRules(config) {
   }
   // Exact shared Apple endpoints assigned to Other Apple Service. In minimal output the
   // regular service group may be omitted; DNS policy is derived from these same route targets.
-  if (options[appleOtherGroupName]) {
+  if (options.Apple其他服务) {
     let group = groups.find((entry) => entry.name === appleOtherGroupName);
     if (!group) {
       group = {
@@ -1998,12 +2040,11 @@ function finalizeMyClashRules(config) {
       groups.splice(1, 0, group);
       groups[0].proxies.push(appleOtherGroupName);
     }
-    for (const domain of appleOtherExactEndpoints)
-      specialRules.push(`DOMAIN,${domain},${appleOtherGroupName}`);
+    for (const domain of appleOtherExactEndpoints) specialRules.push(`DOMAIN,${domain},${appleOtherGroupName}`);
   }
   for (const [name, enabled] of [
-    [appleOtherGroupName, options.Apple服务默认直连],
-    ['Microsoft', options.微软服务默认直连],
+    [appleOtherGroupName, options.Apple其他默认直连],
+    ['Microsoft', options.微软默认直连],
   ]) {
     const group = groups.find((g) => g.name === name);
     if (group && enabled) {
@@ -2011,7 +2052,7 @@ function finalizeMyClashRules(config) {
       delete group['default-selected'];
     }
   }
-  if (options.Apple模型下载直连) {
+  if (options.Apple下载直连) {
     // Apple 官方软件/资源 CDN；这些域名是共享资源端点，不能只按 AI 模型识别。
     for (const domain of ['gdmf.apple.com', 'mesu.apple.com', 'updates.cdn-apple.com', 'assets.cdn-apple.com']) {
       specialRules.push(`DOMAIN,${domain},直连`);
@@ -2022,23 +2063,44 @@ function finalizeMyClashRules(config) {
     // 宽泛 AppleProxy 成员最后匹配，保留上方 Siri、共享 iCloud 与下载域名的精确边界。
     specialRules.push(`RULE-SET,apple_proxy,${appleProxyGroupName}`);
   }
+
+  return specialRules;
+}
+
+function applyDnsPolicies(config, options, specialRules) {
+  const groups = config['proxy-groups'];
   // DNS 白名单与连接路由分开：只加载启用的集合，仍由客户端每日直接更新。
   const dnsWhitelist = {
-    国内CDNDNS: ['dns_domestic_cdn', {
-      type: 'http', behavior: 'classical', format: 'text', interval: 86400,
-      url: 'https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt',
-      path: './ruleset/dns_domestic_cdn.list',
-    }],
-    微软下载DNS: ['dns_microsoft_cdn', {
-      type: 'http', behavior: 'classical', format: 'text', interval: 86400,
-      url: 'https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt',
-      path: './ruleset/dns_microsoft_cdn.list',
-    }],
-    Steam下载DNS: ['dns_steam_cn', {
-      ...ruleProviderCommonDomain,
-      url: 'https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs',
-      path: './ruleset/dns_steam_cn.mrs',
-    }],
+    国内CDN解析: [
+      'dns_domestic_cdn',
+      {
+        type: 'http',
+        behavior: 'classical',
+        format: 'text',
+        interval: 86400,
+        url: 'https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt',
+        path: './ruleset/dns_domestic_cdn.list',
+      },
+    ],
+    微软下载解析: [
+      'dns_microsoft_cdn',
+      {
+        type: 'http',
+        behavior: 'classical',
+        format: 'text',
+        interval: 86400,
+        url: 'https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt',
+        path: './ruleset/dns_microsoft_cdn.list',
+      },
+    ],
+    Steam下载解析: [
+      'dns_steam_cn',
+      {
+        ...ruleProviderCommonDomain,
+        url: 'https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs',
+        path: './ruleset/dns_steam_cn.mrs',
+      },
+    ],
   };
   for (const [option, [name, provider]] of Object.entries(dnsWhitelist)) {
     if (!options[option]) continue;
@@ -2053,10 +2115,12 @@ function finalizeMyClashRules(config) {
   // DNS egress follows the route target group, with Other Apple Service explicitly using Siri's selector.
   const dnsForRoute = (target, dnsEgressGroupName, dnsEgressGroup) => {
     if (target === '直连') return foreignDNS;
-    if (dnsEgressGroup?.proxies.length &&
-        dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))) {
+    if (
+      dnsEgressGroup?.proxies.length &&
+      dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
+    ) {
       // Ordinary Apple traffic remains directly usable when there is no eligible Siri region.
-      if (target === appleOtherGroupName && options.Apple服务默认直连) return chinaDNS;
+      if (target === appleOtherGroupName && options.Apple其他默认直连) return chinaDNS;
       return 'rcode://name_error';
     }
     return foreignDNS.map((dns) => dns.replace('#默认代理', `#${dnsEgressGroupName}`));
@@ -2068,13 +2132,14 @@ function finalizeMyClashRules(config) {
   let dnsOutbound = '内置DNS';
   const usedNames = new Set([...config.proxies, ...groups].map((entry) => entry.name));
   while (usedNames.has(dnsOutbound)) dnsOutbound = `my-${dnsOutbound}`;
-  if (options.拦截外部明文DNS) config.proxies.push({ name: dnsOutbound, type: 'dns' });
-  const safetyRules = options.拦截外部明文DNS ? [`DST-PORT,53,${dnsOutbound}`] : [];
+  if (options.接管DNS53) config.proxies.push({ name: dnsOutbound, type: 'dns' });
+  const safetyRules = options.接管DNS53 ? [`DST-PORT,53,${dnsOutbound}`] : [];
   config.rules = [
     ...safetyRules,
     ...specialRules,
     ...config.rules.filter(
-      (rule) => !specialRules.includes(rule) &&
+      (rule) =>
+        !specialRules.includes(rule) &&
         (options.国内服务优先直连 || (!prefixRules.slice(1).includes(rule) && rule !== geolocationCnRule)),
     ),
   ];
@@ -2136,19 +2201,26 @@ function finalizeMyClashRules(config) {
     }
   }
   config.dns['nameserver-policy'] = Object.fromEntries(compactDnsPolicyEntries);
-  if (options.严格加密DNS) {
+}
+
+function validateStrictDnsSettings(config, options) {
+  const groups = config['proxy-groups'];
+  if (options.严格DNS校验) {
     config.dns['use-system-hosts'] = false;
     // 不向系统 DNS 查询 LAN 名称；局域网名称通过用户 hosts 显式维护。
     config.dns['nameserver-policy']['rule-set:private'] = 'rcode://success';
     const encrypted = (value, field) => {
       for (const server of Array.isArray(value) ? value : [value]) {
-        if (typeof server !== 'string') throw new Error(`严格加密DNS：${field} 必须使用加密 DNS`);
+        if (typeof server !== 'string') throw new Error(`严格DNS校验：${field} 必须使用加密 DNS`);
         if (/^rcode:\/\/(success|name_error|refused)$/i.test(server)) continue;
         const parts = server.split('#');
-        if (parts.length > 2 || !/^(https|tls):\/\/[^\s#@]+$/i.test(parts[0]) ||
-            /skip-cert-verify|@/i.test(server) ||
-            (parts.length === 2 && !['DIRECT', ...groups.map((group) => group.name)].includes(parts[1])))
-          throw new Error(`严格加密DNS：脚本生成的 ${field} 含不受支持或明文 DNS；严格模式不会降级。`);
+        if (
+          parts.length > 2 ||
+          !/^(https|tls):\/\/[^\s#@]+$/i.test(parts[0]) ||
+          /skip-cert-verify|@/i.test(server) ||
+          (parts.length === 2 && !['DIRECT', ...groups.map((group) => group.name)].includes(parts[1]))
+        )
+          throw new Error(`严格DNS校验：脚本生成的 ${field} 含不受支持或明文 DNS；严格模式不会降级。`);
       }
     };
     for (const field of ['default-nameserver', 'proxy-server-nameserver', 'nameserver', 'direct-nameserver'])
@@ -2159,21 +2231,47 @@ function finalizeMyClashRules(config) {
     delete config.dns.fallback;
     delete config.dns['fallback-filter'];
   }
+}
+
+function cleanupUnusedRuleProviders(config) {
   // 规则依赖按实际引用保留；DNS 使用的规则集也必须保留（不能只扫描 rules）。
-  const references = JSON.stringify([config.rules, config.dns]);
-  const dnsRuleSetReferences = new Set(
-    Object.keys(config.dns['nameserver-policy'] || {})
-      .filter((key) => key.startsWith('rule-set:'))
-      .flatMap((key) => key.slice('rule-set:'.length).split(',')),
-  );
+  const references = collectRuleSetReferences([config.rules, config.dns]);
   for (const key of Object.keys(config['rule-providers'])) {
-    if (
-      !references.includes(`RULE-SET,${key},`) &&
-      !references.includes(`RULE-SET,${key})`) &&
-      !references.includes(`rule-set:${key}\"`) &&
-      !dnsRuleSetReferences.has(key)
-    )
-      delete config['rule-providers'][key];
+    if (!references.has(key)) delete config['rule-providers'][key];
   }
+}
+
+function finalizeMyClashRules(config) {
+  const options = ruleOptionsEnable;
+  applyRuntimeConfigOptions(config, options);
+  prioritizePreferredGroups(config);
+  const specialRules = applyAppleRouting(config, options);
+  applyDnsPolicies(config, options, specialRules);
+  validateStrictDnsSettings(config, options);
+  cleanupUnusedRuleProviders(config);
   return config;
+}
+
+const ruleSetRouteReference = /\bRULE-SET\s*,\s*([A-Za-z0-9_!@.-]+)/gi;
+const ruleSetDnsReference = /\brule-set:([A-Za-z0-9_!@.-]+(?:,[A-Za-z0-9_!@.-]+)*)/gi;
+
+/** Collect provider references from rules and DNS without serializing their full structures. */
+function collectRuleSetReferences(value, references = new Set()) {
+  if (typeof value === 'string') {
+    for (const match of value.matchAll(ruleSetRouteReference)) references.add(match[1]);
+    for (const match of value.matchAll(ruleSetDnsReference))
+      for (const name of match[1].split(',')) references.add(name);
+    return references;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) collectRuleSetReferences(entry, references);
+    return references;
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, entry] of Object.entries(value)) {
+      collectRuleSetReferences(key, references);
+      collectRuleSetReferences(entry, references);
+    }
+  }
+  return references;
 }

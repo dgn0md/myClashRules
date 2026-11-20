@@ -26,44 +26,58 @@ function readYaml(file) {
 }
 function configure(api, settings) {
   const options = settings.options || {};
-  const legacyOptionAliases = {
-    自动选择: '自动选择ex(大陆&香港)',
-  };
-  const legacyAppleOptions = {
-    Apple: 'Other Apple Service',
-    Apple智能: 'Siri Ai/Apple Intelligence',
-    Siri: 'Siri Ai/Apple Intelligence',
+  const optionAliases = {
+    自动选择: '排除大陆香港自动选',
+    '自动选择ex(大陆&香港)': '排除大陆香港自动选',
+    'Siri Ai/Apple Intelligence': 'Apple智能分流',
+    'Other Apple Service': 'Apple其他服务',
+    Apple海外媒体: 'Apple媒体代理',
+    Apple模型下载直连: 'Apple下载直连',
+    Apple服务默认直连: 'Apple其他默认直连',
+    国内CDNDNS: '国内CDN解析',
+    微软下载DNS: '微软下载解析',
+    Steam下载DNS: 'Steam下载解析',
+    严格加密DNS: '严格DNS校验',
+    拦截外部明文DNS: '接管DNS53',
+    微软服务默认直连: '微软默认直连',
+    代理IPV4优先: '节点IPv4优先',
+    代理IPV6优先: '节点IPv6优先',
+    极简国内外分流模式: '极简分流',
+    生成地区自动选择组: '地区测速组',
+    隐藏地区手动选择组: '隐藏地区手选组',
+    生成高低倍率组: '倍率节点组',
+    生成家宽节点组: '家宽节点组',
+    分流组添加所有节点: '服务组含全节点',
+    过滤低倍率节点: '过滤低倍率',
+    过滤高倍率节点: '过滤高倍率',
+    过滤非地区节点: '过滤公告信息项',
+    屏蔽代理QUIC流量: '拦截代理QUIC',
+    Apple: 'Apple其他服务',
+    Apple智能: 'Apple智能分流',
+    Siri: 'Apple智能分流',
     'Apple Product地区': 'AppleProxy',
     AppleNews: 'AppleProxy',
     AppleTV: 'AppleProxy',
     AppleFitness: 'AppleProxy',
     AppleSports: 'AppleProxy',
     AppleBooks: 'AppleProxy',
-    Apple地区检测: 'Siri Ai/Apple Intelligence',
+    Apple地区检测: 'Apple智能分流',
   };
   const removedAppleOptions = new Set(['AppleRelay']);
-  const migratedAppleOptions = new Map();
   const migratedOptions = new Map();
   for (const [key, value] of Object.entries(options)) {
     if (typeof value !== 'boolean') throw new Error(`${key} 必须填写 true 或 false`);
     if (removedAppleOptions.has(key)) continue;
-    const aliasTarget = legacyOptionAliases[key];
-    if (aliasTarget) {
-      if (!Object.prototype.hasOwnProperty.call(options, aliasTarget)) migratedOptions.set(aliasTarget, value);
-      continue;
-    }
-    const target = legacyAppleOptions[key];
+    const target = optionAliases[key];
     if (target) {
-      if (!Object.prototype.hasOwnProperty.call(options, target)) {
-        migratedAppleOptions.set(target, (migratedAppleOptions.get(target) || false) || value);
-      }
+      if (!Object.prototype.hasOwnProperty.call(options, target))
+        migratedOptions.set(target, migratedOptions.get(target) || false || value);
       continue;
     }
     if (!Object.prototype.hasOwnProperty.call(api.ruleOptionsEnable, key)) throw new Error(`未知配置项：${key}`);
     api.ruleOptionsEnable[key] = value;
   }
   for (const [key, value] of migratedOptions) api.ruleOptionsEnable[key] = value;
-  for (const [key, value] of migratedAppleOptions) api.ruleOptionsEnable[key] = value;
   if (settings.customProxies) {
     if (!Array.isArray(settings.customProxies)) throw new Error('customProxies 必须为节点数组');
     api.customizeProxies.push(...settings.customProxies);
@@ -87,12 +101,12 @@ function template(api, settings) {
   const seedNames = new Set(out.proxies.filter((p) => p.password === 'template').map((p) => p.name));
   out.proxies = out.proxies.filter((p) => !seedNames.has(p.name));
   const definitions = [...api.regionDefinitions, ...api.rateRegionDefinitions, ...api.homeRegionDefinitions];
-  const filterNonRegion = api.ruleOptionsEnable.过滤非地区节点;
+  const filterNonRegion = api.ruleOptionsEnable.过滤公告信息项;
   const announcements = filterNonRegion ? [api.announcementFilter.source] : [];
   const softInfo = filterNonRegion ? [api.excludeFilter.source] : [];
   const excludedRates = [];
-  if (api.ruleOptionsEnable.过滤低倍率节点) excludedRates.push(api.rateRegionDefinitions[0].regex.source);
-  if (api.ruleOptionsEnable.过滤高倍率节点) excludedRates.push(api.rateRegionDefinitions[1].regex.source);
+  if (api.ruleOptionsEnable.过滤低倍率) excludedRates.push(api.rateRegionDefinitions[0].regex.source);
+  if (api.ruleOptionsEnable.过滤高倍率) excludedRates.push(api.rateRegionDefinitions[1].regex.source);
   for (const group of out['proxy-groups']) {
     const members = group.proxies || [];
     if (!members.some((p) => seedNames.has(p))) continue;
@@ -137,8 +151,8 @@ function template(api, settings) {
       },
       override: {
         'proxy-name': taiwanFlagCorrection,
-        ...(api.ruleOptionsEnable.代理IPV4优先 !== api.ruleOptionsEnable.代理IPV6优先
-          ? { 'ip-version': api.ruleOptionsEnable.代理IPV4优先 ? 'ipv4-prefer' : 'ipv6-prefer' }
+        ...(api.ruleOptionsEnable.节点IPv4优先 !== api.ruleOptionsEnable.节点IPv6优先
+          ? { 'ip-version': api.ruleOptionsEnable.节点IPv4优先 ? 'ipv4-prefer' : 'ipv6-prefer' }
           : {}),
       },
     },
@@ -213,12 +227,24 @@ function cli(args) {
   const settings = input['x-myClashRules'] || input;
   if (input['proxy-providers']?.订阅?.url) settings.subscription = { url: input['proxy-providers'].订阅.url };
   const result = build({ settings, subscription: flags.subscription ? readYaml(flags.subscription) : undefined });
-  const output = path.resolve(flags.output || path.join(ROOT, flags.subscription ? '.local/expanded.yaml' : 'Config/mihomoConfig.yaml'));
+  const output = path.resolve(
+    flags.output || path.join(ROOT, flags.subscription ? '.local/expanded.yaml' : 'Config/mihomoConfig.yaml'),
+  );
   const relativeOutput = path.relative(ROOT, output);
-  const insideRepository = relativeOutput !== '' && !relativeOutput.startsWith('..' + path.sep) && !path.isAbsolute(relativeOutput);
-  const privateInput = Boolean(flags.subscription || settings.customProxies?.length ||
-    (settings.subscription?.url && settings.subscription.url !== 'https://example.invalid/replace-with-your-subscription'));
-  if (privateInput && insideRepository && relativeOutput !== '.local' && !relativeOutput.startsWith('.local' + path.sep))
+  const insideRepository =
+    relativeOutput !== '' && !relativeOutput.startsWith('..' + path.sep) && !path.isAbsolute(relativeOutput);
+  const privateInput = Boolean(
+    flags.subscription ||
+    settings.customProxies?.length ||
+    (settings.subscription?.url &&
+      settings.subscription.url !== 'https://example.invalid/replace-with-your-subscription'),
+  );
+  if (
+    privateInput &&
+    insideRepository &&
+    relativeOutput !== '.local' &&
+    !relativeOutput.startsWith('.local' + path.sep)
+  )
     throw new Error('订阅、真实节点或私有 URL 只能输出到仓库内 .local/，或显式指定仓库外路径');
   if (flags.check) {
     if (!fs.existsSync(output) || fs.readFileSync(output, 'utf8') !== result.text)
