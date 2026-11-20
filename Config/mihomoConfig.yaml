@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：84667c4f8fe55e109554753114cac538cc206445ea96d2e2563a2098383d5e05
+# 最新 Raw SHA-256：610976843d41869eb5c33d3ba243dd5c4cf21491094cf03199860eb9d30972a7
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -2808,38 +2808,46 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geoip/apple.mrs
     path: ./ruleset/apple_ip.mrs
     path-in-bundle: geo/geoip/apple.mrs
-  domestic_tencent:
+  domestic_alibaba:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent.mrs
-    path: ./ruleset/domestic_tencent.mrs
-    path-in-bundle: geo/geosite/tencent.mrs
-  domestic_tencent_noncn:
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/alibaba.mrs
+    path: ./ruleset/domestic_alibaba.mrs
+    path-in-bundle: geo/geosite/alibaba.mrs
+  domestic_alibaba_noncn:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent@!cn.mrs
-    path: ./ruleset/domestic_tencent_noncn.mrs
-    path-in-bundle: geo/geosite/tencent@!cn.mrs
-  domestic_netease:
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/alibaba@!cn.mrs
+    path: ./ruleset/domestic_alibaba_noncn.mrs
+    path-in-bundle: geo/geosite/alibaba@!cn.mrs
+  domestic_baidu:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease.mrs
-    path: ./ruleset/domestic_netease.mrs
-    path-in-bundle: geo/geosite/netease.mrs
-  domestic_netease_noncn:
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/baidu.mrs
+    path: ./ruleset/domestic_baidu.mrs
+    path-in-bundle: geo/geosite/baidu.mrs
+  domestic_bilibili:
     type: http
     format: mrs
     interval: 86400
     behavior: domain
-    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease@!cn.mrs
-    path: ./ruleset/domestic_netease_noncn.mrs
-    path-in-bundle: geo/geosite/netease@!cn.mrs
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bilibili.mrs
+    path: ./ruleset/domestic_bilibili.mrs
+    path-in-bundle: geo/geosite/bilibili.mrs
+  domestic_bilibili_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bilibili@!cn.mrs
+    path: ./ruleset/domestic_bilibili_noncn.mrs
+    path-in-bundle: geo/geosite/bilibili@!cn.mrs
   domestic_bytedance:
     type: http
     format: mrs
@@ -2856,6 +2864,134 @@ rule-providers:
     url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/bytedance@!cn.mrs
     path: ./ruleset/domestic_bytedance_noncn.mrs
     path-in-bundle: geo/geosite/bytedance@!cn.mrs
+  domestic_chinamobile:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinamobile.mrs
+    path: ./ruleset/domestic_chinamobile.mrs
+    path-in-bundle: geo/geosite/chinamobile.mrs
+  domestic_chinamobile_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinamobile@!cn.mrs
+    path: ./ruleset/domestic_chinamobile_noncn.mrs
+    path-in-bundle: geo/geosite/chinamobile@!cn.mrs
+  domestic_chinatelecom:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinatelecom.mrs
+    path: ./ruleset/domestic_chinatelecom.mrs
+    path-in-bundle: geo/geosite/chinatelecom.mrs
+  domestic_chinatelecom_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinatelecom@!cn.mrs
+    path: ./ruleset/domestic_chinatelecom_noncn.mrs
+    path-in-bundle: geo/geosite/chinatelecom@!cn.mrs
+  domestic_chinaunicom:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinaunicom.mrs
+    path: ./ruleset/domestic_chinaunicom.mrs
+    path-in-bundle: geo/geosite/chinaunicom.mrs
+  domestic_chinaunicom_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/chinaunicom@!cn.mrs
+    path: ./ruleset/domestic_chinaunicom_noncn.mrs
+    path-in-bundle: geo/geosite/chinaunicom@!cn.mrs
+  domestic_huaweicloud:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/huaweicloud.mrs
+    path: ./ruleset/domestic_huaweicloud.mrs
+    path-in-bundle: geo/geosite/huaweicloud.mrs
+  domestic_huaweicloud_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/huaweicloud@!cn.mrs
+    path: ./ruleset/domestic_huaweicloud_noncn.mrs
+    path-in-bundle: geo/geosite/huaweicloud@!cn.mrs
+  domestic_jd:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/jd.mrs
+    path: ./ruleset/domestic_jd.mrs
+    path-in-bundle: geo/geosite/jd.mrs
+  domestic_jd_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/jd@!cn.mrs
+    path: ./ruleset/domestic_jd_noncn.mrs
+    path-in-bundle: geo/geosite/jd@!cn.mrs
+  domestic_netease:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease.mrs
+    path: ./ruleset/domestic_netease.mrs
+    path-in-bundle: geo/geosite/netease.mrs
+  domestic_netease_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/netease@!cn.mrs
+    path: ./ruleset/domestic_netease_noncn.mrs
+    path-in-bundle: geo/geosite/netease@!cn.mrs
+  domestic_tencent:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent.mrs
+    path: ./ruleset/domestic_tencent.mrs
+    path-in-bundle: geo/geosite/tencent.mrs
+  domestic_tencent_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/tencent@!cn.mrs
+    path: ./ruleset/domestic_tencent_noncn.mrs
+    path-in-bundle: geo/geosite/tencent@!cn.mrs
+  domestic_xiaomi:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/xiaomi.mrs
+    path: ./ruleset/domestic_xiaomi.mrs
+    path-in-bundle: geo/geosite/xiaomi.mrs
+  domestic_xiaomi_noncn:
+    type: http
+    format: mrs
+    interval: 86400
+    behavior: domain
+    url: https://fastly.jsdelivr.net/gh/appshubcc/bett-rules@meta/geo/geosite/xiaomi@!cn.mrs
+    path: ./ruleset/domestic_xiaomi_noncn.mrs
+    path-in-bundle: geo/geosite/xiaomi@!cn.mrs
   apple_tv:
     type: http
     format: mrs
@@ -2955,9 +3091,18 @@ rules:
   - RULE-SET,paypal,PayPal
   - RULE-SET,patreon,Patreon
   - RULE-SET,ehentai,EHentai
-  - AND,((RULE-SET,domestic_tencent),(NOT,((RULE-SET,domestic_tencent_noncn)))),直连
-  - AND,((RULE-SET,domestic_netease),(NOT,((RULE-SET,domestic_netease_noncn)))),直连
+  - AND,((RULE-SET,domestic_alibaba),(NOT,((RULE-SET,domestic_alibaba_noncn)))),直连
+  - RULE-SET,domestic_baidu,直连
+  - AND,((RULE-SET,domestic_bilibili),(NOT,((RULE-SET,domestic_bilibili_noncn)))),直连
   - AND,((RULE-SET,domestic_bytedance),(NOT,((RULE-SET,domestic_bytedance_noncn)))),直连
+  - AND,((RULE-SET,domestic_chinamobile),(NOT,((RULE-SET,domestic_chinamobile_noncn)))),直连
+  - AND,((RULE-SET,domestic_chinatelecom),(NOT,((RULE-SET,domestic_chinatelecom_noncn)))),直连
+  - AND,((RULE-SET,domestic_chinaunicom),(NOT,((RULE-SET,domestic_chinaunicom_noncn)))),直连
+  - AND,((RULE-SET,domestic_huaweicloud),(NOT,((RULE-SET,domestic_huaweicloud_noncn)))),直连
+  - AND,((RULE-SET,domestic_jd),(NOT,((RULE-SET,domestic_jd_noncn)))),直连
+  - AND,((RULE-SET,domestic_netease),(NOT,((RULE-SET,domestic_netease_noncn)))),直连
+  - AND,((RULE-SET,domestic_tencent),(NOT,((RULE-SET,domestic_tencent_noncn)))),直连
+  - AND,((RULE-SET,domestic_xiaomi),(NOT,((RULE-SET,domestic_xiaomi_noncn)))),直连
   - RULE-SET,geolocation-!cn,默认代理
   - RULE-SET,apple_ip,AppleProxy,no-resolve
   - RULE-SET,private_ip,直连,no-resolve

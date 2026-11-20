@@ -11,7 +11,7 @@
 | 来源 | 本项目用途 | 更新与限制 |
 | --- | --- | --- |
 | [Bett Rules](https://github.com/appshubcc/bett-rules) | 常规服务、国内服务、CN IP、服务 IP、AI 与 TV+ 的 MRS rule provider。TV+ 使用 [`apple-tvplus`](https://github.com/v2fly/domain-list-community/blob/master/data/apple-tvplus) 动态集合，代替逐个主机规则。 | HTTP provider 按 Mihomo 配置定期更新，当前间隔为 86400 秒；源内容变化会改变成员。 |
-| [Bett 厂商集合](https://github.com/appshubcc/bett-rules/tree/meta/geo/geosite) | 路由专用 `domestic_tencent`、`domestic_netease`、`domestic_bytedance`，分别配套 `_noncn` provider，使用同源 `tencent`/`netease`/`bytedance` 与对应 `@!cn` MRS。 | 六个 HTTP provider 每 86400 秒直接更新；运行时 AND/NOT 排除海外子集，不在 CI 合并或发布名单。三个模块统一受 `国内服务优先直连` 开关控制。海外标注不完整不等于剩余域名必然在大陆；不授权国内 DNS。 |
+| [Bett 厂商集合](https://github.com/appshubcc/bett-rules/tree/meta/geo/geosite) | 12 组国内服务路由使用 `alibaba`、`baidu`、`bilibili`、`bytedance`、`chinamobile`、`chinatelecom`、`chinaunicom`、`huaweicloud`、`jd`、`netease`、`tencent`、`xiaomi`。 | 23 个 HTTP provider 每 86400 秒直接更新；除百度外均用同源 `@!cn` provider 在运行时 AND/NOT 排除已标注海外成员。统一受 `国内服务优先直连` 控制。海外标注不完整不等于剩余域名必然在大陆；不授权国内 DNS。 |
 | [SukkaW Surge](https://github.com/SukkaW/Surge) | [`apple_cn` 固定版本规则](https://github.com/SukkaW/Surge/blob/0afc9c2ee92aadbf79ce1c9caf03f724135073ea/Source/non_ip/apple_cn.conf)：大陆专用 Apple classical 文本规则。 | 固定提交使规则内容可复现；它只表达规则列表，不判断解析 IP 的地理位置。 |
 | [Sukka 国内 CDN](https://ruleset.skk.moe/Clash/non_ip/domestic_cdn.txt) 与 [Microsoft CDN](https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt) | DNS 专用 `dns_domestic_cdn`、`dns_microsoft_cdn`，使用 classical/text，分别受 `国内CDNDNS`、`微软下载DNS` 控制，默认开启。 | 客户端 HTTP provider 每 86400 秒直接更新；不在 CI 转换、筛选或重新发布。上游成员变化会扩大或缩小授权范围；沿用其 AGPL-3.0 声明。 |
 | [MetaCubeX Steam 国内集合](https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.list) | DNS 专用 `dns_steam_cn` 使用同路径 MRS，受默认开启的 `Steam下载DNS` 控制。 | 仍由客户端每日直接更新。成品含宽泛服务器/用户内容后缀，脚本为 `steamserver.net`、`steamusercontent.com` 明确保留国外 DNS；其余国内下载、更新及中国站条目使用国内 DNS。不是直接解析 v2fly 原始文件，也不声称成品等同于纯 v2fly `@cn`。 |
@@ -21,6 +21,23 @@
 | [OpenAI API 支持国家/地区](https://developers.openai.com/api/docs/supported-countries)、[BIS 俄罗斯/白俄罗斯出口管制](https://www.bis.gov/licensing/country-guidance/russia-belarus)、[OFAC 地域制裁说明](https://ofac.treasury.gov/faqs/updated/2026-10-26) | 为 `AI`、`Google`、`TikTok`、`Meta` 与 `Siri Ai/Apple Intelligence` 的地区选择排除受限制地区组提供参考。 | OpenAI 页面列出支持地且未单列不支持地；BIS/OFAC 规则范围各异，不代表一张统一的 AI 服务禁用清单。按完整地区组名排除，当前节点地区定义中额外生效的是俄罗斯。 |
 | [AppleFlow](https://github.com/Kianuni/AppleFlow) | [PCC 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Apple-PCC.yaml)、[Siri 清单](https://github.com/Kianuni/AppleFlow/blob/eb017c28c3a77ac1b36d0fa7c0aa7a190ffd532f/rules/clash/Siri-Direct.yaml)。 | 按固定版本整理端点；不复制整份第三方 AI 主机列表作为第二套活动规则。 |
 | [Domain List Community](https://github.com/v2fly/domain-list-community) 与产品规则源 | Apple 产品分类和其他服务的分类参考。 | 服务专用域名不等于产品所有共享后端。 |
+
+## 国内服务厂商集合
+
+| Bett 集合 | 覆盖关系与路由方式 |
+| --- | --- |
+| [`alibaba`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/alibaba.list) | 阿里/淘宝生态；当前集合已覆盖 `aliyun` 与 `youku`，不重复加载子集合。排除 `alibaba@!cn`。 |
+| [`baidu`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/baidu.list) | 百度生态。Bett 当前没有 `baidu@!cn`，因此按完整百度集合直连；这是本组唯一没有海外排除集的模块。 |
+| [`bilibili`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/bilibili.list) | B站及其视频、图片、直播等服务域名；排除 `bilibili@!cn` 中的国际站、海外业务和海外镜像。 |
+| [`bytedance`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/bytedance.list) | 字节生态；当前集合已覆盖 `volcengine`，排除同源 `bytedance@!cn`。 |
+| [`chinamobile`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/chinamobile.list)、[`chinatelecom`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/chinatelecom.list)、[`chinaunicom`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/chinaunicom.list) | 中国移动、电信、联通的服务集合；各自排除同源 `@!cn` 海外子集。 |
+| [`huaweicloud`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/huaweicloud.list) | 只纳入华为云集合，不扩大到整个 Huawei 品牌集合；排除 `huaweicloud@!cn`。 |
+| [`jd`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/jd.list) | 京东生态（含京东云）；排除 `jd@!cn`。 |
+| [`netease`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/netease.list) | 网易生态；排除 `netease@!cn`。 |
+| [`tencent`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/tencent.list) | 腾讯生态；当前集合已覆盖 `qcloud`，排除 `tencent@!cn`。 |
+| [`xiaomi`](https://github.com/appshubcc/bett-rules/blob/meta/geo/geosite/xiaomi.list) | 小米生态；排除 `xiaomi@!cn`。 |
+
+以上覆盖关系按 2026-11-20 Bett 快照核对；上游每天更新，成员关系可能变化。上游未标注海外的共享域名仍会跟随厂商模块直连；该集合目录不是所有中国网站或全部 `cn` 域名的清单。
 
 ## Provider 类别
 

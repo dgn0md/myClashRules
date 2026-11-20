@@ -127,13 +127,15 @@ async function run() {
   }
   const modules = [];
   for (const name of Object.keys(providers).filter((name) =>
-    name.startsWith('domestic_') && providers[`${name}_noncn`])) {
+    name.startsWith('domestic_') && !name.endsWith('_noncn'))) {
     const full = readDomainSnapshot(name);
-    const overseas = readDomainSnapshot(`${name}_noncn`);
-    const candidates = full.hosts.filter((host) => !overseas.matches(host)).slice(0, 64);
-    const excluded = overseas.hosts.find((host) => full.matches(host));
-    assert.ok(candidates.length && excluded, `${name}: no usable domestic/overseas snapshot samples`);
-    modules.push({ source: name.slice('domestic_'.length), candidates, excluded });
+    const overseasProvider = providers[`${name}_noncn`];
+    const overseas = overseasProvider ? readDomainSnapshot(`${name}_noncn`) : null;
+    const candidates = full.hosts.filter((host) => !overseas || !overseas.matches(host)).slice(0, 64);
+    const excluded = overseas?.hosts.find((host) => full.matches(host)) || null;
+    assert.ok(candidates.length, `${name}: no usable vendor snapshot samples`);
+    if (overseas) assert.ok(excluded, `${name}: no usable domestic/overseas snapshot samples`);
+    modules.push({ source: name.slice('domestic_'.length), candidates, excluded, excludeOverseas: !!overseas });
   }
   assert.ok(modules.length, 'no domestic routing modules found');
   const appleTv = readDomainSnapshot('apple_tv');
@@ -164,7 +166,7 @@ async function run() {
   config.hosts[appleTvSample] = '127.0.0.1';
   for (const host of appleProxy.hosts) config.hosts[host] = '127.0.0.1';
   for (const { candidates, excluded } of domesticSamples.modules)
-    for (const host of [...candidates, excluded]) config.hosts[host] = '127.0.0.1';
+    for (const host of [...candidates, ...(excluded ? [excluded] : [])]) config.hosts[host] = '127.0.0.1';
   config.hosts[domesticSamples.outside] = '127.0.0.1';
   if (probe?.type === 'domain') config.hosts[probe.value] = '127.0.0.1';
   delete config['external-ui'];
@@ -336,18 +338,20 @@ async function run() {
     const domesticModuleCases = [[domesticSamples.outside, null]];
     // Earlier service rules may take priority over a vendor sample. Find a witness for
     // each module in the actual snapshot, and require that witness to survive toggling.
-    for (const { source, candidates, excluded } of domesticSamples.modules) {
+    for (const { source, candidates, excluded, excludeOverseas } of domesticSamples.modules) {
       let witness;
       for (const host of candidates) {
         const [result] = await verifyRouting({ port: proxyPort, sinkPort: local.sinkPort,
           track: local.track, api, cases: [[host, null]] });
-        if (result.rule.toUpperCase() === 'AND' && result.payload.includes(`domestic_${source}`)) {
+        const expectedRule = excludeOverseas ? 'AND' : 'RULE-SET';
+        if (result.rule.toUpperCase() === expectedRule && result.payload.includes(`domestic_${source}`)) {
           witness = host;
           break;
         }
       }
       assert.ok(witness, `${source}: no snapshot sample reached the domestic module`);
-      domesticModuleCases.push([witness, source], [excluded, null]);
+      domesticModuleCases.push([witness, source]);
+      if (excluded) domesticModuleCases.push([excluded, null]);
     }
     const domesticModes = [
       {}, { 极简国内外分流模式: true }, { 国内服务优先直连: false },
@@ -362,7 +366,8 @@ async function run() {
       for (const result of decisions) {
         const source = domesticModuleCases.find(([host]) => host === result.host)[1];
         const enabled = source && options.国内服务优先直连 !== false;
-        const matchedModule = result.rule.toUpperCase() === 'AND' && result.payload.includes('domestic_');
+        const matchedModule = ['AND', 'RULE-SET'].includes(result.rule.toUpperCase()) &&
+          result.payload.includes('domestic_');
         assert.equal(!!matchedModule, !!enabled, `${result.host}: ${JSON.stringify({ options, result })}`);
         if (enabled) {
           assert.ok(result.payload.includes(`domestic_${source}`), JSON.stringify(result));

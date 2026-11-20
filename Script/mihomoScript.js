@@ -4,7 +4,7 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：af0bc896470a6e06c38733fafb91b1b3644842c237b609abf23afbe0cc83fae9
+ * 最新 Raw SHA-256：994b2bf3a16dc773184c3791eddf7bae2d8d35475c764428e6d7616f7a24b59f
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  */
@@ -328,23 +328,47 @@ const ruleProviderCommonIpcidr = {
   behavior: 'ipcidr',
 };
 
-// 只生成连接规则，不参与 DNS policy；未标注海外的共享域名仍依赖上游分类质量。
-const domesticServiceModules = ['tencent', 'netease', 'bytedance'];
+// 大陆核心服务与基础设施厂商动态集合；子品牌尽量由其厂商集合覆盖。
+// Bett 当前没有 baidu@!cn，百度按完整厂商集合路由；其他模块排除同源海外子集。
+const domesticServiceModules = [
+  { source: 'alibaba' },
+  { source: 'baidu', excludeOverseas: false },
+  { source: 'bilibili' },
+  { source: 'bytedance' },
+  { source: 'chinamobile' },
+  { source: 'chinatelecom' },
+  { source: 'chinaunicom' },
+  { source: 'huaweicloud' },
+  { source: 'jd' },
+  { source: 'netease' },
+  { source: 'tencent' },
+  { source: 'xiaomi' },
+];
 
 function buildDomesticServiceRoutes(providers) {
   if (!ruleOptionsEnable.国内服务优先直连) return [];
   const rules = [];
-  for (const source of domesticServiceModules) {
+  for (const { source, excludeOverseas = true } of domesticServiceModules) {
     const name = `domestic_${source}`;
-    const overseas = `${name}_noncn`;
-    for (const [provider, file] of [[name, source], [overseas, `${source}@!cn`]]) {
-      providers[provider] = {
-        ...ruleProviderCommonDomain,
-        url: `${ruleSetBaseUrl}geosite/${file}.mrs`,
-        path: `./ruleset/${provider}.mrs`,
-        'path-in-bundle': `geo/geosite/${file}.mrs`,
-      };
+    const fullProvider = {
+      ...ruleProviderCommonDomain,
+      url: `${ruleSetBaseUrl}geosite/${source}.mrs`,
+      path: `./ruleset/${name}.mrs`,
+      'path-in-bundle': `geo/geosite/${source}.mrs`,
+    };
+    providers[name] = fullProvider;
+    if (!excludeOverseas) {
+      rules.push(`RULE-SET,${name},直连`);
+      continue;
     }
+    const overseas = `${name}_noncn`;
+    const overseasFile = `${source}@!cn`;
+    providers[overseas] = {
+      ...ruleProviderCommonDomain,
+      url: `${ruleSetBaseUrl}geosite/${overseasFile}.mrs`,
+      path: `./ruleset/${overseas}.mrs`,
+      'path-in-bundle': `geo/geosite/${overseasFile}.mrs`,
+    };
     rules.push(`AND,((RULE-SET,${name}),(NOT,((RULE-SET,${overseas})))),直连`);
   }
   return rules;
@@ -2063,7 +2087,8 @@ function finalizeMyClashRules(config) {
     if (!domainRuleSetEgress.has(providerName)) domainRuleSetEgress.set(providerName, target);
   }
   for (const [providerName, target] of domainRuleSetEgress) {
-    if (providerName === 'private') continue;
+    // Domestic vendor providers choose only the connection route; they do not grant DNS policy.
+    if (providerName === 'private' || providerName.startsWith('domestic_')) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;
     const dnsEgressGroup = config['proxy-groups'].find((group) => group.name === dnsEgressGroupName);
     config.dns['nameserver-policy'][`rule-set:${providerName}`] =

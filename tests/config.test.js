@@ -295,8 +295,21 @@ test('GLOBAL and default proxy prefer the requested available groups in both mod
   }
 });
 
-test('domestic vendor modules use dynamic differences without changing DNS authorization', () => {
-  const modules = ['tencent', 'netease', 'bytedance'];
+test('domestic vendor modules use dynamic sets without changing DNS authorization', () => {
+  const modules = [
+    ['alibaba', true],
+    ['baidu', false],
+    ['bilibili', true],
+    ['bytedance', true],
+    ['chinamobile', true],
+    ['chinatelecom', true],
+    ['chinaunicom', true],
+    ['huaweicloud', true],
+    ['jd', true],
+    ['netease', true],
+    ['tencent', true],
+    ['xiaomi', true],
+  ];
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const baseline = build({ subscription, settings: { options: {
@@ -310,12 +323,17 @@ test('domestic vendor modules use dynamic differences without changing DNS autho
           assert.deepEqual(config.dns[field], baseline.dns[field]);
         for (const provider of ['dns_domestic_cdn', 'dns_microsoft_cdn', 'dns_steam_cn'])
           assert.deepEqual(policyForRuleSet(config, provider), policyForRuleSet(baseline, provider));
-        for (const source of modules) {
+        for (const [source, excludeOverseas] of modules) {
           const name = `domestic_${source}`;
-          const rule = `AND,((RULE-SET,${name}),(NOT,((RULE-SET,${name}_noncn)))),直连`;
+          const rule = excludeOverseas
+            ? `AND,((RULE-SET,${name}),(NOT,((RULE-SET,${name}_noncn)))),直连`
+            : `RULE-SET,${name},直连`;
           const enabled = options.国内服务优先直连 !== false;
           assert.equal(config.rules.includes(rule), enabled);
-          for (const [provider, file] of [[name, source], [`${name}_noncn`, `${source}@!cn`]]) {
+          const moduleProviders = excludeOverseas
+            ? [[name, source], [`${name}_noncn`, `${source}@!cn`]]
+            : [[name, source]];
+          for (const [provider, file] of moduleProviders) {
             assert.equal(!!config['rule-providers'][provider], enabled);
             if (!enabled) continue;
             assert.ok(config['rule-providers'][provider].url.endsWith(`/geosite/${file}.mrs`));

@@ -16,7 +16,7 @@
 - 首次原生检查会下载 Mihomo 和当前公开规则；需要手动刷新快照时运行 `./tools/npmw run native:refresh-rules`。
 - 本机诊断可运行 `./tools/npmw run diagnose -- --probe-domain gateway.icloud.com` 或 `./tools/npmw run diagnose -- --probe-ip 17.0.0.1`；可以附加 `--select 'Other Apple Service=美国'` 检查一次手动选择。
 
-原生检查从 `apple_proxy` 的实际 YAML/classical 快照与 `apple_tv` 的 MRS 快照抽取 Apple 样本，不维护单独的业务域名测试清单。国内服务集合样本同样从当前上游快照提取。日志与解码样本用于隔离检查，不是发布规则，也不作为手工路由名单。
+原生检查从 `apple_proxy` 的实际 YAML/classical 快照与 `apple_tv` 的 MRS 快照抽取 Apple 样本，不维护单独的业务域名测试清单。国内服务模块样本从当前 Bett 厂商 MRS 快照提取；有 `@!cn` 子集时同时验证排除成员，百度按完整厂商集合验证。日志与解码样本用于隔离检查，不是发布规则，也不作为手工路由名单。
 
 ## Apple 与 DNS 覆盖范围
 
