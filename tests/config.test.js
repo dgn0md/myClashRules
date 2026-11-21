@@ -14,7 +14,8 @@ const siriAiOption = 'Apple智能分流';
 const appleProxyGroup = 'AppleProxy';
 const otherAppleGroup = 'Other Apple Service';
 const otherAppleOption = 'Apple其他服务';
-const domesticDnsResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
+const domesticDnsResolvers = ['https://dns.alidns.com/dns-query#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
+const dnsRouteFor = (resolver) => resolver.split('#')[1]?.split('&')[0];
 const autoSelectExMainlandHongKongGroup = '自动选择ex(大陆&香港)';
 const autoSelectExMainlandHongKongOption = '排除大陆香港自动选';
 const proxy = (name) => ({ name, type: 'ss', server: '192.0.2.1', port: 443, cipher: 'aes-128-gcm', password: 'test' });
@@ -100,9 +101,22 @@ function encryptedDns(config) {
     assert.doesNotMatch(value, /skip-cert-verify=true|^system|^dhcp/);
   }
   assert.deepEqual(dns['default-nameserver'], [
-    'tls://223.5.5.5:853#DIRECT&name-cert-verify=dns.alidns.com',
-    'tls://223.6.6.6:853#DIRECT&name-cert-verify=dns.alidns.com',
+    'https://223.5.5.5/dns-query#DIRECT&name-cert-verify=dns.alidns.com',
+    'https://1.12.12.12/dns-query#DIRECT&name-cert-verify=doh.pub',
   ]);
+  assert.deepEqual(dns.nameserver, [
+    'https://cloudflare-dns.com/dns-query#默认代理&h3=true',
+    'https://dns.google/dns-query#默认代理',
+  ]);
+  assert.deepEqual(dns['proxy-server-nameserver'], [
+    'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
+    'https://dns.google/dns-query#DIRECT',
+  ]);
+  assert.deepEqual(config.hosts['dns.alidns.com'], ['223.5.5.5', '223.6.6.6']);
+  assert.deepEqual(config.hosts['doh.pub'], ['1.12.12.12', '120.53.53.53']);
+  assert.deepEqual(config.hosts['cloudflare-dns.com'], ['1.1.1.1', '1.0.0.1']);
+  assert.deepEqual(config.hosts['dns.google'], ['8.8.8.8', '8.8.4.4']);
+  assert.equal(config.hosts['one.one.one.one'], undefined);
 }
 test('sample-style country names cover regional groups and correct conflicting Taiwan flags', () => {
   const samples = [
@@ -375,7 +389,7 @@ test('domestic vendor DNS policies follow the route toggle and match domestic se
     ['tencent', true],
     ['xiaomi', true],
   ];
-  const domesticResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
+  const domesticResolvers = domesticDnsResolvers;
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const baseline = build({
@@ -559,7 +573,7 @@ test('latency test domain uses the default proxy route and encrypted proxy DNS i
         assert.ok(index < config.rules.indexOf('RULE-SET,private,直连'));
         assert.ok(index < config.rules.findIndex((rule) => rule.startsWith('AND,')));
         assert.deepEqual(config.dns['nameserver-policy']['cp.cloudflare.com'], config.dns.nameserver);
-        assert.ok(config.dns.nameserver.every((dns) => /^(https|tls):\/\//.test(dns) && dns.endsWith('#默认代理')));
+        assert.ok(config.dns.nameserver.every((dns) => /^https:\/\//.test(dns) && dnsRouteFor(dns) === '默认代理'));
       }
     }
   }
@@ -604,8 +618,8 @@ test('Apple AI/Siri and product endpoints precede Apple CN, advertising and QUIC
     assert.equal(config['proxy-groups'].find((g) => g.name === name).proxies[0], '直连');
   assert.ok(config.rules.includes(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`));
   assert.ok(rules.indexOf(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`) < rules.indexOf('RULE-SET,cn_ip,直连'));
-  assert.ok(config.dns['nameserver-policy']['+.apple-relay.apple.com'][0].endsWith(`#${siriAiGroup}`));
-  assert.ok(config.dns['nameserver-policy']['+.smoot.apple.com'][0].endsWith(`#${siriAiGroup}`));
+  assert.equal(dnsRouteFor(config.dns['nameserver-policy']['+.apple-relay.apple.com'][0]), siriAiGroup);
+  assert.equal(dnsRouteFor(config.dns['nameserver-policy']['+.smoot.apple.com'][0]), siriAiGroup);
   for (const domain of ['gdmf.apple.com', 'mesu.apple.com', 'updates.cdn-apple.com', 'assets.cdn-apple.com']) {
     const direct = rules.indexOf(`DOMAIN,${domain},直连`);
     assert.ok(direct >= 0, `missing direct download exception ${domain}`);
@@ -649,7 +663,7 @@ test('Apple DNS domain suffixes route to AppleProxy with matching DNS', () => {
         const policy = config.dns['nameserver-policy'][policyKey];
         assert.ok(policy, `missing DNS policy ${policyKey}`);
         for (const resolver of Array.isArray(policy) ? policy : [policy])
-          assert.ok(resolver.endsWith(`#${appleProxyGroup}`), `${policyKey} DNS → ${resolver}`);
+          assert.equal(dnsRouteFor(resolver), appleProxyGroup, `${policyKey} DNS → ${resolver}`);
       }
       const dynamicRule = `RULE-SET,apple_proxy,${appleProxyGroup}`;
       const dynamicIndex = config.rules.indexOf(dynamicRule);
@@ -663,8 +677,8 @@ test('Apple DNS domain suffixes route to AppleProxy with matching DNS', () => {
         if (laterIndex >= 0) assert.ok(dynamicIndex < laterIndex, `${dynamicRule} must precede ${laterRule}`);
       }
       assert.ok(
-        config.dns['nameserver-policy']['rule-set:apple_proxy']?.every((resolver) =>
-          resolver.endsWith(`#${appleProxyGroup}`),
+        config.dns['nameserver-policy']['rule-set:apple_proxy']?.every(
+          (resolver) => dnsRouteFor(resolver) === appleProxyGroup,
         ),
         'AppleProxy dynamic members must use AppleProxy DNS egress',
       );
@@ -774,7 +788,7 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         assert.ok(dns, `missing DNS policy for ${domainProvider}`);
         for (const resolver of Array.isArray(dns) ? dns : [dns])
           assert.ok(
-            resolver.endsWith(`#${domainProvider === 'apple' && target === otherAppleGroup ? siriAiGroup : target}`),
+            dnsRouteFor(resolver) === (domainProvider === 'apple' && target === otherAppleGroup ? siriAiGroup : target),
             `${ipProvider} → ${target}, ${domainProvider} DNS → ${resolver}`,
           );
       }
@@ -788,7 +802,7 @@ test('dynamic IP rules keep service egress aligned with their domain DNS policy'
         );
         if (config['rule-providers'].apple) {
           assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
-          assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+          assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dnsRouteFor(dns) === siriAiGroup));
         }
       }
     }
@@ -813,7 +827,7 @@ test('Siri AI domain routes use matching DNS policy and precede QUIC rejection i
         const resolvers = config.dns['nameserver-policy'][key];
         assert.ok(resolvers, `missing DNS policy for ${key}`);
         for (const resolver of Array.isArray(resolvers) ? resolvers : [resolvers])
-          assert.ok(resolver.endsWith(`#${siriAiGroup}`), `${key} DNS must use ${siriAiGroup}`);
+          assert.equal(dnsRouteFor(resolver), siriAiGroup, `${key} DNS must use ${siriAiGroup}`);
       }
     }
   }
@@ -836,7 +850,7 @@ test('shared iCloud endpoints use Other Apple Service and matching DNS in both o
         assert.ok(dns, `missing DNS policy for ${host}`);
         for (const resolver of Array.isArray(dns) ? dns : [dns])
           assert.ok(
-            resolver.endsWith(`#${siriAiGroup}`),
+            dnsRouteFor(resolver) === siriAiGroup,
             `Other Apple Service DNS must use ${siriAiGroup}: ${resolver}`,
           );
       }
@@ -906,9 +920,9 @@ test('strict script output discards unsafe airport DNS settings instead of block
     'dhcp://eth0',
     '192.168.1.1',
     'udp://10.2.3.4:53',
-    'udp://8.8.8.8:53',
+    'udp://192.0.2.53:53',
     'tcp://10.2.3.4:53',
-    'tcp://8.8.8.8:53',
+    'tcp://192.0.2.53:53',
     'http://private.test/dns-query',
     'https://private.test/dns-query#skip-cert-verify=true',
   ]) {
@@ -922,10 +936,13 @@ test('strict script output discards unsafe airport DNS settings instead of block
     };
     const config = build({ subscription }).config;
     encryptedDns(config);
-    assert.deepEqual(config.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
+    assert.deepEqual(config.dns.nameserver, [
+      'https://cloudflare-dns.com/dns-query#默认代理&h3=true',
+      'https://dns.google/dns-query#默认代理',
+    ]);
     assert.deepEqual(config.dns['proxy-server-nameserver'], [
-      'quic://dns.alidns.com:853#DIRECT',
-      'https://doh.pub/dns-query#DIRECT',
+      'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
+      'https://dns.google/dns-query#DIRECT',
     ]);
     assert.deepEqual(config.dns['proxy-server-nameserver-policy'], {});
     assert.ok(!('us.node.test' in config.dns['nameserver-policy']), `airport policy leaked: ${resolver}`);
@@ -942,8 +959,8 @@ test('airport DNS policy does not override the script-owned node resolver policy
   const dns = build({ subscription }).config.dns;
   assert.deepEqual(dns['proxy-server-nameserver-policy'], {});
   assert.deepEqual(dns['proxy-server-nameserver'], [
-    'quic://dns.alidns.com:853#DIRECT',
-    'https://doh.pub/dns-query#DIRECT',
+    'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
+    'https://dns.google/dns-query#DIRECT',
   ]);
 });
 test('private hosts rewrite still removes local-loop DNS before strict validation', () => {
@@ -1094,7 +1111,7 @@ test('AppleProxy and Apple product endpoints share one regional group; overseas 
     assert.ok(policy, `missing DNS policy for ${rule}`);
     const dnsTarget = target === otherAppleGroup ? siriAiGroup : target;
     for (const resolver of Array.isArray(policy) ? policy : [policy])
-      assert.ok(resolver.endsWith(`#${dnsTarget}`), `${rule} uses ${policyKey} → ${resolver}`);
+      assert.equal(dnsRouteFor(resolver), dnsTarget, `${rule} uses ${policyKey} → ${resolver}`);
   }
   for (const domain of [
     'news-client-search.apple.com',
@@ -1105,10 +1122,10 @@ test('AppleProxy and Apple product endpoints share one regional group; overseas 
     const ruleDomain = domain.startsWith('+.') ? domain.slice(2) : domain;
     const type = domain.startsWith('+.') ? 'DOMAIN-SUFFIX' : 'DOMAIN';
     assert.ok(defaults.rules.includes(`${type},${ruleDomain},${appleProxyGroup}`));
-    assert.ok(defaults.dns['nameserver-policy'][domain]?.[0].endsWith(`#${appleProxyGroup}`));
+    assert.equal(dnsRouteFor(defaults.dns['nameserver-policy'][domain]?.[0]), appleProxyGroup);
   }
   assert.ok(defaults.rules.includes(`DOMAIN,gspe1-ssl.ls.apple.com,${siriAiGroup}`));
-  assert.ok(defaults.dns['nameserver-policy']['gspe1-ssl.ls.apple.com'][0].endsWith(`#${siriAiGroup}`));
+  assert.equal(dnsRouteFor(defaults.dns['nameserver-policy']['gspe1-ssl.ls.apple.com'][0]), siriAiGroup);
   const appleProxyProvider = defaults['rule-providers'].apple_proxy;
   assert.equal(appleProxyProvider.behavior, 'classical');
   assert.equal(appleProxyProvider.format, 'yaml');
@@ -1120,14 +1137,14 @@ test('AppleProxy and Apple product endpoints share one regional group; overseas 
       defaults.rules.indexOf('RULE-SET,apple_cn,直连'),
   );
   assert.ok(
-    defaults.dns['nameserver-policy']['rule-set:apple_proxy']?.every((dns) => dns.endsWith(`#${appleProxyGroup}`)),
+    defaults.dns['nameserver-policy']['rule-set:apple_proxy']?.every((dns) => dnsRouteFor(dns) === appleProxyGroup),
   );
   assert.ok(defaults['rule-providers'].apple_tv.url.endsWith('/apple-tvplus.mrs'));
   assert.ok(
     defaults.rules.indexOf(`RULE-SET,apple_tv,${appleProxyGroup}`) < defaults.rules.indexOf('RULE-SET,apple_cn,直连'),
   );
   assert.ok(
-    defaults.dns['nameserver-policy']['rule-set:apple_tv']?.every((dns) => dns.endsWith(`#${appleProxyGroup}`)),
+    defaults.dns['nameserver-policy']['rule-set:apple_tv']?.every((dns) => dnsRouteFor(dns) === appleProxyGroup),
   );
   assert.ok(defaults.rules.includes(`RULE-SET,apple_ip,${appleProxyGroup},no-resolve`));
   assert.ok(defaults.rules.includes(`DOMAIN,mask.icloud.com,${siriAiGroup}`));
@@ -1168,7 +1185,7 @@ test('literal domain routes use target DNS and Other Apple DNS follows the Siri 
         const policyKey = type === 'DOMAIN-SUFFIX' ? `+.${domain}` : domain;
         const policy = config.dns['nameserver-policy'][policyKey];
         if (target === '直连' && !policy) {
-          assert.ok(config.dns.nameserver.every((dns) => dns.endsWith('#默认代理')));
+          assert.ok(config.dns.nameserver.every((dns) => dnsRouteFor(dns) === '默认代理'));
           continue;
         }
         assert.ok(policy, `missing nameserver-policy for ${rule}`);
@@ -1182,7 +1199,7 @@ test('literal domain routes use target DNS and Other Apple DNS follows the Siri 
           assert.equal(policy, 'rcode://name_error', `${rule} must fail closed with its DNS egress group`);
         } else {
           for (const resolver of Array.isArray(policy) ? policy : [policy])
-            assert.ok(resolver.endsWith(`#${dnsTarget}`), `${rule} uses ${policyKey} → ${resolver}`);
+            assert.equal(dnsRouteFor(resolver), dnsTarget, `${rule} uses ${policyKey} → ${resolver}`);
         }
       }
       assert.ok(checked > 0);
@@ -1193,10 +1210,10 @@ test('Other Apple Service traffic stays on its group while DNS follows the Siri 
   for (const subscription of [undefined, clean()]) {
     const config = build({ subscription }).config;
     assert.ok(config.rules.includes(`RULE-SET,apple,${otherAppleGroup}`));
-    assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+    assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dnsRouteFor(dns) === siriAiGroup));
     for (const host of ['gateway.icloud.com', 'setup.icloud.com']) {
       assert.ok(config.rules.includes(`DOMAIN,${host},${otherAppleGroup}`));
-      assert.ok(config.dns['nameserver-policy'][host].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+      assert.ok(config.dns['nameserver-policy'][host].every((dns) => dnsRouteFor(dns) === siriAiGroup));
     }
     const group = config['proxy-groups'].find((entry) => entry.name === otherAppleGroup);
     assert.ok(group);
@@ -1212,7 +1229,7 @@ test('Other Apple DNS retains a Siri egress selector when Siri routing is disabl
     !config.rules.some((rule) => rule.endsWith(`,${siriAiGroup}`)),
     'Siri service routes should remain disabled',
   );
-  assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+  assert.ok(config.dns['nameserver-policy']['rule-set:apple'].every((dns) => dnsRouteFor(dns) === siriAiGroup));
   graph(config);
 });
 test('Other Apple direct route keeps encrypted DNS when no eligible Siri region exists', () => {
@@ -1221,14 +1238,14 @@ test('Other Apple direct route keeps encrypted DNS when no eligible Siri region 
   assert.equal(config['proxy-groups'].find((group) => group.name === otherAppleGroup).proxies[0], '直连');
   for (const key of ['rule-set:apple', 'gateway.icloud.com', 'setup.icloud.com'])
     assert.deepEqual(config.dns['nameserver-policy'][key], [
-      'quic://dns.alidns.com:853#DIRECT',
+      'https://dns.alidns.com/dns-query#DIRECT',
       'https://doh.pub/dns-query#DIRECT',
     ]);
   assert.equal(config.dns['nameserver-policy']['api-siri-prod.apple.com'], 'rcode://name_error');
 });
 test('strict DNS validates every generated upstream field', () => {
   const unsafe = loadScript('Script/mihomoScript.js', (source) =>
-    source.replace("'tls://223.5.5.5:853#DIRECT&name-cert-verify=dns.alidns.com'", "'udp://223.5.5.5'"),
+    source.replace("'https://223.5.5.5/dns-query#DIRECT&name-cert-verify=dns.alidns.com'", "'udp://192.0.2.53'"),
   );
   assert.throws(() => unsafe.main(clean()), /严格DNS校验.*default-nameserver/);
 });
@@ -1255,7 +1272,9 @@ test('legacy Apple group switches migrate to the consolidated names and explicit
   assert.ok(legacyRegionDetectionOff['proxy-groups'].some((group) => group.name === siriAiGroup));
   assert.ok(!legacyRegionDetectionOff.rules.some((rule) => rule.endsWith(`,${siriAiGroup}`)));
   assert.ok(
-    legacyRegionDetectionOff.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)),
+    legacyRegionDetectionOff.dns['nameserver-policy']['rule-set:apple'].every(
+      (dns) => dnsRouteFor(dns) === siriAiGroup,
+    ),
   );
   assert.ok(legacyRegionDetectionOff['proxy-groups'].some((group) => group.name === appleProxyGroup));
 
@@ -1349,7 +1368,7 @@ test('AppleFlow PCC and Siri endpoints use the eligible selector with US default
     assert.ok(index >= 0, `missing ${rule}`);
     assert.ok(index < quicReject, `${rule} must precede QUIC rejection`);
     const policyKey = type === 'DOMAIN-SUFFIX' ? `+.${domain}` : domain;
-    assert.ok(config.dns['nameserver-policy'][policyKey]?.some((dns) => dns.endsWith(`#${target}`)));
+    assert.ok(config.dns['nameserver-policy'][policyKey]?.some((dns) => dnsRouteFor(dns) === target));
     assert.ok(config.dns['fake-ip-filter'].includes(policyKey), `missing real-IP exception ${policyKey}`);
   }
   for (const name of ['AI', siriAiGroup]) {
@@ -1419,16 +1438,16 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
       ['meta', 'Meta'],
     ]) {
       if (minimal) continue;
-      assert.ok(policyForRuleSet(config, provider).every((dns) => dns.endsWith(`#${target}`)));
+      assert.ok(policyForRuleSet(config, provider).every((dns) => dnsRouteFor(dns) === target));
     }
     for (const host of ['api-siri-prod.apple.com', 'gspe1-ssl.ls.apple.com']) {
-      assert.ok(config.dns['nameserver-policy'][host].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+      assert.ok(config.dns['nameserver-policy'][host].every((dns) => dnsRouteFor(dns) === siriAiGroup));
     }
   }
 });
 
 test('domestic DNS policy covers geolocation-cn and independent dynamic whitelists', () => {
-  const domesticResolvers = ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
+  const domesticResolvers = domesticDnsResolvers;
   const whitelist = {
     国内CDN解析: 'dns_domestic_cdn',
     微软下载解析: 'dns_microsoft_cdn',
@@ -1530,20 +1549,18 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
     } else if (target === '直连')
       assert.deepEqual(
         dns,
-        ['apple_cn', 'geolocation-cn'].includes(providerName)
-          ? ['quic://dns.alidns.com:853#DIRECT', 'https://doh.pub/dns-query#DIRECT']
-          : config.dns.nameserver,
+        ['apple_cn', 'geolocation-cn'].includes(providerName) ? domesticDnsResolvers : config.dns.nameserver,
       );
     else {
-      for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.ok(resolver.endsWith(`#${dnsTarget}`));
+      for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.equal(dnsRouteFor(resolver), dnsTarget);
     }
   }
-  assert.ok(config.dns['nameserver-policy']['rule-set:ai'].every((dns) => dns.endsWith('#AI')));
-  assert.ok(config.dns['nameserver-policy']['rule-set:google'].every((dns) => dns.endsWith('#Google')));
-  assert.ok(config.dns['nameserver-policy']['rule-set:youtube'].every((dns) => dns.endsWith('#YouTube')));
+  assert.ok(config.dns['nameserver-policy']['rule-set:ai'].every((dns) => dnsRouteFor(dns) === 'AI'));
+  assert.ok(config.dns['nameserver-policy']['rule-set:google'].every((dns) => dnsRouteFor(dns) === 'Google'));
+  assert.ok(config.dns['nameserver-policy']['rule-set:youtube'].every((dns) => dnsRouteFor(dns) === 'YouTube'));
   assert.ok(config.rules.includes('RULE-SET,emby_keyword,Emby'));
   assert.deepEqual(config['rule-providers'].emby_keyword.payload, ['DOMAIN-KEYWORD,emby']);
-  assert.ok(policyForRuleSet(config, 'emby_keyword').every((dns) => dns.endsWith('#Emby')));
+  assert.ok(policyForRuleSet(config, 'emby_keyword').every((dns) => dnsRouteFor(dns) === 'Emby'));
 });
 
 test('Apple real-IP DNS exceptions preserve encrypted route-specific resolvers and narrow iCloud suffix', () => {
@@ -1585,7 +1602,7 @@ test('dynamic AI provider and DNS policy share the AI egress group', () => {
   );
   const resolvers = config.dns['nameserver-policy']['rule-set:ai'];
   assert.ok(resolvers?.length > 0, 'missing DNS policy for the AI rule-set');
-  assert.ok(resolvers.every((dns) => dns.endsWith('#AI')));
+  assert.ok(resolvers.every((dns) => dnsRouteFor(dns) === 'AI'));
 });
 
 test('node UDP declarations pass through unchanged and QUIC blocking stays opt-in', () => {
@@ -1668,7 +1685,7 @@ test('CLI applies edited booleans and preserves the subscription URL from a sett
   const generated = YAML.parse(fs.readFileSync(output, 'utf8'));
   assert.equal(generated['proxy-providers'].订阅.url, settings['proxy-providers'].订阅.url);
   assert.ok(generated['proxy-groups'].some((group) => group.name === siriAiGroup));
-  assert.ok(generated.dns['nameserver-policy']['rule-set:apple'].every((dns) => dns.endsWith(`#${siriAiGroup}`)));
+  assert.ok(generated.dns['nameserver-policy']['rule-set:apple'].every((dns) => dnsRouteFor(dns) === siriAiGroup));
 });
 test('CLI refuses private subscription output inside tracked repository paths', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'myclash-private-'));

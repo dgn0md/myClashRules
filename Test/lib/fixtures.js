@@ -12,7 +12,7 @@ function typicalSubscription() {
       enable: true,
       // 设置 dns.listen 且 proxy-server-nameserver 仅含一个 DNS 且包含 listen 端口（:端口），用于触发 hosts 映射改写
       listen: '198.18.0.1:53',
-      nameserver: ['223.5.5.5', '8.8.8.8', 'https://private.example-dns.com/dns-query'],
+      nameserver: ['192.0.2.53', '198.51.100.53', 'https://private.example-dns.com/dns-query'],
       'proxy-server-nameserver': ['198.18.0.1:53'],
       'proxy-server-nameserver-policy': {
         'hk1.example.com': 'https://private.example-dns.com/dns-query',

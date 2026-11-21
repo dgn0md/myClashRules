@@ -7,7 +7,7 @@
 ## 项目重点
 
 - **Apple 精细分流**：将 Apple Intelligence / Siri、`AppleProxy` 动态集合与产品入口、其他 Apple 服务分组。Siri 组默认美国，没有合格地区候选时拒绝连接；`AppleProxy` 初始选择美国且可切换直连；其他 Apple 服务默认直连。共享端点和 DNS policy 的细节见 [Apple 路由说明](docs/apple-routing.md)。
-- **DNS policy 与出口联动**：现有 `geolocation-cn`、国内 CDN、Microsoft 下载、Steam 国内节点及国内服务集合使用国内加密 DNS；11 组服务集合按 `domestic AND NOT domestic_noncn`，百度按完整集合匹配，厂商 DNS policy 随 `国内服务优先直连` 开关启停。后三个白名单开关默认开启且可独立关闭。其他直连规则不自动授权国内解析；地区服务保持专属解析出口。严格模式不接受生成配置里的明文或不安全 DNS，也不静默回退。它描述的是配置行为，不代表所有设备流量都已被接管。
+- **DNS policy 与出口联动**：现有 `geolocation-cn`、国内 CDN、Microsoft 下载、Steam 国内节点及国内服务集合使用阿里 DoH 与腾讯 DoH；11 组服务集合按 `domestic AND NOT domestic_noncn`，百度按完整集合匹配，厂商 DNS policy 随 `国内服务优先直连` 开关启停。其他直连规则不自动授权国内解析。普通默认和代理节点解析使用 Cloudflare 强制 DoH-H3 与 Google DoH；启动解析单独使用阿里/腾讯 IP DoH。地区服务保持专属解析出口。严格模式不接受生成配置里的明文或不安全 DNS，也不静默回退。它描述的是配置行为，不代表所有设备流量都已被接管。
 - **机场配置只接管节点**：展开订阅时处理节点；机场 DNS、路由、策略组和其他非节点设置由脚本重建。机场 hosts 只在满足节点改写条件时用于改写节点 server，不复制到结果配置。
 - **纯 IP 域名识别**：从支持的 HTTP Host、TLS SNI 与 QUIC 元数据补充路由所需域名；不解密 HTTPS，也不改写目标地址。
 - **脚本与静态配置同源**：`Script/mihomoScript.js` 是规则和选项的来源；`Config/mihomoConfig.yaml` 由 GitHub Actions 构建并回写。YAML 中的 `x-myClashRules` 扩展字段供构建工具读取。
@@ -22,7 +22,7 @@
 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米提供国内服务模块，连接规则和厂商 DNS policy 统一受默认开启的 `国内服务优先直连` 控制。模块动态使用 Bett 厂商集合，有同源 `@!cn` 海外子集时，路由和 DNS 都排除该子集；百度当前没有配套子集，因此完整百度集合使用国内加密 DNS。阿里/淘宝、腾讯云、火山引擎等子品牌由上层厂商集合覆盖，不重复加载；未标注海外的共享域名仍依赖上游分类质量。
 测速域名 `cp.cloudflare.com` 的路由及加密 DNS policy 指向 `默认代理`；测速请求本身由内核通过被测节点发起。
 
-DNS policy 不强制修改连接路由。`geolocation-cn` 成员始终使用国内加密 DNS；国内服务的厂商 DNS policy 随 `国内服务优先直连` 开关启停。关闭单个 DNS 白名单开关只撤销该白名单授权，其他集合或专项例外仍可覆盖同一域名。Apple 精确 CDN 与无合格 Siri 地区时的普通 Apple 解析例外保持原有行为。节点域名及 DNS 服务器启动解析仍使用国内加密 DNS；这不代表完全不向国内解析器发送查询。来源、重叠处理和边界见 [规则来源说明](docs/rule-sources.md)。
+DNS policy 不强制修改连接路由。`geolocation-cn` 成员始终使用阿里/腾讯 DoH；国内服务的厂商 DNS policy 随 `国内服务优先直连` 开关启停。关闭单个 DNS 白名单开关只撤销该白名单授权，其他集合或专项例外仍可覆盖同一域名。Apple 精确 CDN 与无合格 Siri 地区时的普通 Apple 解析例外保持原有行为。节点域名使用 Cloudflare DoH-H3 与 Google DoH，并通过直连建立连接；`default-nameserver` 启动解析使用阿里/腾讯 IP DoH。这不代表完全不向国内解析器发送查询。来源、重叠处理和边界见 [规则来源说明](docs/rule-sources.md)。
 
 ## 发布入口
 

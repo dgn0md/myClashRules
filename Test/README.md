@@ -25,4 +25,6 @@ node Test/run-tests.js
 
 `tests/config.test.js` 覆盖 `geolocation-cn` policy、白名单开关组合、服务组/极简模式独立性、DNS provider 引用及优先级。`tools/native-check.js` 调用 `tools/native-dns-whitelist.js`，从实际 `geolocation-cn` 快照抽取域名样本，并保留生产 policy 顺序，用回环上游计数验证 A/AAAA 和真实直连拨号。确认更具体的服务 policy、Steam 排除项和名单外查询仍使用各自解析器；上游成员更新仍由客户端 HTTP provider 每日直接拉取。
 
+DNS resolver 回归同时锁定 Ali DoH (`dns.alidns.com`)、Tencent DoH (`doh.pub`)、Cloudflare 强制 DoH-H3 (`cloudflare-dns.com`) 和 Google DoH (`dns.google`) 的职责：默认与代理节点解析各使用后两者，代理节点 DoH 经直连建连；Mihomo 要求 IP 字面量的 `default-nameserver` 使用前两者的 IP DoH，并保留证书域名校验。国内动态 policy 使用域名端点，不使用 IP 启动解析器作为通用回退。
+
 只改文档时检查链接与原则一致性即可；行为改动须运行项目测试、生成一致性检查与可用的原生验证。方法和隐私/延迟结论的边界见 [验证说明](../docs/validation.md)。

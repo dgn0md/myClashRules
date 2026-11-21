@@ -24,7 +24,7 @@ Apple 规则按明确的产品入口和共享服务端点分组。它们只选�
 4. 启用的 `apple_ip` 使用 `no-resolve` 进入 `AppleProxy`，且位于 `cn_ip` 直连兜底之前；`private_ip` 使用 `直连,no-resolve`；Google、Telegram、TikTok、Twitter、Facebook/Meta IP 使用对应代理组及 `no-resolve`，组关闭时回退到 `默认代理`；其他服务 IP 集合按对应服务组分流。
 5. `cn_ip` 位于专用 IP 规则之后，只负责剩余匹配的直连兜底。
 
-代理服务的精确域名、后缀域名和动态集合生成对应的 `nameserver-policy`，解析出口跟随服务组。普通直连规则不自动生成国内 DNS 授权；命中现有 `geolocation-cn` provider 的域名始终使用国内加密 DNS，国内服务模块开启时，11 组配对集合和完整百度集合的成员也使用国内加密 DNS。其他直连域名使用独立白名单或默认国外解析。Apple 模型/系统资源的四个精确 CDN 例外保留国内加密 DNS。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 进入 `AppleProxy`，DNS policy 也跟随该组。AppleProxy 动态集合的域名 DNS 跟随 `AppleProxy`；其中被更早 Siri/PCC 精确或后缀规则覆盖的成员仍使用 Siri DNS。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
+代理服务的精确域名、后缀域名和动态集合生成对应的 `nameserver-policy`，解析出口跟随服务组。普通直连规则不自动生成国内 DNS 授权；命中现有 `geolocation-cn` provider 的域名始终使用阿里/腾讯 DoH，国内服务模块开启时，11 组配对集合和完整百度集合的成员也使用这两个解析器。其他直连域名使用独立白名单或 Cloudflare DoH-H3 / Google DoH 默认解析。Apple 模型/系统资源的四个精确 CDN 例外保留阿里/腾讯 DoH。`Other Apple Service` 的连接按该组当前选择路由，默认直连；它的通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` DNS 查询跟随 `Siri Ai/Apple Intelligence` 当前选择。`.apple-dns.net` 与 `.apple-dns.com` 进入 `AppleProxy`，DNS policy 也跟随该组。AppleProxy 动态集合的域名 DNS 跟随 `AppleProxy`；其中被更早 Siri/PCC 精确或后缀规则覆盖的成员仍使用 Siri DNS。IP-CIDR 集合本身没有查询域名；有对应域名 provider 的服务会使用相同目标组。
 
 通用 `cn` 集合不再参与 DNS policy 或 Fake-IP 过滤，仅在可选 QUIC 规则引用时保留；现有 `geolocation-cn` 独立使用国内 DNS policy，国内服务开关开启时 11 组配对集合及百度完整集合使用国内 DNS policy，`cn_ip` 继续承担连接直连兜底。国内 DNS 不引入整份 `apple_cdn`、Apple 或 Cloudflare 网段。Apple CN 仍使用固定版本集合，不随新的下载 DNS 开关改变。
 

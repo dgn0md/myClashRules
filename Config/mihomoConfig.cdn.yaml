@@ -1,10 +1,10 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：ea93768cee5e6a2605621f9b202edd905c94046b098a6244f0f9257499aea90f
+# 最新 Raw SHA-256：e79a3d5a7ae9afe6ab6f821b927b94f5963f682815a4a8f6dac8eb4c9b4c058f
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
-# 缓存 CDN SHA-256：c075ec7ef2ba4dba1bba250304cc04f6d0ca27cd3307bcafddf9ab6f8b7f7bc5
+# 缓存 CDN SHA-256：89e15561e4b87bc82af271f2023c33cd14b5edd8c37ad331cf06b86045cf3d01
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
@@ -70,7 +70,7 @@ x-myClashRules:
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:
-  # DNS：geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单和代理节点域名使用阿里 DoQ 与腾讯 DoH；厂商 DNS policy 随国内服务优先直连开关启停。默认国外解析使用 Cloudflare/Google DoT；其他直连规则不自动授权国内 DNS。固定 IP 阿里 DoT 仅用于 DNS 端点启动解析。
+  # DNS：geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单和 Apple 国内例外使用阿里/腾讯 DoH；代理节点域名与普通查询使用 Cloudflare 强制 DoH-H3 和 Google DoH。厂商 DNS policy 随国内服务优先直连开关启停。default-nameserver 使用阿里/腾讯 IP DoH 仅作域名端点启动解析。
   enable: true
   ipv6: true
   use-hosts: true
@@ -102,218 +102,221 @@ dns:
     - +.apple-relay.akamaized.net
     - cp4.cloudflare.com
   default-nameserver:
-    - tls://223.5.5.5:853#DIRECT&name-cert-verify=dns.alidns.com
-    - tls://223.6.6.6:853#DIRECT&name-cert-verify=dns.alidns.com
+    - https://223.5.5.5/dns-query#DIRECT&name-cert-verify=dns.alidns.com
+    - https://1.12.12.12/dns-query#DIRECT&name-cert-verify=doh.pub
   proxy-server-nameserver:
-    - quic://dns.alidns.com:853#DIRECT
-    - https://doh.pub/dns-query#DIRECT
+    - https://cloudflare-dns.com/dns-query#DIRECT&h3=true
+    - https://dns.google/dns-query#DIRECT
   proxy-server-nameserver-policy: {}
   nameserver:
-    - tls://one.one.one.one#默认代理
-    - tls://dns.google#默认代理
+    - https://cloudflare-dns.com/dns-query#默认代理&h3=true
+    - https://dns.google/dns-query#默认代理
   nameserver-policy:
     +.issuer.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.ropes.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     mask-api.icloud.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     mask.icloud.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     mask-h2.icloud.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.app.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.apple-relay.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.apple-relay.cloudflare.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.apple-relay.fastly-edge.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.apple-relay.akamaized.net:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     cp4.cloudflare.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.icloud-content.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.guzzoni.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.siri.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     dejavu.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     sequoia.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.smoot.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     api-siri-prod.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     gspe1-ssl.ls.apple.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     +.apple-dns.com:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     news-client-search.apple.com:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     +.fitness.apple.com:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     +.sports.apple.com:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     +.books.apple.com:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     gdmf.apple.com:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     mesu.apple.com:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     updates.cdn-apple.com:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     assets.cdn-apple.com:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     +.steamserver.net:
-      - tls://one.one.one.one#Steam
-      - tls://dns.google#Steam
+      - https://cloudflare-dns.com/dns-query#Steam&h3=true
+      - https://dns.google/dns-query#Steam
     +.steamusercontent.com:
-      - tls://one.one.one.one#Steam
-      - tls://dns.google#Steam
+      - https://cloudflare-dns.com/dns-query#Steam&h3=true
+      - https://dns.google/dns-query#Steam
     gateway.icloud.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     setup.icloud.com:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     cp.cloudflare.com:
-      - tls://one.one.one.one#默认代理
-      - tls://dns.google#默认代理
+      - https://cloudflare-dns.com/dns-query#默认代理&h3=true
+      - https://dns.google/dns-query#默认代理
     +.mb3admin.com:
-      - tls://one.one.one.one#Emby
-      - tls://dns.google#Emby
+      - https://cloudflare-dns.com/dns-query#Emby&h3=true
+      - https://dns.google/dns-query#Emby
     +.nubebelle.com:
-      - tls://one.one.one.one#Emby
-      - tls://dns.google#Emby
+      - https://cloudflare-dns.com/dns-query#Emby&h3=true
+      - https://dns.google/dns-query#Emby
     rule-set:private: rcode://success
     rule-set:apple_tv:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     rule-set:dns_domestic_cdn,dns_microsoft_cdn,dns_steam_cn:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     rule-set:apple_proxy:
-      - tls://one.one.one.one#AppleProxy
-      - tls://dns.google#AppleProxy
+      - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
+      - https://dns.google/dns-query#AppleProxy
     rule-set:category-ads: rcode://name_error
     rule-set:games_cn,synology,nvidia_cn:
-      - tls://one.one.one.one#默认代理
-      - tls://dns.google#默认代理
+      - https://cloudflare-dns.com/dns-query#默认代理&h3=true
+      - https://dns.google/dns-query#默认代理
     rule-set:apple_cn:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     rule-set:microsoft_cn:
-      - tls://one.one.one.one#默认代理
-      - tls://dns.google#默认代理
+      - https://cloudflare-dns.com/dns-query#默认代理&h3=true
+      - https://dns.google/dns-query#默认代理
     rule-set:googlefcm:
-      - tls://one.one.one.one#FCM
-      - tls://dns.google#FCM
+      - https://cloudflare-dns.com/dns-query#FCM&h3=true
+      - https://dns.google/dns-query#FCM
     rule-set:youtube:
-      - tls://one.one.one.one#YouTube
-      - tls://dns.google#YouTube
+      - https://cloudflare-dns.com/dns-query#YouTube&h3=true
+      - https://dns.google/dns-query#YouTube
     rule-set:google:
-      - tls://one.one.one.one#Google
-      - tls://dns.google#Google
+      - https://cloudflare-dns.com/dns-query#Google&h3=true
+      - https://dns.google/dns-query#Google
     rule-set:ai:
-      - tls://one.one.one.one#AI
-      - tls://dns.google#AI
+      - https://cloudflare-dns.com/dns-query#AI&h3=true
+      - https://dns.google/dns-query#AI
     rule-set:github:
-      - tls://one.one.one.one#GitHub
-      - tls://dns.google#GitHub
+      - https://cloudflare-dns.com/dns-query#GitHub&h3=true
+      - https://dns.google/dns-query#GitHub
     rule-set:microsoft:
-      - tls://one.one.one.one#Microsoft
-      - tls://dns.google#Microsoft
+      - https://cloudflare-dns.com/dns-query#Microsoft&h3=true
+      - https://dns.google/dns-query#Microsoft
     rule-set:apple:
-      - tls://one.one.one.one#Siri Ai/Apple Intelligence
-      - tls://dns.google#Siri Ai/Apple Intelligence
+      - https://cloudflare-dns.com/dns-query#Siri Ai/Apple Intelligence&h3=true
+      - https://dns.google/dns-query#Siri Ai/Apple Intelligence
     rule-set:telegram:
-      - tls://one.one.one.one#Telegram
-      - tls://dns.google#Telegram
+      - https://cloudflare-dns.com/dns-query#Telegram&h3=true
+      - https://dns.google/dns-query#Telegram
     rule-set:steam:
-      - tls://one.one.one.one#Steam
-      - tls://dns.google#Steam
+      - https://cloudflare-dns.com/dns-query#Steam&h3=true
+      - https://dns.google/dns-query#Steam
     rule-set:tiktok:
-      - tls://one.one.one.one#TikTok
-      - tls://dns.google#TikTok
+      - https://cloudflare-dns.com/dns-query#TikTok&h3=true
+      - https://dns.google/dns-query#TikTok
     rule-set:twitter:
-      - tls://one.one.one.one#Twitter
-      - tls://dns.google#Twitter
+      - https://cloudflare-dns.com/dns-query#Twitter&h3=true
+      - https://dns.google/dns-query#Twitter
     rule-set:meta:
-      - tls://one.one.one.one#Meta
-      - tls://dns.google#Meta
+      - https://cloudflare-dns.com/dns-query#Meta&h3=true
+      - https://dns.google/dns-query#Meta
     rule-set:line:
-      - tls://one.one.one.one#Line
-      - tls://dns.google#Line
+      - https://cloudflare-dns.com/dns-query#Line&h3=true
+      - https://dns.google/dns-query#Line
     rule-set:netflix:
-      - tls://one.one.one.one#Netflix
-      - tls://dns.google#Netflix
+      - https://cloudflare-dns.com/dns-query#Netflix&h3=true
+      - https://dns.google/dns-query#Netflix
     rule-set:emby,emby_keyword:
-      - tls://one.one.one.one#Emby
-      - tls://dns.google#Emby
+      - https://cloudflare-dns.com/dns-query#Emby&h3=true
+      - https://dns.google/dns-query#Emby
     rule-set:pikpak:
-      - tls://one.one.one.one#PikPak
-      - tls://dns.google#PikPak
+      - https://cloudflare-dns.com/dns-query#PikPak&h3=true
+      - https://dns.google/dns-query#PikPak
     rule-set:spotify:
-      - tls://one.one.one.one#Spotify
-      - tls://dns.google#Spotify
+      - https://cloudflare-dns.com/dns-query#Spotify&h3=true
+      - https://dns.google/dns-query#Spotify
     rule-set:cryptocurrency:
-      - tls://one.one.one.one#Crypto
-      - tls://dns.google#Crypto
+      - https://cloudflare-dns.com/dns-query#Crypto&h3=true
+      - https://dns.google/dns-query#Crypto
     rule-set:paypal:
-      - tls://one.one.one.one#PayPal
-      - tls://dns.google#PayPal
+      - https://cloudflare-dns.com/dns-query#PayPal&h3=true
+      - https://dns.google/dns-query#PayPal
     rule-set:patreon:
-      - tls://one.one.one.one#Patreon
-      - tls://dns.google#Patreon
+      - https://cloudflare-dns.com/dns-query#Patreon&h3=true
+      - https://dns.google/dns-query#Patreon
     rule-set:ehentai:
-      - tls://one.one.one.one#EHentai
-      - tls://dns.google#EHentai
+      - https://cloudflare-dns.com/dns-query#EHentai&h3=true
+      - https://dns.google/dns-query#EHentai
     rule-set:domestic_alibaba_dns,domestic_baidu,domestic_bilibili_dns,domestic_bytedance_dns,domestic_chinamobile_dns,domestic_chinatelecom_dns,domestic_chinaunicom_dns,domestic_huaweicloud_dns,domestic_jd_dns,domestic_netease_dns,domestic_tencent_dns,domestic_xiaomi_dns,geolocation-cn:
-      - quic://dns.alidns.com:853#DIRECT
+      - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
     rule-set:geolocation-!cn:
-      - tls://one.one.one.one#默认代理
-      - tls://dns.google#默认代理
+      - https://cloudflare-dns.com/dns-query#默认代理&h3=true
+      - https://dns.google/dns-query#默认代理
   listen: 127.0.0.1:1053
   prefer-h3: false
   respect-rules: false
 hosts:
+  dns.alidns.com:
+    - 223.5.5.5
+    - 223.6.6.6
   doh.pub:
     - 1.12.12.12
     - 120.53.53.53
-  one.one.one.one:
+  cloudflare-dns.com:
     - 1.1.1.1
     - 1.0.0.1
   dns.google:

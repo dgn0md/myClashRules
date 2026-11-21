@@ -181,7 +181,7 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
       if (domesticPolicyProvider) {
         config.dns['nameserver-policy'] = {
           [`rule-set:${domesticPolicyProvider}`]: [
-            'quic://dns.alidns.com:853#DIRECT',
+            'https://dns.alidns.com/dns-query#DIRECT',
             'https://doh.pub/dns-query#DIRECT',
           ],
         };
@@ -190,9 +190,10 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
         if (typeof value === 'string' && value.startsWith('rcode://')) return value;
         return value.map((server) => {
           const isDomesticResolver =
-            /^https:\/\/doh\.pub\/dns-query(?:#|$)/i.test(server) ||
-            /^quic:\/\/dns\.alidns\.com:853(?:#|$)/i.test(server) ||
-            /^tls:\/\/(?:223\.5\.5\.5|223\.6\.6\.6):853#DIRECT&name-cert-verify=dns\.alidns\.com$/i.test(server);
+            /^https:\/\/(?:dns\.alidns\.com|doh\.pub)\/dns-query(?:#|$)/i.test(server) ||
+            /^https:\/\/(?:223\.5\.5\.5|1\.12\.12\.12)\/dns-query#DIRECT&name-cert-verify=(?:dns\.alidns\.com|doh\.pub)$/i.test(
+              server,
+            );
           return isDomesticResolver ? domestic.url : foreign.url;
         });
       };

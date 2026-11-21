@@ -94,15 +94,18 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     const cfg = fx.typicalSubscription();
     cfg.dns['fake-ip-filter'].push('+.airport-filter.example');
     cfg.dns['fake-ip-filter-mode'] = 'blacklist';
-    cfg.dns['nameserver'] = ['8.8.8.8', 'https://private.example-dns.com/dns-query#proxy'];
+    cfg.dns['nameserver'] = ['192.0.2.53', 'https://private.example-dns.com/dns-query#proxy'];
     cfg.dns['proxy-server-nameserver'] = ['https://private-proxy.example-dns.com/dns-query'];
     const out = api.main(cfg);
     h.assertEqual(out.dns.enable, true);
     h.assertEqual(out.dns['enhanced-mode'], 'fake-ip');
-    h.assertDeep(out.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
+    h.assertDeep(out.dns.nameserver, [
+      'https://cloudflare-dns.com/dns-query#默认代理&h3=true',
+      'https://dns.google/dns-query#默认代理',
+    ]);
     h.assertDeep(out.dns['proxy-server-nameserver'], [
-      'quic://dns.alidns.com:853#DIRECT',
-      'https://doh.pub/dns-query#DIRECT',
+      'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
+      'https://dns.google/dns-query#DIRECT',
     ]);
     h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '机场节点 DNS policy 应明确清空');
     h.assert(!out.dns['fake-ip-filter'].includes('+.airport-filter.example'), '不得继承机场 Fake-IP 例外');
@@ -113,7 +116,7 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       'system',
       'dhcp://eth0',
       'udp://127.0.0.1:53',
-      'tcp://8.8.8.8:53',
+      'tcp://192.0.2.53:53',
       'https://private.example-dns.com/dns-query#skip-cert-verify=true',
     ]) {
       const cfg = fx.typicalSubscription();
@@ -122,10 +125,13 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       cfg.dns['nameserver-policy'] = { 'hk1.example.com': resolver };
       cfg.dns['proxy-server-nameserver-policy'] = { 'hk1.example.com': resolver };
       const out = api.main(cfg);
-      h.assertDeep(out.dns.nameserver, ['tls://one.one.one.one#默认代理', 'tls://dns.google#默认代理']);
+      h.assertDeep(out.dns.nameserver, [
+        'https://cloudflare-dns.com/dns-query#默认代理&h3=true',
+        'https://dns.google/dns-query#默认代理',
+      ]);
       h.assertDeep(out.dns['proxy-server-nameserver'], [
-        'quic://dns.alidns.com:853#DIRECT',
-        'https://doh.pub/dns-query#DIRECT',
+        'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
+        'https://dns.google/dns-query#DIRECT',
       ]);
       h.assertDeep(out.dns['proxy-server-nameserver-policy'], {});
       h.assert(!('hk1.example.com' in out.dns['nameserver-policy']), `机场 DNS policy 不应进入输出：${resolver}`);
@@ -170,11 +176,11 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
     const find = (cfg) => api.main(cfg).proxies.find((x) => x.name === '🇭🇰 香港 01 | 中转');
     // proxy-server-nameserver 长度不为 1（含多个 DNS，其中一个包含 listen 端口）→ 不触发
     let cfg = fx.typicalSubscription();
-    cfg.dns['proxy-server-nameserver'] = ['8.8.8.8', '198.18.0.1:53'];
+    cfg.dns['proxy-server-nameserver'] = ['192.0.2.53', '198.18.0.1:53'];
     h.assertEqual(find(cfg).server, 'hk1.example.com', 'proxy-server-nameserver 长度不为 1 时不应改写');
     // 长度为 1 但不含 listen 端口（:端口）→ 不触发
     cfg = fx.typicalSubscription();
-    cfg.dns['proxy-server-nameserver'] = ['8.8.8.8'];
+    cfg.dns['proxy-server-nameserver'] = ['192.0.2.53'];
     h.assertEqual(find(cfg).server, 'hk1.example.com', '未命中触发条件时不应改写');
     // 新写法：proxy-server-nameserver 不含 127.0.0.1 → 不触发
     cfg = fx.typicalSubscription();
