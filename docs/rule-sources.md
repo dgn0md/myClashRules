@@ -2,7 +2,7 @@
 
 本页说明规则数据由哪里来、如何参与路由和 DNS。活动配置仍以 `Script/mihomoScript.js` 为准，静态 YAML 由 GitHub Actions 运行构建器生成并回写；开发者无需本地生成。
 
-维护与换源先遵守 [国内 DNS 白名单维护原则](dns-whitelist.md)。本页记录具体来源；不能因规则集名称、国内可用性或连接出口为直连，就扩大国内 DNS 的查询范围。
+维护与换源先遵守 [国内 DNS 白名单维护原则](dns-whitelist.md)。本页记录具体来源；明确域名规则匹配且目标为直连时按规则使用国内 DNS；不能因未命中域名规则后通过 IP 兜底直连，就扩大国内 DNS 的查询范围。
 
 规则模块按 [模块化与动态规则集开发原则](development-principles.md) 设计：优先复用现用上游，核对实际成员后用集合关系控制范围，不逐域名维护同用途清单。
 
@@ -43,7 +43,7 @@
 
 | Provider 类型    | 典型用途                                                                                       | 路由与 DNS                                                                                                                                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| domain MRS       | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。                               | 代理服务的 DNS policy 跟随路由目标组；普通直连域名通过 DNS 白名单或默认国外 DNS 解析；`apple` 的连接目标是 `Other Apple Service`，DNS 使用 `Siri Ai/Apple Intelligence` 当前出口；`apple_tv` 的连接与 DNS 都进入 `AppleProxy`。 |
+| domain MRS       | Apple、Google、Microsoft、Telegram、Steam、视频、AI 等服务域名。                               | 代理服务的 DNS 请求经路由目标组选择出口；目标为 `直连` 的域名规则使用阿里/腾讯 DoH；`apple` 的连接目标是 `Other Apple Service`，DNS 使用 `Siri Ai/Apple Intelligence` 当前出口；`apple_tv` 的连接与 DNS 都进入 `AppleProxy`。 |
 | classical/YAML   | AppleProxy 动态服务成员及固定文本域名规则。                                                    | `apple_proxy` 的域名成员与 DNS policy 进入 `AppleProxy`；其中优先级更高的 Siri/PCC/国际 iCloud 规则保持其既定路由与 DNS。`PROCESS-NAME` 成员只影响连接路由，不生成域名 policy。                                                 |
 | ipcidr MRS       | Apple 与 Google、Microsoft、Telegram、Steam、TikTok、Twitter、Meta、Netflix、Spotify 服务 IP。 | IP 规则直接选择服务组；同服务的 domain provider 使用相同出口。IPCIDR provider 本身没有域名 DNS 查询。                                                                                                                           |
 | domain/classical | 固定文本域名列表、精确/后缀路由和 Emby 关键词等匹配。                                          | 可路由的 domain 与 classical provider 按路由谓词建立 DNS policy；保留集合有专用 policy，关键词规则使用 classical inline set。                                                                                                   |
@@ -54,7 +54,7 @@
 - 通用 `cn` 域名集合不用于国内 DNS 策略或 Fake-IP 过滤，仅在可选 QUIC 豁免规则引用时保留；现有 `geolocation-cn` 独立使用国内 DNS，国内服务开关开启时，11 组国内服务 `AND/NOT` policy 与完整百度集合使用国内 DNS；`cn_ip` 继续末端直连兜底。
 - DNS 白名单只参与 `nameserver-policy`，不增加连接直连规则。三个开关独立于普通服务组、极简模式和国内路由开关，关闭后不加载相应 provider；重叠集合及专项例外仍分别生效。
 - 白名单 policy 排在通用服务集合之前，让 CDN 子集不被 Microsoft/Steam 全量集合覆盖；Steam 的服务器/用户内容后缀使用显式国外解析 policy。显式主机/后缀 policy 排在所有 rule-set policy 之前，使 Apple/Siri 与 Steam 排除项在内核中实际优先。
-- 移除通用 `direct-nameserver` 及其独立缓存/解析路径；未知域名即使连接直连，也按统一 policy 和默认国外 DNS 解析。普通整厂商集合不自动授权 DNS；国内服务开关开启时，11 组配对集合按与路由相同的 `AND/NOT` 谓词授权，百度按完整集合授权；`geolocation-cn` 仍单独生效。
+- 移除通用 `direct-nameserver` 及其独立缓存/解析路径；明确目标为 `直连` 的域名规则和动态 domain/classical 规则集使用国内加密 DNS，未命中域名 policy、仅通过 IP 兜底直连的查询仍用默认国外 DNS。普通整厂商集合不自动授权 DNS；国内服务开关开启时，11 组配对集合按与路由相同的 `AND/NOT` 谓词授权，百度按完整集合授权；`geolocation-cn` 仍单独生效。
 - 国内解析例外还包括固定 `apple_cn`、启用模型直连时的四个 Apple CDN 精确域名，以及无合格 Siri 候选时普通 Apple 默认直连的既有解析回退。节点域名及普通业务查询使用 Cloudflare 强制 DoH-H3 与 Google DoH；节点 DoH 连接使用 `DIRECT`。`default-nameserver` 启动解析为 Mihomo IP 字面量要求使用阿里/腾讯 IP DoH。
 - 缓存和 Fake-IP 减少或延后部分查询，不保证消除真实解析；名单外的国内网站/CDN 可能因国外解析得到不同节点，需要在实际网络测量首次连接和下载表现。
 - Apple IP 使用 `apple_ip` 并路由到 `AppleProxy`。该规则排在 `cn_ip` 前面。

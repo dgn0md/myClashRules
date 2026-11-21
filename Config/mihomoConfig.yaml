@@ -1,7 +1,7 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：e79a3d5a7ae9afe6ab6f821b927b94f5963f682815a4a8f6dac8eb4c9b4c058f
+# 最新 Raw SHA-256：0d9902c9ab3e50fdf2863bf66637c7624efaf9ecf00d8181301327a375a7c846
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
@@ -69,7 +69,7 @@ x-myClashRules:
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:
-  # DNS：geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单和 Apple 国内例外使用阿里/腾讯 DoH；代理节点域名与普通查询使用 Cloudflare 强制 DoH-H3 和 Google DoH。厂商 DNS policy 随国内服务优先直连开关启停。default-nameserver 使用阿里/腾讯 IP DoH 仅作域名端点启动解析。
+  # DNS：显式直连域名规则、geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单和 Apple 国内例外使用阿里/腾讯 DoH；服务组目标的 DNS 请求经对应组选择出口；代理节点域名与普通默认查询使用 Cloudflare 强制 DoH-H3 和 Google DoH。厂商 DNS policy 随国内服务优先直连开关启停。default-nameserver 使用阿里/腾讯 IP DoH 仅作域名端点启动解析。
   enable: true
   ipv6: true
   use-hosts: true
@@ -210,6 +210,15 @@ dns:
     cp.cloudflare.com:
       - https://cloudflare-dns.com/dns-query#默认代理&h3=true
       - https://dns.google/dns-query#默认代理
+    fsend.cn:
+      - https://dns.alidns.com/dns-query#DIRECT
+      - https://doh.pub/dns-query#DIRECT
+    international-gfe.download.nvidia.com:
+      - https://dns.alidns.com/dns-query#DIRECT
+      - https://doh.pub/dns-query#DIRECT
+    +.ctaiot.com:
+      - https://dns.alidns.com/dns-query#DIRECT
+      - https://doh.pub/dns-query#DIRECT
     +.mb3admin.com:
       - https://cloudflare-dns.com/dns-query#Emby&h3=true
       - https://dns.google/dns-query#Emby
@@ -227,15 +236,9 @@ dns:
       - https://cloudflare-dns.com/dns-query#AppleProxy&h3=true
       - https://dns.google/dns-query#AppleProxy
     rule-set:category-ads: rcode://name_error
-    rule-set:games_cn,synology,nvidia_cn:
-      - https://cloudflare-dns.com/dns-query#默认代理&h3=true
-      - https://dns.google/dns-query#默认代理
-    rule-set:apple_cn:
+    rule-set:games_cn,synology,nvidia_cn,apple_cn,microsoft_cn:
       - https://dns.alidns.com/dns-query#DIRECT
       - https://doh.pub/dns-query#DIRECT
-    rule-set:microsoft_cn:
-      - https://cloudflare-dns.com/dns-query#默认代理&h3=true
-      - https://dns.google/dns-query#默认代理
     rule-set:googlefcm:
       - https://cloudflare-dns.com/dns-query#FCM&h3=true
       - https://dns.google/dns-query#FCM

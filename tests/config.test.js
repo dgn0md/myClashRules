@@ -1168,7 +1168,7 @@ test('AppleProxy and Apple product endpoints share one regional group; overseas 
   for (const host of ['buy.itunes.apple.com', 'p12-buy.itunes.apple.com', 'play.itunes.apple.com'])
     assert.ok(media.rules.includes(`DOMAIN,${host},${appleProxyGroup}`));
 });
-test('literal domain routes use target DNS and Other Apple DNS follows the Siri selector', () => {
+test('literal domain routes use mainland DNS when direct and service DNS follows the target group', () => {
   for (const subscription of [undefined, clean()]) {
     for (const minimal of [false, true]) {
       const config = build({ subscription, settings: { options: { 极简分流: minimal } } }).config;
@@ -1184,14 +1184,10 @@ test('literal domain routes use target DNS and Other Apple DNS follows the Siri 
         const dnsGroup = groups.get(dnsTarget);
         const policyKey = type === 'DOMAIN-SUFFIX' ? `+.${domain}` : domain;
         const policy = config.dns['nameserver-policy'][policyKey];
-        if (target === '直连' && !policy) {
-          assert.ok(config.dns.nameserver.every((dns) => dnsRouteFor(dns) === '默认代理'));
-          continue;
-        }
         assert.ok(policy, `missing nameserver-policy for ${rule}`);
         checked++;
         if (target === '直连') {
-          assert.deepEqual(policy, domesticDnsResolvers, `${rule} is an explicit Apple DNS exception`);
+          assert.deepEqual(policy, domesticDnsResolvers, `${rule} must use mainland DNS`);
         } else if (
           dnsGroup?.proxies.length &&
           dnsGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
@@ -1446,7 +1442,7 @@ test('AI, Google, TikTok, Meta and Siri AI expose only eligible country groups a
   }
 });
 
-test('domestic DNS policy covers geolocation-cn and independent dynamic whitelists', () => {
+test('domestic DNS policy covers explicit direct routes, geolocation-cn and independent dynamic whitelists', () => {
   const domesticResolvers = domesticDnsResolvers;
   const whitelist = {
     国内CDN解析: 'dns_domestic_cdn',
@@ -1504,22 +1500,30 @@ test('domestic DNS policy covers geolocation-cn and independent dynamic whitelis
   assert.ok(
     keys.indexOf(policyKeyForRuleSet(config, 'steam')) < keys.indexOf(policyKeyForRuleSet(config, 'geolocation-cn')),
   );
-  const domesticKeys = Object.entries(config.dns['nameserver-policy'])
-    .filter(([, value]) => JSON.stringify(value) === JSON.stringify(domesticResolvers))
-    .map(([key]) => key)
-    .sort();
-  assert.deepEqual(
-    domesticKeys,
-    [
-      domesticWhitelistKey,
-      policyKeyForRuleSet(config, 'geolocation-cn'),
-      'rule-set:apple_cn',
-      'gdmf.apple.com',
-      'mesu.apple.com',
-      'updates.cdn-apple.com',
-      'assets.cdn-apple.com',
-    ].sort(),
-  );
+  for (const key of [
+    domesticWhitelistKey,
+    policyKeyForRuleSet(config, 'geolocation-cn'),
+    'rule-set:apple_cn',
+    'gdmf.apple.com',
+    'mesu.apple.com',
+    'updates.cdn-apple.com',
+    'assets.cdn-apple.com',
+  ])
+    assert.deepEqual(
+      key.startsWith('rule-set:')
+        ? (config.dns['nameserver-policy'][key] ?? policyForRuleSet(config, key.slice('rule-set:'.length)))
+        : config.dns['nameserver-policy'][key],
+      domesticResolvers,
+    );
+  const directDomainProviders = new Set();
+  for (const rule of config.rules) {
+    const match = /^RULE-SET,([^,]+),直连(?:,|$)/.exec(rule);
+    if (!match || match[1] === 'private') continue;
+    const provider = config['rule-providers'][match[1]];
+    if (provider && ['domain', 'classical'].includes(provider.behavior)) directDomainProviders.add(match[1]);
+  }
+  for (const provider of directDomainProviders)
+    assert.deepEqual(policyForRuleSet(config, provider), domesticResolvers, `rule-set:${provider}`);
 });
 
 test('every routed domain rule-set uses its configured DNS egress group', () => {
@@ -1546,11 +1550,7 @@ test('every routed domain rule-set uses its configured DNS egress group', () => 
       dnsTargetGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
     ) {
       assert.equal(dns, 'rcode://name_error');
-    } else if (target === '直连')
-      assert.deepEqual(
-        dns,
-        ['apple_cn', 'geolocation-cn'].includes(providerName) ? domesticDnsResolvers : config.dns.nameserver,
-      );
+    } else if (target === '直连') assert.deepEqual(dns, domesticDnsResolvers);
     else {
       for (const resolver of Array.isArray(dns) ? dns : [dns]) assert.equal(dnsRouteFor(resolver), dnsTarget);
     }

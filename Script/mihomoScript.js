@@ -4,7 +4,7 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：460957e2932f9da1c5b41bd98bd4ce7a3a1b39d89c9389d998fc09f914833ee2
+ * 最新 Raw SHA-256：f5bcafd3a9fb26f8dcad82ca03fba26e4efc2033bbd5c2535b3021ad4bcc84ed
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  */
@@ -1779,7 +1779,7 @@ function buildDnsAndHostsConfig(config, filteredProxies) {
     'nameserver-policy': {
       'rule-set:private': 'system',
     },
-    // 直连出口与普通查询共用 policy/nameserver，避免再次向通用国内 DNS 解析。
+    // 显式直连域名规则使用国内加密 DNS；未命中显式 policy 的普通查询仍使用默认国外 DNS。
   };
 
   const hosts = {
@@ -2125,9 +2125,10 @@ function applyDnsPolicies(config, options, specialRules) {
   for (const suffix of ['+.steamserver.net', '+.steamusercontent.com'])
     config.dns['nameserver-policy'][suffix] = foreignDNS.map((dns) => dns.replace('#默认代理', `#${steamDnsGroup}`));
 
-  // DNS egress follows the route target group, with Other Apple Service explicitly using Siri's selector.
+  // 直连目标使用国内 DNS；代理服务的 DNS 请求经对应路由组建立连接。
+  // Other Apple Service 的 DNS 例外明确使用 Siri 的选择器。
   const dnsForRoute = (target, dnsEgressGroupName, dnsEgressGroup) => {
-    if (target === '直连') return foreignDNS;
+    if (target === '直连') return chinaDNS;
     if (
       dnsEgressGroup?.proxies.length &&
       dnsEgressGroup.proxies.every((proxy) => ['REJECT', 'REJECT-DROP', 'PASS'].includes(proxy))
@@ -2175,8 +2176,8 @@ function applyDnsPolicies(config, options, specialRules) {
       ? chinaDNS
       : dnsForRoute(target, dnsEgressGroupName, dnsEgressGroup);
   }
-  // Explicit proxy domain routes get their DNS egress group; direct routes use the DNS whitelist. Domain keyword/regex rules
-  // use a classical rule-set so nameserver-policy can match the same domain predicate.
+  // 显式域名规则的 DNS policy 与目标一致：直连使用国内加密 DNS，服务组经同一选择组查询 DNS。
+  // DOMAIN-KEYWORD/REGEX 通过 classical rule-set 匹配相同域名范围。
   const literalDomainEgress = new Map();
   for (const rule of config.rules) {
     const match = /^(DOMAIN|DOMAIN-SUFFIX),([^,]+),([^,]+)(?:,|$)/.exec(rule);
@@ -2187,8 +2188,10 @@ function applyDnsPolicies(config, options, specialRules) {
     if (!literalDomainEgress.has(policyKey)) literalDomainEgress.set(policyKey, target);
   }
   for (const [policyKey, target] of literalDomainEgress) {
-    // 直连域名不自动获准交给国内 DNS；已有 Apple 精确例外保留，其余交给白名单/默认解析。
-    if (target === '直连') continue;
+    if (target === '直连') {
+      config.dns['nameserver-policy'][policyKey] = chinaDNS;
+      continue;
+    }
     const targetGroup = groups.find((group) => group.name === target);
     if (!targetGroup) continue;
     const dnsEgressGroupName = target === appleOtherGroupName ? appleOtherDnsEgressGroupName : target;

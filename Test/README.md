@@ -21,7 +21,7 @@ node Test/run-tests.js
 
 ## DNS 白名单回归原则
 
-修改 DNS、规则源或相关开关前遵守 [国内 DNS 白名单维护原则](../docs/dns-whitelist.md)。兼容性测试不能恢复“所有直连都使用国内 DNS”、通用 `cn` 国内解析或通用 `direct-nameserver` 等旧行为来适配断言；应区分连接路由、`geolocation-cn` policy、`domestic AND NOT domestic_noncn` policy、白名单授权和 Apple/启动解析例外。
+修改 DNS、规则源或相关开关前遵守 [国内 DNS 白名单维护原则](../docs/dns-whitelist.md)。显式目标为 `直连` 的域名规则和动态 domain/classical 集合应使用国内 DNS；不能扩大为通用 `cn`、未知域名或仅由 `cn_ip` 兜底直连的域名，也不配置通用 `direct-nameserver`。应区分连接路由、`geolocation-cn` policy、`domestic AND NOT domestic_noncn` policy、DNS 白名单和 Apple/启动解析例外。
 
 `tests/config.test.js` 覆盖 `geolocation-cn` policy、白名单开关组合、服务组/极简模式独立性、DNS provider 引用及优先级。`tools/native-check.js` 调用 `tools/native-dns-whitelist.js`，从实际 `geolocation-cn` 快照抽取域名样本，并保留生产 policy 顺序，用回环上游计数验证 A/AAAA 和真实直连拨号。确认更具体的服务 policy、Steam 排除项和名单外查询仍使用各自解析器；上游成员更新仍由客户端 HTTP provider 每日直接拉取。
 

@@ -6,14 +6,14 @@
 
 ## 基本边界
 
-- 连接出口和 DNS 解析器分别决定。域名允许直连、命中国内 IP、属于国内服务或进入某个服务组，都不自动授权向国内公共 DNS 查询。
-- 国内业务域名解析由现有 `geolocation-cn` provider、开启国内服务模块时的厂商集合、启用的 DNS 白名单和下文列出的专项例外授权。11 组有同源 `@!cn` 子集的服务按 `domestic AND NOT domestic_noncn` 匹配；百度按完整集合匹配。其余查询使用国外加密 DNS；有专属服务 policy 的，保留对应服务组出口。服务组可以选择直连，因此“国外 DNS”不等同于“一定经代理”。
-- 不配置通用 `direct-nameserver`，直连拨号与普通查询共用 `nameserver-policy` 和默认 `nameserver`。不得因域名未命中、连接直连或国外 DNS 失败而自动改用国内 DNS。
+- 连接出口和 DNS 解析器分别决定。明确域名规则或动态 domain/classical 规则集命中且目标为 `直连` 时，该规则的 DNS policy 使用国内加密 DNS；代理服务目标组的 DNS 请求经对应服务组选择出口。仅因 IP 兜底规则直连或进入可选服务组，不会把任意未知域名改成国内 DNS。
+- 其他国内业务域名解析由现有 `geolocation-cn` provider、开启国内服务模块时的厂商集合、启用的 DNS 白名单和下文列出的专项例外授权。11 组有同源 `@!cn` 子集的服务按 `domestic AND NOT domestic_noncn` 匹配；百度按完整集合匹配。其余未命中明确直连规则或授权集合的查询使用国外加密 DNS；服务组 policy 仍保留对应组选择出口。
+- 不配置通用 `direct-nameserver`，也不因域名未命中、连接最终直连或国外 DNS 失败而自动切换解析器。`private` 保留本地 hosts/system 或严格模式下的 RCODE 安全处理。`cn_ip` 只承担连接兜底，不提供 DNS 域名集合。
 - 通用 `cn`、`douyin`、`.cn` 后缀和整家厂商/公共云集合不自动成为国内 DNS 白名单。现有 `geolocation-cn` provider 单独授权其实际成员使用国内加密 DNS；通用 `cn` 不参与 DNS policy 或 Fake-IP 过滤，仅在可选 QUIC 规则引用时保留；`cn_ip` 继续承担连接直连兜底。
 - 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米模块使用 Bett 集合；路由和厂商 DNS policy 统一受 `国内服务优先直连` 控制。有同源 `@!cn` 的 11 组按 `domestic AND NOT domestic_noncn` 匹配；百度没有配套子集，直接按完整百度集合使用国内加密 DNS。`geolocation-cn` 与其他白名单仍可独立授权重叠域名。
 - `no-resolve` 只限制相应 IP 规则主动触发解析，不指定 DNS 上游，也不代替白名单。缓存和 Fake-IP 可减少或延后查询，不消除真实解析，也不扩大国内 DNS 授权范围。
 - 严格加密 DNS 默认开启，生成配置不接受 system/DHCP、明文 UDP/TCP 或跳过证书校验；不添加明文或国内 DNS 的隐式故障回退。机场非节点 DNS 设置不得进入输出。
-- 国内白名单、`geolocation-cn`、国内服务集合及 Apple 国内例外使用阿里 `https://dns.alidns.com/dns-query` 与腾讯 `https://doh.pub/dns-query`。默认业务解析使用 Cloudflare `https://cloudflare-dns.com/dns-query#h3=true` 与 Google `https://dns.google/dns-query`；Cloudflare 项强制 HTTP/3，Google 项使用标准 DoH。代理节点域名解析使用同两家服务，但通过 `DIRECT` 建立 DNS 连接，避免解析节点时依赖代理。
+- 明确直连规则、国内白名单、`geolocation-cn`、国内服务集合及 Apple 国内例外使用阿里 `https://dns.alidns.com/dns-query` 与腾讯 `https://doh.pub/dns-query`。默认业务解析使用 Cloudflare `https://cloudflare-dns.com/dns-query#h3=true` 与 Google `https://dns.google/dns-query`；Cloudflare 项强制 HTTP/3，Google 项使用标准 DoH。代理服务的 DNS 请求经对应服务组选择出口；代理节点域名解析使用同两家服务，但通过 `DIRECT` 建立 DNS 连接，避免解析节点时依赖代理。
 - Mihomo 的 `default-nameserver` 只能填写 IP 字面量，因此使用阿里 `https://223.5.5.5/dns-query#DIRECT&name-cert-verify=dns.alidns.com` 与腾讯 `https://1.12.12.12/dns-query#DIRECT&name-cert-verify=doh.pub`。这两项只用于解析 DoH 服务器域名的启动解析；常规国内 policy 仍使用上面的域名端点，不把启动解析器当作业务 DNS 兜底。
 
 ## 默认组合与开关
@@ -43,7 +43,7 @@
 1. 显式主机/后缀 policy 位于动态 rule-set policy 之前，保护 Apple/Siri 精确例外和 Steam 排除项。不能仅依赖域名更具体来假定优先级。
 2. DNS 白名单和更具体的服务 rule-set policy 先于国内服务 `AND/NOT` policy，保护 CDN 子集及代理服务的专属解析出口。
 3. 国内服务 policy 先于广域 `geolocation-cn` policy；配对集合中的 `@!cn` 成员不命中对应组合，但仍可由其他独立集合授权。
-4. 其余未命中 `geolocation-cn`、国内服务集合、白名单或专项例外的域名使用默认国外 DNS。关闭国内服务路由开关时，厂商路由和对应 DNS policy 一并移除。
+4. 显式目标为 `直连` 的域名规则与动态集合使用国内 DNS；其他未命中 `geolocation-cn`、国内服务集合、白名单或专项例外的域名使用默认国外 DNS。关闭国内服务路由开关时，厂商路由和对应 DNS policy 一并移除。
 
 路由规则顺序与 DNS policy 顺序分别检查，不能只验证其中一项。不能因下载优化把 Apple AI、Siri 或有地区要求的服务切到不对应的解析出口。
 
@@ -51,6 +51,7 @@
 
 | 场景                                        | 解析约定                                                                                                                                               |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 任一明确域名规则或动态 domain/classical 规则集目标为 `直连` | 与连接规则使用同一精确域名/集合谓词，解析使用阿里/腾讯加密 DNS；不改变默认解析器，也不覆盖 `private` 本地名称安全 policy。 |
 | 固定版本 `apple_cn`                         | 其直连路由启用时保留国内加密 DNS，不改成整份动态 `apple_cdn`。                                                                                         |
 | `Apple下载直连` 开启                        | `gdmf.apple.com`、`mesu.apple.com`、`updates.cdn-apple.com`、`assets.cdn-apple.com` 四个精确域名保留国内加密 DNS。                                     |
 | 无合格 Siri 地区候选，且普通 Apple 默认直连 | `rule-set:apple`、`gateway.icloud.com`、`setup.icloud.com` 保留国内加密解析回退；有合格候选时恢复跟随 Siri 组，关闭普通 Apple 默认直连时不启用此回退。 |

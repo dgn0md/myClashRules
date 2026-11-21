@@ -144,6 +144,7 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
   const local = await fixtures();
   const configProviders = build().config['rule-providers'];
   const geolocationCn = readDomainSnapshot(binary, rulesDir, temp, configProviders, 'geolocation-cn');
+  const gamesCn = readDomainSnapshot(binary, rulesDir, temp, configProviders, 'games_cn');
   const domesticDnsSamples = readDomesticDnsSamples(binary, rulesDir, temp, build().config);
   const evidence = [];
   const node = { name: '美国 DNS 测试', type: 'socks5', server: '127.0.0.1', port: local.socksPort };
@@ -221,8 +222,12 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
         fs.copyFileSync(path.resolve(rulesDir, filename), file);
         config['rule-providers'][key] = { type: 'file', behavior: spec.behavior, format: spec.format, path: file };
       }
-      // Synthetic direct domains test the direct dial path without altering production DNS policies.
-      config.rules.unshift('DOMAIN,unknown-direct.dns-whitelist-probe.net,直连', 'DOMAIN,cdn-direct.hdslb.com,直连');
+      // Synthetic direct rules verify mainland DNS selection and the direct dial path.
+      const directDns = config.dns['nameserver-policy']['mesu.apple.com'] || [domestic.url, domestic.url];
+      assert.deepEqual(directDns, [domestic.url, domestic.url]);
+      const directHosts = ['unknown-direct.dns-whitelist-probe.net', 'cdn-direct.hdslb.com'];
+      config.rules.unshift(...directHosts.map((host) => `DOMAIN,${host},直连`));
+      for (const host of directHosts) config.dns['nameserver-policy'][host] = directDns;
       const filename = path.join(temp, `dns-${name}.yaml`);
       fs.writeFileSync(filename, YAML.stringify(config));
       const child = spawn(binary, ['-d', temp, '-f', filename], { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -278,8 +283,18 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
               ['i0.hdslb.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'i0.hdslb.com')],
               ['qhimgs7.com', options.国内CDN解析 !== false || matchesDomain(geolocationCn, 'qhimgs7.com')],
               ['res.cdn.office.net', options.微软下载解析 !== false],
-              ['dl.steam.clngaa.com', options.Steam下载解析 !== false],
-              ['alibaba.cdn.steampipe.steamcontent.com', options.Steam下载解析 !== false],
+              [
+                'dl.steam.clngaa.com',
+                options.Steam下载解析 !== false ||
+                  matchesDomain(gamesCn, 'dl.steam.clngaa.com') ||
+                  matchesDomain(geolocationCn, 'dl.steam.clngaa.com'),
+              ],
+              [
+                'alibaba.cdn.steampipe.steamcontent.com',
+                options.Steam下载解析 !== false ||
+                  matchesDomain(gamesCn, 'alibaba.cdn.steampipe.steamcontent.com') ||
+                  matchesDomain(geolocationCn, 'alibaba.cdn.steampipe.steamcontent.com'),
+              ],
               ['ugc.steamusercontent.com', false],
               ['api.steamserver.net', false],
               ['store.steampowered.com', false],
@@ -288,7 +303,7 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
               ['www.qq.com', matchesDomain(geolocationCn, 'www.qq.com')],
               ['www.bilibili.com', matchesDomain(geolocationCn, 'www.bilibili.com')],
               ['download.dns-whitelist-probe.net', matchesDomain(geolocationCn, 'download.dns-whitelist-probe.net')],
-              ['fsend.cn', matchesDomain(geolocationCn, 'fsend.cn')],
+              ['fsend.cn', options.国内服务优先直连 !== false || matchesDomain(geolocationCn, 'fsend.cn')],
               ['chatgpt.com', false],
               ['guzzoni.apple.com', false],
               ['mesu.apple.com', true],
@@ -320,16 +335,8 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
         }
         if (!domesticPolicyProvider)
           for (const [host, allowed] of [
-            [
-              'unknown-direct.dns-whitelist-probe.net',
-              matchesDomain(geolocationCn, 'unknown-direct.dns-whitelist-probe.net'),
-            ],
-            [
-              'cdn-direct.hdslb.com',
-              options.国内CDN解析 !== false ||
-                matchesDomain(geolocationCn, 'cdn-direct.hdslb.com') ||
-                (options.国内服务优先直连 !== false && domesticDnsSamples.matches('cdn-direct.hdslb.com')),
-            ],
+            ['unknown-direct.dns-whitelist-probe.net', true],
+            ['cdn-direct.hdslb.com', true],
           ]) {
             const domesticVendorPolicy =
               options.国内服务优先直连 !== false &&

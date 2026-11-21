@@ -28,7 +28,7 @@
 - 配置回归断言国内 DNS policy 使用 `dns.alidns.com` 与 `doh.pub` DoH；默认查询使用 Cloudflare `cloudflare-dns.com` 强制 H3 和 Google `dns.google` DoH；代理节点解析使用同一组服务且经 `DIRECT` 建连。`default-nameserver` 保持 IP 字面量并使用阿里/腾讯 DoH IP 与证书域名校验。
 - Apple News、Fitness、Sports、Books、PCC、Siri 和模型下载的有限端点按功能范围回归；上游 Apple 集合未覆盖这些组的边界时，不用宽泛集合代替。
 - 实际 rule provider 保持加载，用回环 CONNECT 检查命中的规则与策略链；DNS 检查将上游替换为本地计数器，不产生公共业务 DNS 查询。
-- 国内 DNS 回归从实际 `geolocation-cn` 与 Bett 国内服务快照抽取样本，覆盖 `domestic AND NOT domestic_noncn` 命中与排除、完整百度集合、厂商 DNS policy 随国内路由开关启停、白名单 provider 开关、重叠集合、Steam 排除项、名单外查询、A/AAAA 与直连拨号；它验证生成策略在隔离环境的选择，不测量真实线路延迟。
+- 国内 DNS 回归从实际 `geolocation-cn` 与 Bett 国内服务快照抽取样本，覆盖明确直连域名规则的国内 DNS、`domestic AND NOT domestic_noncn` 命中与排除、完整百度集合、厂商 DNS policy 随国内路由开关启停、白名单 provider 开关、重叠集合、Steam 排除项、名单外查询、A/AAAA 与直连拨号；代理服务 DNS policy 按对应服务组验证。它验证生成策略在隔离环境的选择，不测量真实线路延迟。
 
 ## CI 与用户网络
 
