@@ -55,7 +55,7 @@
 - DNS 白名单只参与 `nameserver-policy`，不增加连接直连规则。三个开关独立于普通服务组、极简模式和国内路由开关，关闭后不加载相应 provider；重叠集合及专项例外仍分别生效。
 - 白名单 policy 排在通用服务集合之前，让 CDN 子集不被 Microsoft/Steam 全量集合覆盖；Steam 的服务器/用户内容后缀使用显式国外解析 policy。显式主机/后缀 policy 排在所有 rule-set policy 之前，使 Apple/Siri 与 Steam 排除项在内核中实际优先。
 - 移除通用 `direct-nameserver` 及其独立缓存/解析路径；明确目标为 `直连` 的域名规则和动态 domain/classical 规则集使用国内加密 DNS，未命中域名 policy、仅通过 IP 兜底直连的查询仍用默认国外 DNS。普通整厂商集合不自动授权 DNS；国内服务开关开启时，11 组配对集合按与路由相同的 `AND/NOT` 谓词授权，百度按完整集合授权；`geolocation-cn` 仍单独生效。
-- 国内解析例外还包括固定 `apple_cn`、启用模型直连时的四个 Apple CDN 精确域名，以及无合格 Siri 候选时普通 Apple 默认直连的既有解析回退。节点域名及普通业务查询使用 Cloudflare 强制 DoH-H3 与 Google DoH；节点 DoH 连接使用 `DIRECT`。`default-nameserver` 启动解析为 Mihomo IP 字面量要求使用阿里/腾讯 IP DoH。
+- 国内解析例外还包括固定 `apple_cn`、启用模型直连时的四个 Apple CDN 精确域名，以及无合格 Siri 候选时普通 Apple 默认直连的既有解析回退。普通业务查询使用 Cloudflare 强制 DoH-H3 与 Google DoH；代理节点域名使用阿里/腾讯 DoH 并经 `DIRECT` 建连，避免代理启动前依赖境外解析器。`default-nameserver` 启动解析为 Mihomo IP 字面量要求使用阿里/腾讯 IP DoH。
 - 缓存和 Fake-IP 减少或延后部分查询，不保证消除真实解析；名单外的国内网站/CDN 可能因国外解析得到不同节点，需要在实际网络测量首次连接和下载表现。
 - Apple IP 使用 `apple_ip` 并路由到 `AppleProxy`。该规则排在 `cn_ip` 前面。
 - AppleProxy 使用 Blackmatrix7 每日更新的 classical/YAML provider。`apple-tvplus` MRS 保留 TV+ 专属分类，用于补充 AppleProxy 集合未含的 TV+ 成员；两者共享同一组。

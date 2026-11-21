@@ -104,8 +104,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
       'https://dns.google/dns-query#默认代理',
     ]);
     h.assertDeep(out.dns['proxy-server-nameserver'], [
-      'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
-      'https://dns.google/dns-query#DIRECT',
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
     ]);
     h.assertDeep(out.dns['proxy-server-nameserver-policy'], {}, '机场节点 DNS policy 应明确清空');
     h.assert(!out.dns['fake-ip-filter'].includes('+.airport-filter.example'), '不得继承机场 Fake-IP 例外');
@@ -130,8 +130,8 @@ function runIntegrationTests(h, api, fx, loadScript, scriptFile) {
         'https://dns.google/dns-query#默认代理',
       ]);
       h.assertDeep(out.dns['proxy-server-nameserver'], [
-        'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
-        'https://dns.google/dns-query#DIRECT',
+        'https://dns.alidns.com/dns-query#DIRECT',
+        'https://doh.pub/dns-query#DIRECT',
       ]);
       h.assertDeep(out.dns['proxy-server-nameserver-policy'], {});
       h.assert(!('hk1.example.com' in out.dns['nameserver-policy']), `机场 DNS policy 不应进入输出：${resolver}`);

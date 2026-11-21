@@ -29,7 +29,7 @@
 - 可路由的精确域名、后缀域名及动态 domain/classical 规则集，目标为 `直连` 时使用国内加密 DNS，目标为服务组时 DNS 请求经对应服务组选择出口；仅因 IP 兜底规则直连或未命中明确域名 policy 的查询仍用默认国外 DNS。`private` 保留本地 hosts/system 或严格模式下的 RCODE 安全 policy。Apple 例外：
   - `Other Apple Service` 连接默认直连；通用 `rule-set:apple`、`gateway.icloud.com` 和 `setup.icloud.com` 的 DNS policy 使用 `Siri Ai/Apple Intelligence` 当前选择。没有合格的 Siri 地区候选且普通 Apple 默认直连时，这些域名改用国内加密直连 DNS，避免直连连接被 NXDOMAIN 阻断。
   - AppleProxy 动态集合、Apple 产品入口与 `apple_ip` 进入 `AppleProxy`；`apple-dns.net` 和 `apple-dns.com` 的 DNS policy 使用该组。
-- `private` 和拒绝出口可用专用安全 policy。明确直连域名 policy、`geolocation-cn` 成员、国内服务集合、国内 DNS 白名单及 Apple 国内例外使用阿里/腾讯 DoH；服务组目标的 DNS 请求跟随对应组选择。其他业务查询使用 Cloudflare 强制 DoH-H3 与 Google DoH，代理节点 DoH 经 `DIRECT` 建连。Mihomo 的 `default-nameserver` 启动解析必须使用 IP 字面量，因此配置阿里/腾讯 IP DoH，并仅用于解析加密 DNS 端点域名。IP-CIDR provider 本身没有域名 DNS。
+- `private` 和拒绝出口可用专用安全 policy。明确直连域名 policy、`geolocation-cn` 成员、国内服务集合、国内 DNS 白名单及 Apple 国内例外使用阿里/腾讯 DoH；服务组目标的 DNS 请求跟随对应组选择。普通默认业务查询使用 Cloudflare 强制 DoH-H3 与 Google DoH；代理节点域名使用阿里/腾讯 DoH 并经 `DIRECT` 建连，避免代理启动前依赖境外解析器。Mihomo 的 `default-nameserver` 启动解析必须使用 IP 字面量，因此配置阿里/腾讯 IP DoH，并仅用于解析加密 DNS 端点域名。IP-CIDR provider 本身没有域名 DNS。
 - 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米国内服务模块使用 Bett 厂商集合；有同源 `@!cn` 子集时，路由与国内 DNS policy 都按 `domestic AND NOT domestic_noncn` 匹配，百度没有配套子集，路由和 DNS policy 都使用完整百度集合。连接规则与厂商 DNS policy 统一受默认开启的 `国内服务优先直连` 控制；专用服务规则先于模块，模块先于通用 CN 域名、国外域名与 IP 兜底。海外标注不完整仍可能影响分类。
 - IP 规则顺序保留 `apple_ip`、`private_ip`、服务 IP、`cn_ip` 直连兜底的优先级，避免服务 IP 被通用 CN 集合先匹配。
 - Apple 精确规则须先于广告、Apple CN 和可选 QUIC 拒绝规则。不得用整个 Apple、Cloudflare 或 `17/8` 网段代替精细端点分流。

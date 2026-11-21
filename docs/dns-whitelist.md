@@ -13,7 +13,7 @@
 - 阿里、百度、B站、字节、中国移动/电信/联通、华为云、京东、网易、腾讯、小米模块使用 Bett 集合；路由和厂商 DNS policy 统一受 `国内服务优先直连` 控制。有同源 `@!cn` 的 11 组按 `domestic AND NOT domestic_noncn` 匹配；百度没有配套子集，直接按完整百度集合使用国内加密 DNS。`geolocation-cn` 与其他白名单仍可独立授权重叠域名。
 - `no-resolve` 只限制相应 IP 规则主动触发解析，不指定 DNS 上游，也不代替白名单。缓存和 Fake-IP 可减少或延后查询，不消除真实解析，也不扩大国内 DNS 授权范围。
 - 严格加密 DNS 默认开启，生成配置不接受 system/DHCP、明文 UDP/TCP 或跳过证书校验；不添加明文或国内 DNS 的隐式故障回退。机场非节点 DNS 设置不得进入输出。
-- 明确直连规则、国内白名单、`geolocation-cn`、国内服务集合及 Apple 国内例外使用阿里 `https://dns.alidns.com/dns-query` 与腾讯 `https://doh.pub/dns-query`。默认业务解析使用 Cloudflare `https://cloudflare-dns.com/dns-query#h3=true` 与 Google `https://dns.google/dns-query`；Cloudflare 项强制 HTTP/3，Google 项使用标准 DoH。代理服务的 DNS 请求经对应服务组选择出口；代理节点域名解析使用同两家服务，但通过 `DIRECT` 建立 DNS 连接，避免解析节点时依赖代理。
+- 明确直连规则、国内白名单、`geolocation-cn`、国内服务集合、代理节点域名引导及 Apple 国内例外使用阿里 `https://dns.alidns.com/dns-query` 与腾讯 `https://doh.pub/dns-query`。默认业务解析使用 Cloudflare `https://cloudflare-dns.com/dns-query#h3=true` 与 Google `https://dns.google/dns-query`；Cloudflare 项强制 HTTP/3，Google 项使用标准 DoH。代理服务的 DNS 请求经对应服务组选择出口；代理节点 resolver 通过 `DIRECT` 建立连接，避免节点解析依赖境外解析器。
 - Mihomo 的 `default-nameserver` 只能填写 IP 字面量，因此使用阿里 `https://223.5.5.5/dns-query#DIRECT&name-cert-verify=dns.alidns.com` 与腾讯 `https://1.12.12.12/dns-query#DIRECT&name-cert-verify=doh.pub`。这两项只用于解析 DoH 服务器域名的启动解析；常规国内 policy 仍使用上面的域名端点，不把启动解析器当作业务 DNS 兜底。
 
 ## 默认组合与开关
@@ -55,7 +55,7 @@
 | 固定版本 `apple_cn`                         | 其直连路由启用时保留国内加密 DNS，不改成整份动态 `apple_cdn`。                                                                                         |
 | `Apple下载直连` 开启                        | `gdmf.apple.com`、`mesu.apple.com`、`updates.cdn-apple.com`、`assets.cdn-apple.com` 四个精确域名保留国内加密 DNS。                                     |
 | 无合格 Siri 地区候选，且普通 Apple 默认直连 | `rule-set:apple`、`gateway.icloud.com`、`setup.icloud.com` 保留国内加密解析回退；有合格候选时恢复跟随 Siri 组，关闭普通 Apple 默认直连时不启用此回退。 |
-| 代理节点域名解析                            | 使用 Cloudflare DoH-H3 与 Google DoH，但连接都通过 `DIRECT` 建立，避免代理自依赖；不把代理节点专用解析器作为普通业务查询的通用兜底。                 |
+| 代理节点域名解析                            | 使用阿里与腾讯 DoH，连接通过 `DIRECT` 建立；避免代理启动依赖境外解析器，且不作为普通业务查询的通用兜底。                                                 |
 | DoH 服务器启动解析                           | `default-nameserver` 使用阿里/腾讯 IP DoH，满足 Mihomo 的 IP 字面量要求；只用于解析 DoH 端点，不作为普通业务查询的通用兜底。                           |
 | 私有域名与拒绝出口                          | 保留本地 hosts/专用 RCODE 安全处理；严格模式不为 LAN 名称查询系统或公共 DNS。                                                                          |
 

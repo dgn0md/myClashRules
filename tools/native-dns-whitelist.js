@@ -138,6 +138,118 @@ async function dnsStub() {
   };
 }
 
+async function verifyProxyNodeBootstrapDns({ binary, temp, domestic, foreign, local }) {
+  const nodeHost = 'proxy-node.dns-whitelist-probe.test';
+  const nodeName = 'Synthetic DNS Node';
+  const groupName = 'DNS Bootstrap Probe';
+  const generatedDns = build().config.dns;
+  const localResolvers = generatedDns['proxy-server-nameserver'].map((server) =>
+    /^https:\/\/(?:dns\.alidns\.com|doh\.pub)\/dns-query(?:#|$)/i.test(server) ? domestic.url : foreign.url,
+  );
+  const mixedPort = await freePort();
+  const controllerPort = await freePort();
+  const config = {
+    'mixed-port': mixedPort,
+    'allow-lan': false,
+    mode: 'rule',
+    'log-level': 'error',
+    'external-controller': `127.0.0.1:${controllerPort}`,
+    dns: {
+      enable: true,
+      ipv6: false,
+      'use-hosts': false,
+      'use-system-hosts': false,
+      'enhanced-mode': 'redir-host',
+      'default-nameserver': [domestic.url],
+      'proxy-server-nameserver': localResolvers,
+      'proxy-server-nameserver-policy': {},
+      nameserver: [foreign.url],
+      'nameserver-policy': {},
+    },
+    proxies: [{ name: nodeName, type: 'socks5', server: nodeHost, port: local.socksPort }],
+    'proxy-groups': [{ name: groupName, type: 'select', proxies: [nodeName] }],
+    rules: [`MATCH,${groupName}`],
+    tun: { enable: false },
+    ntp: { enable: false },
+    profile: { 'store-selected': false, 'store-fake-ip': false },
+  };
+  const filename = path.join(temp, 'proxy-node-bootstrap-dns.yaml');
+  fs.writeFileSync(filename, YAML.stringify(config));
+  domestic.queries.length = foreign.queries.length = 0;
+  const child = spawn(binary, ['-d', temp, '-f', filename], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let logs = '';
+  child.stdout.on('data', (bytes) => {
+    logs += bytes;
+  });
+  child.stderr.on('data', (bytes) => {
+    logs += bytes;
+  });
+  try {
+    let ready = false;
+    for (let i = 0; i < 50; i++) {
+      assert.equal(child.exitCode, null, logs);
+      try {
+        const response = await fetch(`http://127.0.0.1:${controllerPort}/version`, {
+          signal: AbortSignal.timeout(500),
+        });
+        ready = response.ok;
+        if (ready) break;
+      } catch {}
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(ready, `proxy-node DNS probe did not start: ${logs}`);
+    const groupUrl = `http://127.0.0.1:${controllerPort}/proxies/${encodeURIComponent(groupName)}`;
+    const groupState = await (await fetch(groupUrl)).json();
+    if (groupState.now !== nodeName)
+      await fetch(groupUrl, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: nodeName }),
+      });
+    const socket = local.track(net.connect(mixedPort, '127.0.0.1'));
+    try {
+      await once(socket, 'connect');
+      const responsePromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('proxy-node DNS probe timed out')), 5000);
+        socket.once('data', (response) => {
+          clearTimeout(timeout);
+          resolve(response);
+        });
+        socket.once('error', (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        });
+      });
+      socket.write('CONNECT 192.0.2.1:443 HTTP/1.1\r\nHost: 192.0.2.1:443\r\n\r\n');
+      const response = await responsePromise;
+      assert.match(response.toString(), /200 Connection established/i, logs);
+      const { connections } = await (await fetch(`http://127.0.0.1:${controllerPort}/connections`)).json();
+      const connection = (connections || []).find(
+        (entry) => String(entry.metadata.sourcePort) === String(socket.localPort),
+      );
+      const chains = connection?.chains || [];
+      assert.ok(
+        domestic.queries.some((query) => query.host === nodeHost),
+        `proxy node hostname did not use mainland DNS; domestic=${domestic.queries.length}, foreign=${foreign.queries.length}, chain=${chains.join(',')}`,
+      );
+      assert.ok(
+        !foreign.queries.some((query) => query.host === nodeHost),
+        `proxy node hostname leaked to foreign DNS; domestic=${domestic.queries.length}, foreign=${foreign.queries.length}, chain=${chains.join(',')}`,
+      );
+    } finally {
+      socket.destroy();
+    }
+    return { mode: 'proxy-node-bootstrap', host: nodeHost, type: 'proxy-server-resolution', upstream: 'domestic' };
+  } finally {
+    fs.writeFileSync(path.join(temp, 'proxy-node-bootstrap-dns.log'), logs);
+    if (child.exitCode === null) {
+      const exited = once(child, 'exit');
+      child.kill('SIGTERM');
+      await exited;
+    }
+  }
+}
+
 async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
   const domestic = await dnsStub();
   const foreign = await dnsStub();
@@ -165,6 +277,7 @@ async function verifyDnsWhitelist({ binary, rulesDir, temp }) {
     { name: 'domestic-vendor-baidu-policy', options: {}, domesticPolicyProvider: 'domestic_baidu' },
   ];
   try {
+    evidence.push(await verifyProxyNodeBootstrapDns({ binary, temp, domestic, foreign, local }));
     for (const { name, options, expanded, domesticPolicyProvider } of modes) {
       const config = build({
         settings: { options },

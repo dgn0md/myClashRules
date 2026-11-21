@@ -451,7 +451,8 @@ async function run() {
   console.log(`Offline sniffing: ${sniffing.length} pure-IP HTTP/TLS routing decisions verified`);
   const whitelistDns = await verifyDnsWhitelist({ binary, rulesDir, temp });
   fs.writeFileSync(path.join(temp, 'dns-policy.json'), JSON.stringify(whitelistDns, null, 2));
-  console.log(`Offline DNS policy: ${whitelistDns.length} A/AAAA and direct dial decisions verified`);
+  console.log('Proxy node bootstrap DNS: mainland resolver verified with a synthetic node');
+  console.log(`Offline DNS policy: ${whitelistDns.length - 1} A/AAAA and direct dial decisions verified`);
 }
 run().catch((error) => {
   console.error(error.stack);

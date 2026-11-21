@@ -109,8 +109,8 @@ function encryptedDns(config) {
     'https://dns.google/dns-query#默认代理',
   ]);
   assert.deepEqual(dns['proxy-server-nameserver'], [
-    'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
-    'https://dns.google/dns-query#DIRECT',
+    'https://dns.alidns.com/dns-query#DIRECT',
+    'https://doh.pub/dns-query#DIRECT',
   ]);
   assert.deepEqual(config.hosts['dns.alidns.com'], ['223.5.5.5', '223.6.6.6']);
   assert.deepEqual(config.hosts['doh.pub'], ['1.12.12.12', '120.53.53.53']);
@@ -913,6 +913,17 @@ test('international iCloud content suffix shares priority routing and DNS while 
     }
   }
 });
+test('proxy node hostname bootstrap uses mainland encrypted DNS before proxies are available', () => {
+  const dns = build().config.dns;
+  assert.deepEqual(dns['proxy-server-nameserver'], [
+    'https://dns.alidns.com/dns-query#DIRECT',
+    'https://doh.pub/dns-query#DIRECT',
+  ]);
+  assert.deepEqual(dns.nameserver, [
+    'https://cloudflare-dns.com/dns-query#默认代理&h3=true',
+    'https://dns.google/dns-query#默认代理',
+  ]);
+});
 test('strict script output discards unsafe airport DNS settings instead of blocking import', () => {
   for (const resolver of [
     'system',
@@ -941,8 +952,8 @@ test('strict script output discards unsafe airport DNS settings instead of block
       'https://dns.google/dns-query#默认代理',
     ]);
     assert.deepEqual(config.dns['proxy-server-nameserver'], [
-      'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
-      'https://dns.google/dns-query#DIRECT',
+      'https://dns.alidns.com/dns-query#DIRECT',
+      'https://doh.pub/dns-query#DIRECT',
     ]);
     assert.deepEqual(config.dns['proxy-server-nameserver-policy'], {});
     assert.ok(!('us.node.test' in config.dns['nameserver-policy']), `airport policy leaked: ${resolver}`);
@@ -959,8 +970,8 @@ test('airport DNS policy does not override the script-owned node resolver policy
   const dns = build({ subscription }).config.dns;
   assert.deepEqual(dns['proxy-server-nameserver-policy'], {});
   assert.deepEqual(dns['proxy-server-nameserver'], [
-    'https://cloudflare-dns.com/dns-query#DIRECT&h3=true',
-    'https://dns.google/dns-query#DIRECT',
+    'https://dns.alidns.com/dns-query#DIRECT',
+    'https://doh.pub/dns-query#DIRECT',
   ]);
 });
 test('private hosts rewrite still removes local-loop DNS before strict validation', () => {

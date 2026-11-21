@@ -4,11 +4,11 @@
  * 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
  * 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
  *
- * 最新 Raw SHA-256：f5bcafd3a9fb26f8dcad82ca03fba26e4efc2033bbd5c2535b3021ad4bcc84ed
+ * 最新 Raw SHA-256：9029707fc068751ce917f9f99f7f1bd6af8cb50077d3a376a93d654233e15e05
  * Raw 脚本：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Script/mihomoScript.js
  * CDN 脚本：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Script/mihomoScript.cdn.js
  *
- * 缓存 CDN SHA-256：4e9c8488f566f9df97752780def309a77c145bf617c60b9f96aec55b1878dae9
+ * 缓存 CDN SHA-256：f67983cce2688fec9cb3b51caeac1898b220db5b1b0eb501fe5e35f20e3ae780
  */
 
 // --- 静态配置区域 ---
@@ -1576,8 +1576,8 @@ function buildFunctionalGroups(filteredProxies, generatedRegionGroups, customize
 // ---dns和hosts相关处理---
 
 // 国内外 DNS 定义
-// 国内 DNS 白名单：阿里与腾讯 DoH；默认/代理节点查询：Cloudflare DoH-H3 与 Google DoH。
-// 不配置明文 DNS 或 skip-cert-verify；不可达时失败，不降级为明文。
+// 国内 DNS 白名单与代理节点引导：阿里与腾讯 DoH；普通默认查询使用 Cloudflare DoH-H3 与 Google DoH。
+// 节点域名必须在代理可用前解析，因此使用可直连的国内 DoH；不可达时失败，不降级为明文。
 const chinaDNS = ['https://dns.alidns.com/dns-query#DIRECT', 'https://doh.pub/dns-query#DIRECT'];
 const foreignDNS = ['https://cloudflare-dns.com/dns-query#默认代理&h3=true', 'https://dns.google/dns-query#默认代理'];
 // Mihomo 的 default-nameserver 要求 IP 字面量；以阿里和腾讯 IP DoH 端点启动解析并校验证书域名。
@@ -1588,7 +1588,7 @@ const bootstrapDNS = [
 // Other Apple Service connections keep their own group, while Apple DNS uses the Siri selector.
 const appleOtherDnsEgressGroupName = appleAiGroupName;
 const defaultDNS = [...bootstrapDNS];
-const proxyServerDNS = foreignDNS.map((dns) => dns.replace('#默认代理', '#DIRECT'));
+const proxyServerDNS = [...chinaDNS];
 
 /**
  * hosts 匹配优先级：精确 > +. > . > *（同级按出现顺序）

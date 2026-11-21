@@ -1,10 +1,10 @@
 # myClashRules Mihomo 全量静态配置
 # 致谢：AIsouler/MyClash 全量版（commit 4861619be366c7bacabfed6d581bb8c450de1ca1）。
 # 许可：MIT License；Copyright (c) 2026 dgn0md、AIsouler。
-# 最新 Raw SHA-256：0d9902c9ab3e50fdf2863bf66637c7624efaf9ecf00d8181301327a375a7c846
+# 最新 Raw SHA-256：99d467c413c2743fc13a3f35b2e976a1303405eea362206c13b84866e1d9efee
 # Raw 配置：https://raw.githubusercontent.com/dgn0md/myClashRules/main/Config/mihomoConfig.yaml
 # CDN 配置：https://cdn.jsdelivr.net/gh/dgn0md/myClashRules@main/Config/mihomoConfig.cdn.yaml
-# 缓存 CDN SHA-256：fc9add2340e4bb7db0527358bf1c61606a2e70eaba93da27d0f5539f8a08dae5
+# 缓存 CDN SHA-256：fa20dee0880d43d11cdd34bb6741033e10eb85f47eaa67abee210f843f39d64c
 # 仅适用于 Mihomo。关闭客户端 DNS 覆写。第一次使用请填 proxy-providers.订阅.url。
 # 此 YAML 的开关由生成器读取，Mihomo 不执行 x-myClashRules。修改开关并推送后由 GitHub Actions 重新生成。
 # 机场非节点设置不会继承；需处理实际节点与节点 hosts 映射时使用 --subscription .local/subscription.yaml。
@@ -70,7 +70,7 @@ x-myClashRules:
     链式代理: false # 是否启用链式代理（自定义节点作为落地节点，经“链式中转”策略组中转）
   customProxies: []
 dns:
-  # DNS：显式直连域名规则、geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单和 Apple 国内例外使用阿里/腾讯 DoH；服务组目标的 DNS 请求经对应组选择出口；代理节点域名与普通默认查询使用 Cloudflare 强制 DoH-H3 和 Google DoH。厂商 DNS policy 随国内服务优先直连开关启停。default-nameserver 使用阿里/腾讯 IP DoH 仅作域名端点启动解析。
+  # DNS：显式直连域名规则、geolocation-cn、国内服务 AND NOT 海外子集、完整百度集合、白名单、代理节点域名引导和 Apple 国内例外使用阿里/腾讯 DoH；服务组目标的 DNS 请求经对应组选择出口；普通默认查询使用 Cloudflare 强制 DoH-H3 和 Google DoH。厂商 DNS policy 随国内服务优先直连开关启停。default-nameserver 使用阿里/腾讯 IP DoH 仅作域名端点启动解析。
   enable: true
   ipv6: true
   use-hosts: true
@@ -105,8 +105,8 @@ dns:
     - https://223.5.5.5/dns-query#DIRECT&name-cert-verify=dns.alidns.com
     - https://1.12.12.12/dns-query#DIRECT&name-cert-verify=doh.pub
   proxy-server-nameserver:
-    - https://cloudflare-dns.com/dns-query#DIRECT&h3=true
-    - https://dns.google/dns-query#DIRECT
+    - https://dns.alidns.com/dns-query#DIRECT
+    - https://doh.pub/dns-query#DIRECT
   proxy-server-nameserver-policy: {}
   nameserver:
     - https://cloudflare-dns.com/dns-query#默认代理&h3=true
